@@ -104,7 +104,7 @@ const ProductDetailScreen = () => {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size='large' color='#F8D930' />
+        <ActivityIndicator size='large' color='#D4AF37' />
         <Text style={styles.loadingText}>Cargando información del producto...</Text>
       </View>
     );
@@ -134,12 +134,12 @@ const ProductDetailScreen = () => {
         options={{
           title: product?.name || 'Detalles',
           headerBackTitle: 'Volver',
-          headerTintColor: '#F8D930',
+          headerTintColor: '#D4AF37',
           headerStyle: {
             backgroundColor: '#1a1919',
           },
           headerTitleStyle: {
-            color: '#F8D930',
+            color: '#D4AF37',
           },
         }}
       />
@@ -162,7 +162,7 @@ const ProductDetailScreen = () => {
         {/* Usage Recommendation Card */}
         <View style={styles.card}>
           <View style={styles.sectionHeader}>
-            <Ionicons name='bulb' size={24} color='#F8D930' />
+            <Ionicons name='bulb' size={24} color='#D4AF37' />
             <Text style={styles.sectionTitle}>Recomendaciones de Uso</Text>
           </View>
           <Text style={styles.sectionContent}>{product.usage_recommendation}</Text>
@@ -172,7 +172,7 @@ const ProductDetailScreen = () => {
         {flavors.length > 0 && (
           <View style={styles.card}>
             <View style={styles.sectionHeader}>
-              <Ionicons name='color-palette' size={24} color='#F8D930' />
+              <Ionicons name='color-palette' size={24} color='#D4AF37' />
               <Text style={styles.sectionTitle}>Sabores Disponibles</Text>
             </View>
             <View style={styles.flavorContainer}>
@@ -189,7 +189,7 @@ const ProductDetailScreen = () => {
         {nutrition && (
           <View style={styles.card}>
             <View style={styles.sectionHeader}>
-              <Ionicons name='nutrition' size={24} color='#F8D930' />
+              <Ionicons name='nutrition' size={24} color='#D4AF37' />
               <Text style={styles.sectionTitle}>Información Nutricional</Text>
             </View>
             <View style={styles.nutritionGrid}>
@@ -213,14 +213,14 @@ const ProductDetailScreen = () => {
         {attributes.length > 0 && (
           <View style={styles.card}>
             <View style={styles.sectionHeader}>
-              <Ionicons name='checkmark-circle' size={24} color='#F8D930' />
+              <Ionicons name='checkmark-circle' size={24} color='#D4AF37' />
               <Text style={styles.sectionTitle}>Beneficios y Características</Text>
             </View>
             {attributes.map((attr, index) =>
               attr.description ? (
                 <View key={`attr-${attr.attribute_id}-${index}`} style={styles.attributeItem}>
                   <View style={styles.attributeHeader}>
-                    <Ionicons name='star' size={16} color='#F8D930' />
+                    <Ionicons name='star' size={16} color='#D4AF37' />
                     <Text style={styles.attributeName}>{attr.name}</Text>
                   </View>
                   <Text style={styles.attributeDescription}>{attr.description}</Text>
@@ -228,7 +228,7 @@ const ProductDetailScreen = () => {
               ) : (
                 <View key={`attr-${attr.attribute_id}-${index}`} style={styles.attributeItem}>
                   <View style={styles.attributeHeader}>
-                    <Ionicons name='star' size={16} color='#F8D930' />
+                    <Ionicons name='star' size={16} color='#D4AF37' />
                     <Text style={styles.attributeName}>{attr.name}</Text>
                   </View>
                 </View>
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
     borderBottomWidth: 3,
-    borderBottomColor: '#F8D930',
+    borderBottomColor: '#D4AF37',
   },
   productImage: {
     width: width * 0.8,
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     borderColor: '#333',
   },
   productName: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 26,
     fontWeight: 'bold',
     marginBottom: 12,
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#333',
   },
   sectionTitle: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 20,
     fontWeight: 'bold',
     marginLeft: 12,
@@ -336,12 +336,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#F8D930',
+    borderColor: '#D4AF37',
     marginRight: 8,
     marginBottom: 8,
   },
   flavorText: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   nutritionValue: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   attributeName: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 8,

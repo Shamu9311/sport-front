@@ -164,7 +164,7 @@ const ProfileScreen = () => {
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size='large' color='#F8D930' />
+        <ActivityIndicator size='large' color='#D4AF37' />
         <Text style={styles.loadingText}>Cargando información del perfil...</Text>
       </View>
     );
@@ -195,7 +195,7 @@ const ProfileScreen = () => {
       {/* Header con Avatar */}
       <View style={styles.profileHeader}>
         <View style={styles.avatarContainer}>
-          <Ionicons name='person-circle' size={100} color='#F8D930' />
+          <Ionicons name='person-circle' size={100} color='#D4AF37' />
         </View>
         <Text style={styles.profileTitle}>{userInfo?.username || 'Usuario'}</Text>
         <Text style={styles.profileEmail}>{userInfo?.email || 'No disponible'}</Text>
@@ -204,7 +204,7 @@ const ProfileScreen = () => {
       {/* Card de Información Personal y Datos Físicos */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Ionicons name='person' size={24} color='#F8D930' />
+          <Ionicons name='person' size={24} color='#D4AF37' />
           <Text style={styles.cardTitle}>Información Personal</Text>
         </View>
 
@@ -227,19 +227,19 @@ const ProfileScreen = () => {
 
             <View style={styles.statsGrid}>
               <View style={styles.statItem}>
-                <Ionicons name='calendar-outline' size={24} color='#F8D930' />
+                <Ionicons name='calendar-outline' size={24} color='#D4AF37' />
                 <Text style={styles.statValue}>{userInfo.profile.age}</Text>
                 <Text style={styles.statLabel}>Años</Text>
               </View>
 
               <View style={styles.statItem}>
-                <Ionicons name='scale-outline' size={24} color='#F8D930' />
+                <Ionicons name='scale-outline' size={24} color='#D4AF37' />
                 <Text style={styles.statValue}>{userInfo.profile.weight}</Text>
                 <Text style={styles.statLabel}>kg</Text>
               </View>
 
               <View style={styles.statItem}>
-                <Ionicons name='resize-outline' size={24} color='#F8D930' />
+                <Ionicons name='resize-outline' size={24} color='#D4AF37' />
                 <Text style={styles.statValue}>{userInfo.profile.height}</Text>
                 <Text style={styles.statLabel}>cm</Text>
               </View>
@@ -261,7 +261,7 @@ const ProfileScreen = () => {
         <>
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Ionicons name='barbell' size={24} color='#F8D930' />
+              <Ionicons name='barbell' size={24} color='#D4AF37' />
               <Text style={styles.cardTitle}>Actividad Deportiva</Text>
             </View>
 
@@ -293,7 +293,7 @@ const ProfileScreen = () => {
           {/* Card de Preferencias */}
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Ionicons name='settings' size={24} color='#F8D930' />
+              <Ionicons name='settings' size={24} color='#D4AF37' />
               <Text style={styles.cardTitle}>Preferencias</Text>
             </View>
 
@@ -436,7 +436,7 @@ const PersonalDataForm = ({ onCancel }: { onCancel?: () => void }) => {
       {/* Header con título y botón de regresar */}
       <View style={styles.editHeader}>
         <TouchableOpacity onPress={onCancel} style={styles.backButtonEdit}>
-          <Ionicons name='arrow-back' size={24} color='#F8D930' />
+          <Ionicons name='arrow-back' size={24} color='#D4AF37' />
           <Text style={styles.backButtonText}>Volver</Text>
         </TouchableOpacity>
         <Text style={styles.editHeaderTitle}>Editar Perfil</Text>
@@ -447,7 +447,7 @@ const PersonalDataForm = ({ onCancel }: { onCancel?: () => void }) => {
         {/* Datos Básicos Card */}
         <View style={styles.formCard}>
           <View style={styles.formCardHeader}>
-            <Ionicons name='person-outline' size={20} color='#F8D930' />
+            <Ionicons name='person-outline' size={20} color='#D4AF37' />
             <Text style={styles.formCardTitle}>Datos Básicos</Text>
           </View>
 
@@ -485,7 +485,7 @@ const PersonalDataForm = ({ onCancel }: { onCancel?: () => void }) => {
         {/* Género y Características Card */}
         <View style={styles.formCard}>
           <View style={styles.formCardHeader}>
-            <Ionicons name='body-outline' size={20} color='#F8D930' />
+            <Ionicons name='body-outline' size={20} color='#D4AF37' />
             <Text style={styles.formCardTitle}>Características Personales</Text>
           </View>
 
@@ -494,7 +494,7 @@ const PersonalDataForm = ({ onCancel }: { onCancel?: () => void }) => {
             selectedValue={userData.gender}
             onValueChange={(value) => setUserData({ ...userData, gender: value })}
             style={styles.picker}
-            dropdownIconColor='#F8D930'
+            dropdownIconColor='#D4AF37'
             mode='dialog'
           >
             <Picker.Item label='Hombre' value='hombre' />
@@ -507,7 +507,7 @@ const PersonalDataForm = ({ onCancel }: { onCancel?: () => void }) => {
         {/* Actividad Deportiva Card */}
         <View style={styles.formCard}>
           <View style={styles.formCardHeader}>
-            <Ionicons name='barbell-outline' size={20} color='#F8D930' />
+            <Ionicons name='barbell-outline' size={20} color='#D4AF37' />
             <Text style={styles.formCardTitle}>Actividad Deportiva</Text>
           </View>
 
@@ -516,7 +516,7 @@ const PersonalDataForm = ({ onCancel }: { onCancel?: () => void }) => {
             selectedValue={userData.activity_level}
             onValueChange={(value) => setUserData({ ...userData, activity_level: value })}
             style={styles.picker}
-            dropdownIconColor='#F8D930'
+            dropdownIconColor='#D4AF37'
             mode='dialog'
           >
             <Picker.Item label='Sedentario' value='sedentario' />
@@ -530,7 +530,7 @@ const PersonalDataForm = ({ onCancel }: { onCancel?: () => void }) => {
             selectedValue={userData.training_frequency}
             onValueChange={(value) => setUserData({ ...userData, training_frequency: value })}
             style={styles.picker}
-            dropdownIconColor='#F8D930'
+            dropdownIconColor='#D4AF37'
             mode='dialog'
           >
             <Picker.Item label='1-2 veces por semana' value='1-2' />
@@ -544,7 +544,7 @@ const PersonalDataForm = ({ onCancel }: { onCancel?: () => void }) => {
             selectedValue={userData.primary_goal}
             onValueChange={(value) => setUserData({ ...userData, primary_goal: value })}
             style={styles.picker}
-            dropdownIconColor='#F8D930'
+            dropdownIconColor='#D4AF37'
             mode='dialog'
           >
             <Picker.Item label='Mejor rendimiento' value='mejor rendimiento' />
@@ -559,7 +559,7 @@ const PersonalDataForm = ({ onCancel }: { onCancel?: () => void }) => {
         {/* Preferencias Card */}
         <View style={styles.formCard}>
           <View style={styles.formCardHeader}>
-            <Ionicons name='settings-outline' size={20} color='#F8D930' />
+            <Ionicons name='settings-outline' size={20} color='#D4AF37' />
             <Text style={styles.formCardTitle}>Preferencias</Text>
           </View>
 
@@ -568,7 +568,7 @@ const PersonalDataForm = ({ onCancel }: { onCancel?: () => void }) => {
             selectedValue={userData.sweat_level}
             onValueChange={(value) => setUserData({ ...userData, sweat_level: value })}
             style={styles.picker}
-            dropdownIconColor='#F8D930'
+            dropdownIconColor='#D4AF37'
             mode='dialog'
           >
             <Picker.Item label='Bajo' value='bajo' />
@@ -581,7 +581,7 @@ const PersonalDataForm = ({ onCancel }: { onCancel?: () => void }) => {
             selectedValue={userData.caffeine_tolerance}
             onValueChange={(value) => setUserData({ ...userData, caffeine_tolerance: value })}
             style={styles.picker}
-            dropdownIconColor='#F8D930'
+            dropdownIconColor='#D4AF37'
             mode='dialog'
           >
             <Picker.Item label='No consumo' value='no' />
@@ -595,7 +595,7 @@ const PersonalDataForm = ({ onCancel }: { onCancel?: () => void }) => {
             selectedValue={userData.dietary_restrictions}
             onValueChange={(value) => setUserData({ ...userData, dietary_restrictions: value })}
             style={styles.picker}
-            dropdownIconColor='#F8D930'
+            dropdownIconColor='#D4AF37'
             mode='dialog'
           >
             <Picker.Item label='Ninguna' value='no' />
@@ -681,7 +681,7 @@ const styles = StyleSheet.create({
   profileTitle: {
     fontSize: 26,
     fontWeight: 'bold',
-    color: '#F8D930',
+    color: '#D4AF37',
     marginBottom: 5,
   },
   profileEmail: {
@@ -715,7 +715,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#F8D930',
+    color: '#D4AF37',
     marginLeft: 12,
   },
 
@@ -744,7 +744,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#F8D930',
+    color: '#D4AF37',
     marginTop: 8,
     marginBottom: 4,
   },
@@ -792,7 +792,7 @@ const styles = StyleSheet.create({
     borderColor: '#333',
   },
   noProfileText: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -811,7 +811,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   editButton: {
-    backgroundColor: '#F8D930',
+    backgroundColor: '#D4AF37',
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 20,
@@ -820,7 +820,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     elevation: 3,
-    shadowColor: '#F8D930',
+    shadowColor: '#D4AF37',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -870,7 +870,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   refreshButton: {
-    backgroundColor: '#F8D930',
+    backgroundColor: '#D4AF37',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 25,
@@ -890,7 +890,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     paddingHorizontal: 20,
     borderBottomWidth: 3,
-    borderBottomColor: '#F8D930',
+    borderBottomColor: '#D4AF37',
   },
   backButtonEdit: {
     flexDirection: 'row',
@@ -898,7 +898,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   backButtonText: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
@@ -935,7 +935,7 @@ const styles = StyleSheet.create({
   formCardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#F8D930',
+    color: '#D4AF37',
     marginLeft: 10,
   },
   label: {
@@ -966,7 +966,7 @@ const styles = StyleSheet.create({
     borderColor: '#444',
   },
   button: {
-    backgroundColor: '#F8D930',
+    backgroundColor: '#D4AF37',
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 20,
@@ -975,7 +975,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     elevation: 3,
-    shadowColor: '#F8D930',
+    shadowColor: '#D4AF37',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,

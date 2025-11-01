@@ -204,7 +204,7 @@ const RecommendationScreen = () => {
                 </View>
               )}
               <View style={styles.cardFooter}>
-                <Ionicons name='arrow-forward-circle' size={18} color='#F8D930' />
+                <Ionicons name='arrow-forward-circle' size={18} color='#D4AF37' />
                 <Text style={styles.viewDetailsText}>Ver detalles</Text>
               </View>
             </View>
@@ -242,7 +242,7 @@ const RecommendationScreen = () => {
     if (!loading && recommendations.length === 0) {
       return (
         <View style={styles.centeredMessageContainer}>
-          <Ionicons name='rocket-outline' size={80} color='#F8D930' style={styles.emptyIcon} />
+          <Ionicons name='rocket-outline' size={80} color='#D4AF37' style={styles.emptyIcon} />
           <Text style={styles.emptyText}>
             Aún no hay recomendaciones para ti.
             {'\n\n'}Presiona el botón Actualizar o desliza hacia abajo para generar recomendaciones
@@ -270,7 +270,7 @@ const RecommendationScreen = () => {
       </View>
 
       {loading && !refreshing && (
-        <ActivityIndicator size='large' color='#F8D930' style={styles.loader} />
+        <ActivityIndicator size='large' color='#D4AF37' style={styles.loader} />
       )}
 
       {!loading && (recommendations.length > 0 || error) ? (
@@ -295,8 +295,8 @@ const RecommendationScreen = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#F8D930']}
-              tintColor='#F8D930'
+              colors={['#D4AF37']}
+              tintColor='#D4AF37'
               progressBackgroundColor='#1a1919'
             />
           }
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#F8D930',
+    color: '#D4AF37',
     marginBottom: 5,
   },
   subtitle: {
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   refreshButton: {
-    backgroundColor: '#F8D930',
+    backgroundColor: '#D4AF37',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 25,
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 3,
-    shadowColor: '#F8D930',
+    shadowColor: '#D4AF37',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
-    color: '#F8D930',
+    color: '#D4AF37',
   },
   productDescription: {
     fontSize: 14,
@@ -427,13 +427,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#1f1f1f',
     borderRadius: 8,
     borderLeftWidth: 4,
-    borderLeftColor: '#F8D930',
+    borderLeftColor: '#D4AF37',
   },
   reasoningTitle: {
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 6,
-    color: '#F8D930',
+    color: '#D4AF37',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#333',
   },
   viewDetailsText: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 4,

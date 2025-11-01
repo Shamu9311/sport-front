@@ -34,7 +34,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#F8D930', // Tu color activo
+        tabBarActiveTintColor: '#D4AF37', // Tu color activo
         tabBarInactiveTintColor: 'gray',
         tabBarStyle: { backgroundColor: '#1a1a19' }, // Color de fondo de la barra
         // headerShown: true, // Lo mantenemos si esa es tu preferencia global

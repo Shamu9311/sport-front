@@ -155,12 +155,12 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '80%',
-    backgroundColor: '#F8D930',
+    backgroundColor: '#D4AF37',
     marginTop: 20, // Espacio después del formulario
   },
   buttonregister: {
     width: '80%',
-    backgroundColor: '#F8D930', // Quizás otro color para distinguir?
+    backgroundColor: '#D4AF37', // Quizás otro color para distinguir?
     marginTop: 15,
   },
 });

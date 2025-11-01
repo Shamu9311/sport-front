@@ -201,7 +201,7 @@ const CreateProfileScreen = () => {
               selectedValue={profileData.age}
               style={[styles.picker]}
               onValueChange={(value) => handleChange('age', value)}
-              dropdownIconColor='#F8D930'
+              dropdownIconColor='#D4AF37'
               itemStyle={
                 {
                   // height: 50,
@@ -247,7 +247,7 @@ const CreateProfileScreen = () => {
               selectedValue={profileData.weight}
               style={styles.picker}
               onValueChange={(value) => handleChange('weight', value)}
-              dropdownIconColor='#F8D930'
+              dropdownIconColor='#D4AF37'
             >
               <Picker.Item label='Selecciona tu peso' value='' />
               {Array.from({ length: 151 }, (_, i) => i + 40).map((weight) => (
@@ -290,7 +290,7 @@ const CreateProfileScreen = () => {
               selectedValue={profileData.height}
               style={styles.picker}
               onValueChange={(value) => handleChange('height', value)}
-              dropdownIconColor='#F8D930'
+              dropdownIconColor='#D4AF37'
             >
               <Picker.Item label='Selecciona tu altura' value='' />
               {Array.from({ length: 91 }, (_, i) => i + 140).map((height) => (
@@ -333,7 +333,7 @@ const CreateProfileScreen = () => {
               selectedValue={profileData.gender}
               style={styles.picker}
               onValueChange={(value) => handleChange('gender', value as Gender)}
-              dropdownIconColor='#F8D930'
+              dropdownIconColor='#D4AF37'
             >
               <Picker.Item label='Masculino' value='M' />
               <Picker.Item label='Femenino' value='F' />
@@ -376,7 +376,7 @@ const CreateProfileScreen = () => {
               selectedValue={profileData.activity_level}
               style={styles.picker}
               onValueChange={(value) => handleChange('activity_level', value)}
-              dropdownIconColor='#F8D930'
+              dropdownIconColor='#D4AF37'
             >
               <Picker.Item label='Sedentario' value='sedentary' />
               <Picker.Item label='Moderado (1-3 días/sem)' value='moderate' />
@@ -419,7 +419,7 @@ const CreateProfileScreen = () => {
               selectedValue={profileData.training_frequency}
               style={styles.picker}
               onValueChange={(value) => handleChange('training_frequency', value)}
-              dropdownIconColor='#F8D930'
+              dropdownIconColor='#D4AF37'
             >
               <Picker.Item label='1-2 veces por semana' value='1-2' />
               <Picker.Item label='3-4 veces por semana' value='3-4' />
@@ -461,7 +461,7 @@ const CreateProfileScreen = () => {
               selectedValue={profileData.primary_goal}
               style={styles.picker}
               onValueChange={(value) => handleChange('primary_goal', value)}
-              dropdownIconColor='#F8D930'
+              dropdownIconColor='#D4AF37'
             >
               <Picker.Item label='Ganancia muscular' value='muscle_gain' />
               <Picker.Item label='Pérdida de peso' value='weight_loss' />
@@ -504,7 +504,7 @@ const CreateProfileScreen = () => {
               selectedValue={profileData.sweat_level}
               style={styles.picker}
               onValueChange={(value) => handleChange('sweat_level', value)}
-              dropdownIconColor='#F8D930'
+              dropdownIconColor='#D4AF37'
             >
               <Picker.Item label='Bajo - Apenas sudo' value='low' />
               <Picker.Item label='Medio - Sudoración normal' value='medium' />
@@ -544,7 +544,7 @@ const CreateProfileScreen = () => {
               selectedValue={profileData.caffeine_tolerance}
               style={styles.picker}
               onValueChange={(value) => handleChange('caffeine_tolerance', value)}
-              dropdownIconColor='#F8D930'
+              dropdownIconColor='#D4AF37'
             >
               <Picker.Item label='No consumo cafeína' value='none' />
               <Picker.Item label='Baja - Me afecta mucho' value='low' />
@@ -637,7 +637,7 @@ const CreateProfileScreen = () => {
     >
       {currentStep > 0 && ( // Show back button on all steps except the first one (welcome screen)
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Ionicons name='arrow-back-outline' size={30} color='#F8D930' />
+          <Ionicons name='arrow-back-outline' size={30} color='#D4AF37' />
         </TouchableOpacity>
       )}
       <View style={styles.content}>{renderStepContent()}</View>
@@ -673,7 +673,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#F8D930',
+    color: '#D4AF37',
     marginBottom: 10,
     textAlign: 'center',
   },
@@ -698,7 +698,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 18,
-    color: '#F8D930',
+    color: '#D4AF37',
     marginBottom: 15,
     textAlign: 'center',
     fontWeight: 'bold',
@@ -730,7 +730,7 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '80%',
-    backgroundColor: '#F8D930',
+    backgroundColor: '#D4AF37',
     marginTop: 30,
     marginBottom: 20, // Adjusted margin for consistency
   },

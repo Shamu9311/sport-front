@@ -83,7 +83,7 @@ const HomeScreen = () => {
       icon: 'sparkles',
       title: 'IA Personalizada',
       description: 'Recomendaciones inteligentes basadas en tu perfil y entrenamientos',
-      color: '#F8D930',
+      color: '#D4AF37',
     },
     {
       icon: 'time',
@@ -142,7 +142,7 @@ const HomeScreen = () => {
         {user && (
           <View style={styles.statsCard}>
             <View style={styles.statsHeader}>
-              <Ionicons name='analytics' size={24} color='#F8D930' />
+              <Ionicons name='analytics' size={24} color='#D4AF37' />
               <Text style={styles.statsTitle}>Tu Actividad</Text>
             </View>
 
@@ -174,10 +174,12 @@ const HomeScreen = () => {
 
         {/* OPCIÓN 3: Carrusel de Features */}
         <View style={styles.featuresSection}>
-          <Text style={styles.featuresTitle}>¿Por qué SportNutri?</Text>
-
           <View style={styles.carouselContainer}>
             <View style={styles.featureCard}>
+              <View style={styles.featuresTitleContainer}>
+                <Text style={styles.featuresTitle}>¿Por qué SIS?</Text>
+              </View>
+
               <View
                 style={[
                   styles.featureIconContainer,
@@ -192,18 +194,54 @@ const HomeScreen = () => {
               </View>
               <Text style={styles.featureTitle}>{features[currentFeature].title}</Text>
               <Text style={styles.featureDescription}>{features[currentFeature].description}</Text>
+              <View style={styles.indicators}>
+                {features.map((_, index) => (
+                  <TouchableOpacity
+                    key={`indicator-${index}`}
+                    onPress={() => setCurrentFeature(index)}
+                    style={[styles.indicator, currentFeature === index && styles.indicatorActive]}
+                  />
+                ))}
+              </View>
             </View>
 
             {/* Indicadores del carrusel */}
-            <View style={styles.indicators}>
-              {features.map((_, index) => (
-                <TouchableOpacity
-                  key={`indicator-${index}`}
-                  onPress={() => setCurrentFeature(index)}
-                  style={[styles.indicator, currentFeature === index && styles.indicatorActive]}
-                />
-              ))}
+          </View>
+        </View>
+
+        {/* Sección Cómo Funciona */}
+        <View style={styles.howItWorksCard}>
+          <View style={styles.howItWorksHeader}>
+            <Ionicons name='information-circle' size={24} color='#D4AF37' />
+            <Text style={styles.howItWorksTitle}>Cómo Funciona</Text>
+          </View>
+
+          <Text style={styles.howItWorksText}>
+            Analizamos la información de tu <Text style={styles.highlight}>Perfil</Text> y las
+            características de nuestros productos para recomendarte la combinación ideal de
+            suplementos.
+          </Text>
+
+          <View style={styles.benefitsList}>
+            <View style={styles.benefitItem}>
+              <Ionicons name='flash' size={20} color='#D4AF37' />
+              <Text style={styles.benefitText}>Optimiza tu energía</Text>
             </View>
+            <View style={styles.benefitItem}>
+              <Ionicons name='water' size={20} color='#4CAF50' />
+              <Text style={styles.benefitText}>Mejora tu hidratación</Text>
+            </View>
+            <View style={styles.benefitItem}>
+              <Ionicons name='fitness' size={20} color='#2196F3' />
+              <Text style={styles.benefitText}>Acelera tu recuperación</Text>
+            </View>
+          </View>
+
+          <View style={styles.tipContainer}>
+            <Ionicons name='bulb' size={18} color='#D4AF37' />
+            <Text style={styles.tipText}>
+              Completa tu perfil para obtener las mejores recomendaciones
+            </Text>
           </View>
         </View>
 
@@ -216,7 +254,7 @@ const HomeScreen = () => {
               style={styles.quickAccessCard}
               onPress={() => router.push('/(tabs)/products')}
             >
-              <Ionicons name='cube' size={36} color='#F8D930' />
+              <Ionicons name='cube' size={36} color='#D4AF37' />
               <Text style={styles.quickAccessText}>Productos</Text>
             </TouchableOpacity>
 
@@ -276,7 +314,7 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#F8D930',
+    color: '#D4AF37',
     textAlign: 'center',
     marginBottom: 8,
   },
@@ -313,7 +351,7 @@ const styles = StyleSheet.create({
   statsTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#F8D930',
+    color: '#D4AF37',
     marginLeft: 12,
   },
   statsGrid: {
@@ -331,9 +369,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#333',
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#F8D930',
+    color: '#D4AF37',
     marginTop: 8,
     marginBottom: 4,
   },
@@ -349,12 +387,20 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 24,
   },
+  featuresTitleContainer: {
+    marginBottom: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 2,
+    borderBottomColor: '#333',
+    width: '100%',
+  },
   featuresTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#F8D930',
-    marginBottom: 16,
+    color: '#D4AF37',
     textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   carouselContainer: {
     width: '100%',
@@ -385,7 +431,7 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#F8D930',
+    color: '#D4AF37',
     marginBottom: 12,
     textAlign: 'center',
   },
@@ -408,8 +454,80 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   indicatorActive: {
-    backgroundColor: '#F8D930',
+    backgroundColor: '#D4AF37',
     width: 24,
+  },
+
+  // Cómo Funciona Card
+  howItWorksCard: {
+    width: '100%',
+    backgroundColor: '#252525',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#333',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  howItWorksHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: '#333',
+  },
+  howItWorksTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#D4AF37',
+    marginLeft: 12,
+  },
+  howItWorksText: {
+    fontSize: 15,
+    color: '#ddd',
+    lineHeight: 24,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  highlight: {
+    color: '#D4AF37',
+    fontWeight: 'bold',
+  },
+  benefitsList: {
+    marginBottom: 16,
+  },
+  benefitItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingLeft: 10,
+  },
+  benefitText: {
+    fontSize: 15,
+    color: '#fff',
+    marginLeft: 12,
+    fontWeight: '500',
+  },
+  tipContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1f1f1f',
+    padding: 12,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#D4AF37',
+  },
+  tipText: {
+    fontSize: 13,
+    color: '#ddd',
+    marginLeft: 10,
+    flex: 1,
+    lineHeight: 20,
   },
 
   // Acceso Rápido
@@ -420,7 +538,7 @@ const styles = StyleSheet.create({
   quickAccessTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#F8D930',
+    color: '#D4AF37',
     marginBottom: 16,
     textAlign: 'center',
   },

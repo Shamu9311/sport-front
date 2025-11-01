@@ -98,7 +98,7 @@ const TrainingSessionItem: React.FC<TrainingSessionItemProps> = ({
         activeOpacity={0.7}
       >
         <View style={styles.iconContainer}>
-          <MaterialCommunityIcons name={getTypeIcon(session.type)} size={32} color='#F8D930' />
+          <MaterialCommunityIcons name={getTypeIcon(session.type)} size={32} color='#D4AF37' />
         </View>
         <View style={styles.contentContainer}>
           <Text style={styles.date}>{formatDate(session.session_date)}</Text>
@@ -125,7 +125,7 @@ const TrainingSessionItem: React.FC<TrainingSessionItemProps> = ({
             </View>
           </View>
         </View>
-        <MaterialCommunityIcons name='chevron-right' size={24} color='#F8D930' />
+        <MaterialCommunityIcons name='chevron-right' size={24} color='#D4AF37' />
       </TouchableOpacity>
     </Swipeable>
   );
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   date: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 8,

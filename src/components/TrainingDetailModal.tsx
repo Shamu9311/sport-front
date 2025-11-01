@@ -140,7 +140,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
     if (loading) {
       return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color='#F8D930' />
+          <ActivityIndicator size='large' color='#D4AF37' />
           <Text style={styles.loadingText}>Buscando recomendaciones...</Text>
         </View>
       );
@@ -168,7 +168,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
     return (
       <View style={styles.recommendationsContainer}>
         <View style={styles.recommendationsHeader}>
-          <Ionicons name='star' size={24} color='#F8D930' />
+          <Ionicons name='star' size={24} color='#D4AF37' />
           <Text style={styles.sectionTitle}>Productos Recomendados</Text>
         </View>
         {recommendations.map((rec, recIndex) => {
@@ -201,7 +201,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
               case 'diario':
                 return '#9C27B0';
               default:
-                return '#F8D930';
+                return '#D4AF37';
             }
           };
 
@@ -237,7 +237,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
 
               {rec.feedback && (
                 <View style={styles.reasoningBox}>
-                  <Ionicons name='bulb' size={16} color='#F8D930' />
+                  <Ionicons name='bulb' size={16} color='#D4AF37' />
                   <Text style={styles.recommendationReason}>{rec.feedback}</Text>
                 </View>
               )}
@@ -248,7 +248,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                 rec.consumption_instructions) && (
                 <View style={styles.consumptionGuide}>
                   <View style={styles.consumptionHeader}>
-                    <Ionicons name='nutrition' size={20} color='#F8D930' />
+                    <Ionicons name='nutrition' size={20} color='#D4AF37' />
                     <Text style={styles.consumptionTitle}>Cómo Consumir</Text>
                   </View>
 
@@ -275,7 +275,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                   {/* Cantidad */}
                   {rec.recommended_quantity && (
                     <View style={styles.consumptionItem}>
-                      <Ionicons name='flask' size={18} color='#F8D930' />
+                      <Ionicons name='flask' size={18} color='#D4AF37' />
                       <View style={styles.consumptionTextContainer}>
                         <Text style={styles.consumptionLabel}>Cantidad</Text>
                         <Text style={styles.consumptionValue}>{rec.recommended_quantity}</Text>
@@ -286,7 +286,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                   {/* Instrucciones */}
                   {rec.consumption_instructions && (
                     <View style={styles.consumptionItem}>
-                      <Ionicons name='information-circle' size={18} color='#F8D930' />
+                      <Ionicons name='information-circle' size={18} color='#D4AF37' />
                       <View style={styles.consumptionTextContainer}>
                         <Text style={styles.consumptionLabel}>Instrucciones</Text>
                         <Text style={styles.consumptionValue}>{rec.consumption_instructions}</Text>
@@ -313,11 +313,11 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
           {/* Header del modal */}
           <View style={styles.modalHeader}>
             <View style={styles.modalHeaderContent}>
-              <Ionicons name='barbell' size={28} color='#F8D930' />
+              <Ionicons name='barbell' size={28} color='#D4AF37' />
               <Text style={styles.modalTitle}>Detalles del Entrenamiento</Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name='close-circle' size={32} color='#F8D930' />
+              <Ionicons name='close-circle' size={32} color='#D4AF37' />
             </TouchableOpacity>
           </View>
 
@@ -329,7 +329,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                   <MaterialCommunityIcons
                     name={getTypeIcon(session.type)}
                     size={36}
-                    color='#F8D930'
+                    color='#D4AF37'
                   />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -344,7 +344,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
             {/* Stats Grid */}
             <View style={styles.statsCard}>
               <View style={styles.statItem}>
-                <MaterialCommunityIcons name='clock-outline' size={28} color='#F8D930' />
+                <MaterialCommunityIcons name='clock-outline' size={28} color='#D4AF37' />
                 <Text style={styles.statValue}>{session.duration_min}</Text>
                 <Text style={styles.statLabel}>minutos</Text>
               </View>
@@ -371,7 +371,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                     <MaterialCommunityIcons
                       name='weather-partly-cloudy'
                       size={28}
-                      color='#F8D930'
+                      color='#D4AF37'
                     />
                     <Text style={styles.statValue}>
                       {session.weather.charAt(0).toUpperCase() + session.weather.slice(1)}
@@ -386,7 +386,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
             {session.notes && (
               <View style={styles.notesContainer}>
                 <View style={styles.notesHeader}>
-                  <Ionicons name='document-text' size={20} color='#F8D930' />
+                  <Ionicons name='document-text' size={20} color='#D4AF37' />
                   <Text style={styles.notesLabel}>Notas del Entrenamiento</Text>
                 </View>
                 <Text style={styles.notesText}>{session.notes}</Text>
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     backgroundColor: '#252525',
     borderBottomWidth: 3,
-    borderBottomColor: '#F8D930',
+    borderBottomColor: '#D4AF37',
   },
   modalHeaderContent: {
     flexDirection: 'row',
@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modalTitle: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 22,
     fontWeight: 'bold',
     marginLeft: 12,
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(248, 217, 48, 0.3)',
   },
   dateText: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 4,
@@ -513,7 +513,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
   statValue: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 20,
     fontWeight: 'bold',
     marginTop: 8,
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#333',
     borderLeftWidth: 4,
-    borderLeftColor: '#F8D930',
+    borderLeftColor: '#D4AF37',
   },
   notesHeader: {
     flexDirection: 'row',
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   notesLabel: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 8,
@@ -575,7 +575,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#F8D930',
+    color: '#D4AF37',
     marginLeft: 12,
   },
   recommendationCard: {
@@ -594,7 +594,7 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#F8D930',
+    color: '#D4AF37',
     marginBottom: 12,
   },
   imageContainer: {
@@ -632,7 +632,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     borderLeftWidth: 3,
-    borderLeftColor: '#F8D930',
+    borderLeftColor: '#D4AF37',
   },
   recommendationReason: {
     fontSize: 14,
@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     borderWidth: 2,
-    borderColor: '#F8D930',
+    borderColor: '#D4AF37',
   },
   consumptionHeader: {
     flexDirection: 'row',
@@ -695,7 +695,7 @@ const styles = StyleSheet.create({
   consumptionTitle: {
     fontSize: 17,
     fontWeight: 'bold',
-    color: '#F8D930',
+    color: '#D4AF37',
     marginLeft: 10,
   },
   consumptionItem: {

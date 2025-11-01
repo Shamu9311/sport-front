@@ -117,7 +117,7 @@ export default function TrainingScreen() {
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size='large' color='#F8D930' />
+              <ActivityIndicator size='large' color='#D4AF37' />
               <Text style={styles.loadingText}>Cargando entrenamientos...</Text>
             </View>
           ) : trainingSessions.length === 0 ? (
@@ -125,7 +125,7 @@ export default function TrainingScreen() {
               <Ionicons
                 name='barbell-outline'
                 size={80}
-                color='#F8D930'
+                color='#D4AF37'
                 style={{ marginBottom: 20 }}
               />
               <Text style={styles.emptyStateTitle}>No hay entrenamientos</Text>
@@ -197,12 +197,12 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     backgroundColor: '#1a1919',
     borderBottomWidth: 3,
-    borderBottomColor: '#F8D930',
+    borderBottomColor: '#D4AF37',
   },
   headerTitle: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#F8D930',
+    color: '#D4AF37',
     marginBottom: 5,
   },
   headerSubtitle: {
@@ -210,14 +210,14 @@ const styles = StyleSheet.create({
     color: '#999',
   },
   addButton: {
-    backgroundColor: '#F8D930',
+    backgroundColor: '#D4AF37',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 25,
     alignItems: 'center',
     flexDirection: 'row',
     elevation: 3,
-    shadowColor: '#F8D930',
+    shadowColor: '#D4AF37',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     marginTop: 60,
   },
   emptyStateTitle: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 12,
@@ -264,14 +264,14 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   emptyStateButton: {
-    backgroundColor: '#F8D930',
+    backgroundColor: '#D4AF37',
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 25,
     alignItems: 'center',
     flexDirection: 'row',
     elevation: 3,
-    shadowColor: '#F8D930',
+    shadowColor: '#D4AF37',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   sessionsCount: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 16,
     fontWeight: 'bold',
   },

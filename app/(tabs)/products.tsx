@@ -219,7 +219,7 @@ const ProductListScreen = () => {
             {item.product_description || item.description || 'Sin descripción'}
           </Text>
           <View style={styles.productFooter}>
-            <Ionicons name='arrow-forward-circle' size={18} color='#F8D930' />
+            <Ionicons name='arrow-forward-circle' size={18} color='#D4AF37' />
             <Text style={styles.viewDetailsText}>Ver producto</Text>
           </View>
         </View>
@@ -295,7 +295,7 @@ const ProductListScreen = () => {
               !showingPersonalized ? (
                 <View style={styles.categoryContainer}>
                   <View style={styles.categoryHeader}>
-                    <Ionicons name='apps' size={20} color='#F8D930' />
+                    <Ionicons name='apps' size={20} color='#D4AF37' />
                     <Text style={styles.categoryTitle}>Categorías</Text>
                   </View>
                   <ScrollView
@@ -328,7 +328,7 @@ const ProductListScreen = () => {
                 </View>
               ) : (
                 <View style={styles.personalizedHeader}>
-                  <Ionicons name='star' size={28} color='#F8D930' style={{ marginBottom: 10 }} />
+                  <Ionicons name='star' size={28} color='#D4AF37' style={{ marginBottom: 10 }} />
                   <Text style={styles.personalizedTitle}>Recomendado para ti</Text>
                   <Text style={styles.personalizedSubtitle}>
                     Productos seleccionados según tu perfil
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#F8D930',
+    color: '#D4AF37',
     marginBottom: 5,
   },
   pageSubtitle: {
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   loadingPersonalizedText: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 14,
     marginLeft: 10,
   },
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   switchButtonActive: {
-    backgroundColor: '#F8D930',
+    backgroundColor: '#D4AF37',
   },
   switchButtonText: {
     color: '#999',
@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   categoryTitle: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 18,
     fontWeight: 'bold',
     marginLeft: 10,
@@ -494,8 +494,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   selectedCategory: {
-    backgroundColor: '#F8D930',
-    borderColor: '#F8D930',
+    backgroundColor: '#D4AF37',
+    borderColor: '#D4AF37',
   },
   categoryText: {
     color: '#ccc',
@@ -516,15 +516,15 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#F8D930',
+    borderColor: '#D4AF37',
     elevation: 5,
-    shadowColor: '#F8D930',
+    shadowColor: '#D4AF37',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
   },
   personalizedTitle: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 8,
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   productName: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 17,
     fontWeight: 'bold',
     marginBottom: 8,
@@ -594,7 +594,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#333',
   },
   viewDetailsText: {
-    color: '#F8D930',
+    color: '#D4AF37',
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 6,

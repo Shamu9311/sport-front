@@ -19,7 +19,7 @@ const LoadingProfileScreen = () => {
     'Buscando productos compatibles...',
     'Aplicando algoritmo de recomendación...',
     'Optimizando resultados para ti...',
-    'Finalizando personalización...'
+    'Finalizando personalización...',
   ];
 
   useEffect(() => {
@@ -27,18 +27,18 @@ const LoadingProfileScreen = () => {
     const interval = 100;
     const steps = totalDuration / interval;
     const incrementPerStep = 1 / steps;
-    
+
     const timer = setInterval(() => {
-      setProgress(prev => {
+      setProgress((prev) => {
         const newProgress = Math.min(prev + incrementPerStep, 1);
-        
+
         if (newProgress >= 1 && !navigationComplete.current) {
           navigationComplete.current = true;
           clearInterval(timer);
           // Navegar a productos cuando esté completo
           router.replace('/(tabs)/products');
         }
-        
+
         progressAnim.setValue(newProgress);
         return newProgress;
       });
@@ -60,21 +60,21 @@ const LoadingProfileScreen = () => {
   // Mapear el valor de progreso a un ancho de la barra
   const width = progressAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0%', '100%']
+    outputRange: ['0%', '100%'],
   });
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Preparando tu experiencia personalizada</Text>
-      
+
       <Text style={styles.loadingText}>{loadingText}</Text>
-      
+
       <View style={styles.progressContainer}>
         <Animated.View style={[styles.progressBar, { width }]} />
       </View>
-      
-      <ActivityIndicator size="large" color="#F8D930" style={styles.spinner} />
-      
+
+      <ActivityIndicator size='large' color='#D4AF37' style={styles.spinner} />
+
       <Text style={styles.percentText}>{Math.round(progress * 100)}%</Text>
     </View>
   );
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#F8D930',
+    color: '#D4AF37',
     marginBottom: 40,
     textAlign: 'center',
   },
@@ -111,16 +111,16 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: '100%',
-    backgroundColor: '#F8D930',
+    backgroundColor: '#D4AF37',
   },
   spinner: {
     marginVertical: 20,
   },
   percentText: {
     fontSize: 16,
-    color: '#F8D930',
+    color: '#D4AF37',
     fontWeight: 'bold',
-  }
+  },
 });
 
 export default LoadingProfileScreen;

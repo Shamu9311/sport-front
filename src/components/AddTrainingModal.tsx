@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Modal, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
   TextInput,
   ScrollView,
   Alert,
-  Platform
+  Platform,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 // Función para formatear fechas en español
@@ -17,7 +17,7 @@ const formatDate = (date: Date) => {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
   });
 };
 
@@ -71,7 +71,7 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
       intensity,
       type,
       weather,
-      notes
+      notes,
     };
 
     onSave(trainingData);
@@ -95,18 +95,13 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
   // formatDate ya está definida arriba
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={handleClose}
-    >
+    <Modal visible={visible} animationType='slide' transparent={true} onRequestClose={handleClose}>
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Agregar Entrenamiento</Text>
             <TouchableOpacity onPress={handleClose}>
-              <MaterialCommunityIcons name="close" size={24} color="#fff" />
+              <MaterialCommunityIcons name='close' size={24} color='#fff' />
             </TouchableOpacity>
           </View>
 
@@ -114,34 +109,30 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
             {/* Fecha */}
             <Text style={styles.label}>Fecha</Text>
             <View style={styles.dateContainer}>
-              <TouchableOpacity 
-                style={styles.dateButton}
-                onPress={decrementDate}
-              >
-                <MaterialCommunityIcons name="chevron-left" size={24} color="#F8D930" />
+              <TouchableOpacity style={styles.dateButton} onPress={decrementDate}>
+                <MaterialCommunityIcons name='chevron-left' size={24} color='#D4AF37' />
               </TouchableOpacity>
-              
+
               <View style={styles.dateDisplay}>
                 <Text style={styles.dateText}>{formatDate(date)}</Text>
               </View>
-              
-              <TouchableOpacity 
-                style={styles.dateButton}
-                onPress={incrementDate}
-              >
-                <MaterialCommunityIcons name="chevron-right" size={24} color="#F8D930" />
+
+              <TouchableOpacity style={styles.dateButton} onPress={incrementDate}>
+                <MaterialCommunityIcons name='chevron-right' size={24} color='#D4AF37' />
               </TouchableOpacity>
             </View>
-            
+
             {/* Duración */}
-            <Text style={styles.label}>Duración (minutos) <Text style={styles.required}>*</Text></Text>
+            <Text style={styles.label}>
+              Duración (minutos) <Text style={styles.required}>*</Text>
+            </Text>
             <TextInput
               style={styles.input}
               value={duration}
               onChangeText={setDuration}
-              placeholder="Ej: 45"
-              placeholderTextColor="#666"
-              keyboardType="numeric"
+              placeholder='Ej: 45'
+              placeholderTextColor='#666'
+              keyboardType='numeric'
             />
 
             {/* Intensidad */}
@@ -150,16 +141,12 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
               {intensityOptions.map((option) => (
                 <TouchableOpacity
                   key={option}
-                  style={[
-                    styles.optionButton,
-                    intensity === option && styles.selectedOption
-                  ]}
+                  style={[styles.optionButton, intensity === option && styles.selectedOption]}
                   onPress={() => setIntensity(option)}
                 >
-                  <Text style={[
-                    styles.optionText,
-                    intensity === option && styles.selectedOptionText
-                  ]}>
+                  <Text
+                    style={[styles.optionText, intensity === option && styles.selectedOptionText]}
+                  >
                     {option.charAt(0).toUpperCase() + option.slice(1)}
                   </Text>
                 </TouchableOpacity>
@@ -172,16 +159,10 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
               {typeOptions.map((option) => (
                 <TouchableOpacity
                   key={option}
-                  style={[
-                    styles.optionButton,
-                    type === option && styles.selectedOption
-                  ]}
+                  style={[styles.optionButton, type === option && styles.selectedOption]}
                   onPress={() => setType(option)}
                 >
-                  <Text style={[
-                    styles.optionText,
-                    type === option && styles.selectedOptionText
-                  ]}>
+                  <Text style={[styles.optionText, type === option && styles.selectedOptionText]}>
                     {option.charAt(0).toUpperCase() + option.slice(1)}
                   </Text>
                 </TouchableOpacity>
@@ -194,16 +175,12 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
               {weatherOptions.map((option) => (
                 <TouchableOpacity
                   key={option}
-                  style={[
-                    styles.optionButton,
-                    weather === option && styles.selectedOption
-                  ]}
+                  style={[styles.optionButton, weather === option && styles.selectedOption]}
                   onPress={() => setWeather(option)}
                 >
-                  <Text style={[
-                    styles.optionText,
-                    weather === option && styles.selectedOptionText
-                  ]}>
+                  <Text
+                    style={[styles.optionText, weather === option && styles.selectedOptionText]}
+                  >
                     {option.charAt(0).toUpperCase() + option.slice(1)}
                   </Text>
                 </TouchableOpacity>
@@ -216,24 +193,18 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
               style={[styles.input, styles.notesInput]}
               value={notes}
               onChangeText={setNotes}
-              placeholder="Agrega alguna nota sobre tu entrenamiento"
-              placeholderTextColor="#666"
+              placeholder='Agrega alguna nota sobre tu entrenamiento'
+              placeholderTextColor='#666'
               multiline
               numberOfLines={4}
             />
           </ScrollView>
 
           <View style={styles.modalFooter}>
-            <TouchableOpacity 
-              style={[styles.button, styles.cancelButton]}
-              onPress={handleClose}
-            >
+            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleClose}>
               <Text style={styles.buttonText}>Cancelar</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.button, styles.saveButton]}
-              onPress={handleSave}
-            >
+            <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={handleSave}>
               <Text style={[styles.buttonText, styles.saveButtonText]}>Guardar</Text>
             </TouchableOpacity>
           </View>
@@ -335,8 +306,8 @@ const styles = StyleSheet.create({
     borderColor: '#444',
   },
   selectedOption: {
-    backgroundColor: '#F8D930',
-    borderColor: '#F8D930',
+    backgroundColor: '#D4AF37',
+    borderColor: '#D4AF37',
   },
   optionText: {
     color: '#fff',
@@ -368,7 +339,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   saveButton: {
-    backgroundColor: '#F8D930',
+    backgroundColor: '#D4AF37',
     marginLeft: 10,
   },
   buttonText: {

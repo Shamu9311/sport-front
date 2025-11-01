@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '80%',
-    backgroundColor: '#F8D930',
+    backgroundColor: '#D4AF37',
     marginTop: 15, // Espaciado entre botones y form
   },
 });
