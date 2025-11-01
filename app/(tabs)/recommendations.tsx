@@ -223,11 +223,11 @@ const RecommendationScreen = () => {
       if (error.toLowerCase().includes('perfil')) {
         actionButton = (
           <TouchableOpacity
-            style={styles.refreshButton}
+            style={styles.actionButton}
             onPress={() => router.push('/(tabs)/profile')}
           >
             <Ionicons name='person-add' size={20} color='#1a1919' />
-            <Text style={styles.refreshButtonText}>Completar mi Perfil</Text>
+            <Text style={styles.actionButtonText}>Completar mi Perfil</Text>
           </TouchableOpacity>
         );
       }
@@ -259,14 +259,7 @@ const RecommendationScreen = () => {
       <View style={styles.headerContainer}>
         <Text style={styles.title}>Tus Recomendaciones</Text>
         <Text style={styles.subtitle}>Productos personalizados según tu perfil</Text>
-        <TouchableOpacity
-          style={styles.refreshButton}
-          onPress={() => fetchRecommendations(false)}
-          disabled={loading || refreshing}
-        >
-          <Ionicons name='refresh' size={20} color='#1a1919' />
-          <Text style={styles.refreshButtonText}>{loading ? 'Actualizando...' : 'Actualizar'}</Text>
-        </TouchableOpacity>
+        <Text style={styles.pullHint}>Desliza hacia abajo para actualizar</Text>
       </View>
 
       {loading && !refreshing && (
@@ -328,23 +321,29 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: '#999',
-    marginBottom: 15,
+    marginBottom: 10,
   },
-  refreshButton: {
+  pullHint: {
+    fontSize: 12,
+    color: '#666',
+    fontStyle: 'italic',
+    // textAlign: 'center',
+  },
+  actionButton: {
     backgroundColor: '#D4AF37',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
     borderRadius: 25,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    marginTop: 20,
     elevation: 3,
     shadowColor: '#D4AF37',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
-  refreshButtonText: {
+  actionButtonText: {
     color: '#1a1919',
     fontWeight: 'bold',
     fontSize: 15,
