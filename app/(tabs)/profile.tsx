@@ -186,7 +186,15 @@ const ProfileScreen = () => {
 
   // Si se muestra el formulario de edición, renderizar el formulario
   if (showEditForm) {
-    return <PersonalDataForm onCancel={() => setShowEditForm(false)} />;
+    return (
+      <PersonalDataForm
+        onCancel={() => {
+          setShowEditForm(false);
+          loadUserProfile(); // Recargar datos después de cerrar el formulario
+        }}
+        currentProfile={userInfo?.profile}
+      />
+    );
   }
 
   // Renderizar la información del perfil
@@ -362,9 +370,16 @@ const ProfileScreen = () => {
 };
 
 // Componente de formulario de datos personales
-const PersonalDataForm = ({ onCancel }: { onCancel?: () => void }) => {
+const PersonalDataForm = ({
+  onCancel,
+  currentProfile,
+}: {
+  onCancel?: () => void;
+  currentProfile?: UserProfileData;
+}) => {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<UserProfileData>({
     age: '',
     weight: '',
@@ -377,6 +392,73 @@ const PersonalDataForm = ({ onCancel }: { onCancel?: () => void }) => {
     caffeine_tolerance: 'medio',
     dietary_restrictions: 'no',
   });
+  const [originalData, setOriginalData] = useState<UserProfileData | null>(null);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Cargar datos actuales del usuario al montar el componente
+  useEffect(() => {
+    const loadCurrentData = async () => {
+      try {
+        if (currentProfile) {
+          // Si se pasa el perfil como prop, usarlo
+          const loadedData = {
+            age: currentProfile.age?.toString() || '',
+            weight: currentProfile.weight?.toString() || '',
+            height: currentProfile.height?.toString() || '',
+            gender: currentProfile.gender || 'hombre',
+            activity_level: currentProfile.activity_level || 'moderado',
+            training_frequency: currentProfile.training_frequency || '3-4',
+            primary_goal: currentProfile.primary_goal || 'mejor rendimiento',
+            sweat_level: currentProfile.sweat_level || 'medio',
+            caffeine_tolerance: currentProfile.caffeine_tolerance || 'medio',
+            dietary_restrictions: currentProfile.dietary_restrictions || 'no',
+          };
+          setUserData(loadedData);
+          setOriginalData(loadedData); // Guardar datos originales para comparar
+          console.log('✅ Datos del perfil cargados en el formulario');
+        } else if (user?.id) {
+          // Si no se pasa como prop, cargar desde la API
+          const response = await getProfile(user.id);
+          if (response.success && response.data?.profile) {
+            const profile = response.data.profile;
+            const loadedData = {
+              age: profile.age?.toString() || '',
+              weight: profile.weight?.toString() || '',
+              height: profile.height?.toString() || '',
+              gender: profile.gender || 'hombre',
+              activity_level: profile.activity_level || 'moderado',
+              training_frequency: profile.training_frequency || '3-4',
+              primary_goal: profile.primary_goal || 'mejor rendimiento',
+              sweat_level: profile.sweat_level || 'medio',
+              caffeine_tolerance: profile.caffeine_tolerance || 'medio',
+              dietary_restrictions: profile.dietary_restrictions || 'no',
+            };
+            setUserData(loadedData);
+            setOriginalData(loadedData); // Guardar datos originales
+            console.log('✅ Datos del perfil cargados desde API');
+          }
+        }
+      } catch (error) {
+        console.error('Error cargando datos del perfil para edición:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCurrentData();
+  }, [currentProfile, user]);
+
+  // Detectar si hay cambios en el formulario
+  useEffect(() => {
+    if (!originalData) {
+      setHasChanges(false);
+      return;
+    }
+
+    // Comparar userData con originalData
+    const changed = JSON.stringify(userData) !== JSON.stringify(originalData);
+    setHasChanges(changed);
+  }, [userData, originalData]);
 
   // Función para manejar el envío del formulario
   const handleSubmit = async () => {
@@ -403,14 +485,10 @@ const PersonalDataForm = ({ onCancel }: { onCancel?: () => void }) => {
       // Llamar a la API para guardar el perfil
       await saveUserProfile(user.id, profileData as any);
 
-      Alert.alert('Éxito', 'Perfil guardado correctamente', [
-        {
-          text: 'OK',
-          onPress: () => {
-            if (onCancel) onCancel(); // Cierra el formulario al guardar
-          },
-        },
-      ]);
+      // Cerrar el formulario automáticamente
+      if (onCancel) onCancel();
+
+      Alert.alert('Éxito', 'Perfil actualizado correctamente');
     } catch (error: any) {
       console.error('Error saving profile:', error);
       const errorMsg =
@@ -425,6 +503,16 @@ const PersonalDataForm = ({ onCancel }: { onCancel?: () => void }) => {
     const numericValue = text.replace(/[^0-9.]/g, '');
     setUserData({ ...userData, [field]: numericValue });
   };
+
+  // Mostrar loading mientras carga los datos
+  if (loading) {
+    return (
+      <View style={styles.centeredContainer}>
+        <ActivityIndicator size='large' color='#D4AF37' />
+        <Text style={styles.loadingText}>Cargando datos del perfil...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -607,36 +695,39 @@ const PersonalDataForm = ({ onCancel }: { onCancel?: () => void }) => {
           </Picker>
         </View>
 
-        <CustomButton
-          title='GUARDAR PERFIL'
-          onPress={handleSubmit}
-          iconName='save-outline'
-          iconPosition='right'
-          iconColor='#1a1919'
-          iconSize={24}
-          style={styles.button}
-        />
+        {/* Botones centrados */}
+        <View style={styles.formButtonsContainer}>
+          <CustomButton
+            title={hasChanges ? 'GUARDAR CAMBIOS' : 'SIN CAMBIOS'}
+            onPress={hasChanges ? handleSubmit : () => {}}
+            iconName={hasChanges ? 'save-outline' : 'checkmark-circle-outline'}
+            iconPosition='right'
+            iconColor='#1a1919'
+            iconSize={24}
+            style={[styles.button, !hasChanges && styles.buttonDisabled]}
+          />
 
-        <CustomButton
-          title='CERRAR SESIÓN'
-          onPress={() => {
-            Alert.alert('Cerrar Sesión', '¿Estás seguro que deseas cerrar sesión?', [
-              { text: 'Cancelar', style: 'cancel' },
-              {
-                text: 'Sí, cerrar sesión',
-                onPress: async () => {
-                  await logout();
-                  router.replace('/login');
+          <CustomButton
+            title='CERRAR SESIÓN'
+            onPress={() => {
+              Alert.alert('Cerrar Sesión', '¿Estás seguro que deseas cerrar sesión?', [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                  text: 'Sí, cerrar sesión',
+                  onPress: async () => {
+                    await logout();
+                    router.replace('/login');
+                  },
                 },
-              },
-            ]);
-          }}
-          iconName='log-out-outline'
-          iconPosition='right'
-          iconColor='#1a1919'
-          iconSize={20}
-          style={styles.logoutButton}
-        />
+              ]);
+            }}
+            iconName='log-out-outline'
+            iconPosition='right'
+            iconColor='#1a1919'
+            iconSize={20}
+            style={styles.logoutButton}
+          />
+        </View>
       </View>
     </ScrollView>
   );
@@ -809,6 +900,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     paddingHorizontal: 16,
     marginTop: 10,
+    alignItems: 'center',
   },
   editButton: {
     backgroundColor: '#D4AF37',
@@ -817,6 +909,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: 'center',
     marginBottom: 12,
+    width: '90%',
     flexDirection: 'row',
     justifyContent: 'center',
     elevation: 3,
@@ -831,21 +924,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 8,
   },
-  logoutButton: {
-    backgroundColor: '#FF6B35',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    marginBottom: 12,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    elevation: 3,
-    shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
   logoutButtonText: {
     color: '#fff',
     fontSize: 16,
@@ -858,6 +936,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 20,
     alignItems: 'center',
+    width: '90%',
     flexDirection: 'row',
     justifyContent: 'center',
     borderWidth: 1,
@@ -910,6 +989,11 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     padding: 16,
+  },
+  formButtonsContainer: {
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginTop: 10,
   },
   formCard: {
     backgroundColor: '#252525',
@@ -972,10 +1056,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: 'center',
     marginTop: 10,
+    marginBottom: 12,
+    width: '90%',
     flexDirection: 'row',
     justifyContent: 'center',
     elevation: 3,
     shadowColor: '#D4AF37',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  buttonDisabled: {
+    backgroundColor: '#666',
+    elevation: 0,
+    shadowOpacity: 0,
+    opacity: 0.6,
+  },
+  logoutButton: {
+    backgroundColor: '#FF6B35',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    width: '90%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    elevation: 3,
+    shadowColor: '#FF6B35',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
