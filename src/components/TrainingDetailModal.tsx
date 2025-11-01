@@ -171,7 +171,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
           <Ionicons name='star' size={24} color='#F8D930' />
           <Text style={styles.sectionTitle}>Productos Recomendados</Text>
         </View>
-        {recommendations.map((rec) => {
+        {recommendations.map((rec, recIndex) => {
           console.log('Rendering recommendation:', rec);
 
           // Función helper para obtener icono de timing
@@ -206,7 +206,10 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
           };
 
           return (
-            <View key={rec.recommendation_id} style={styles.recommendationCard}>
+            <View
+              key={`rec-${rec.recommendation_id || rec.product_id}-${recIndex}`}
+              style={styles.recommendationCard}
+            >
               <Text style={styles.productName}>{rec.product_name}</Text>
 
               <View style={styles.imageContainer}>

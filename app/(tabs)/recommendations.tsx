@@ -277,15 +277,17 @@ const RecommendationScreen = () => {
         <FlatList
           data={recommendations}
           renderItem={renderRecommendationItem}
-          keyExtractor={(item) => {
+          keyExtractor={(item, index) => {
             // Safely extract the product_id regardless of the data structure
-            if (item.product_details && item.product_details.product_id) {
-              return item.product_details.product_id.toString();
+            if (item.recommendation_id) {
+              return `rec-${item.recommendation_id}`;
+            } else if (item.product_details && item.product_details.product_id) {
+              return `prod-${item.product_details.product_id}-${index}`;
             } else if (item.product_id) {
-              return item.product_id.toString();
+              return `prod-${item.product_id}-${index}`;
             }
-            // Fallback to using item index if needed
-            return Math.random().toString();
+            // Fallback usando el índice del array
+            return `item-${index}`;
           }}
           ListEmptyComponent={renderEmptyOrErrorState}
           contentContainerStyle={styles.listContainer}

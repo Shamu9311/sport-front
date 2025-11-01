@@ -64,7 +64,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name='training' // DEBE COINCIDIR con el nombre del archivo: app/(tabs)/training.tsx
         options={{
-          title: 'Entrenamiento',
+          title: 'Entrenar',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIconMCI name='dumbbell' color={color} focused={focused} />
           ),

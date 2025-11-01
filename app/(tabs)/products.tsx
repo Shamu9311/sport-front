@@ -289,7 +289,7 @@ const ProductListScreen = () => {
           <FlatList
             data={showingPersonalized ? personalizedProducts : products}
             renderItem={renderProductItem}
-            keyExtractor={(item) => item.product_id.toString()}
+            keyExtractor={(item, index) => `product-${item.product_id}-${index}`}
             contentContainerStyle={styles.listContainer}
             ListHeaderComponent={
               !showingPersonalized ? (

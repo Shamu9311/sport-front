@@ -216,9 +216,9 @@ const ProductDetailScreen = () => {
               <Ionicons name='checkmark-circle' size={24} color='#F8D930' />
               <Text style={styles.sectionTitle}>Beneficios y Características</Text>
             </View>
-            {attributes.map((attr) =>
+            {attributes.map((attr, index) =>
               attr.description ? (
-                <View key={attr.attribute_id} style={styles.attributeItem}>
+                <View key={`attr-${attr.attribute_id}-${index}`} style={styles.attributeItem}>
                   <View style={styles.attributeHeader}>
                     <Ionicons name='star' size={16} color='#F8D930' />
                     <Text style={styles.attributeName}>{attr.name}</Text>
@@ -226,7 +226,7 @@ const ProductDetailScreen = () => {
                   <Text style={styles.attributeDescription}>{attr.description}</Text>
                 </View>
               ) : (
-                <View key={attr.attribute_id} style={styles.attributeItem}>
+                <View key={`attr-${attr.attribute_id}-${index}`} style={styles.attributeItem}>
                   <View style={styles.attributeHeader}>
                     <Ionicons name='star' size={16} color='#F8D930' />
                     <Text style={styles.attributeName}>{attr.name}</Text>
