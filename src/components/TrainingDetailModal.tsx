@@ -14,7 +14,7 @@ import {
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import api from '../services/api';
+import api, { saveProductFeedback } from '../services/api';
 import { getProductImageSource } from '../utils/imageUtils';
 
 const { width } = Dimensions.get('window');
@@ -78,6 +78,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [feedbackStates, setFeedbackStates] = useState<{ [key: number]: string }>({});
 
   useEffect(() => {
     console.log('TrainingDetailModal - Props:', { visible, session, userId });
@@ -86,6 +87,30 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
       fetchRecommendations();
     }
   }, [visible, session, userId]);
+
+  // Manejar feedback del usuario
+  const handleFeedback = async (productId: number, feedback: 'positivo' | 'negativo') => {
+    try {
+      await saveProductFeedback(userId, productId, feedback);
+
+      // Actualizar estado local
+      setFeedbackStates((prev) => ({
+        ...prev,
+        [productId]: feedback,
+      }));
+
+      Alert.alert(
+        'Gracias por tu feedback',
+        feedback === 'positivo'
+          ? '✅ Seguiremos recomendando productos similares'
+          : '👎 No volveremos a recomendar este producto',
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Error saving feedback:', error);
+      Alert.alert('Error', 'No se pudo guardar tu feedback. Intenta de nuevo.');
+    }
+  };
 
   const fetchRecommendations = async () => {
     try {
@@ -295,6 +320,69 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                   )}
                 </View>
               )}
+
+              {/* Sección de Feedback */}
+              <View style={styles.feedbackSection}>
+                <Text style={styles.feedbackQuestion}>¿Te funcionó este producto?</Text>
+
+                <View style={styles.feedbackButtons}>
+                  <TouchableOpacity
+                    style={[
+                      styles.feedbackButton,
+                      feedbackStates[rec.product_id] === 'positivo' &&
+                        styles.feedbackButtonPositive,
+                    ]}
+                    onPress={() => handleFeedback(rec.product_id, 'positivo')}
+                  >
+                    <Ionicons
+                      name={
+                        feedbackStates[rec.product_id] === 'positivo'
+                          ? 'thumbs-up'
+                          : 'thumbs-up-outline'
+                      }
+                      size={24}
+                      color={feedbackStates[rec.product_id] === 'positivo' ? '#fff' : '#4CAF50'}
+                    />
+                    <Text
+                      style={[
+                        styles.feedbackButtonText,
+                        feedbackStates[rec.product_id] === 'positivo' &&
+                          styles.feedbackButtonTextActive,
+                      ]}
+                    >
+                      Bueno
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.feedbackButton,
+                      feedbackStates[rec.product_id] === 'negativo' &&
+                        styles.feedbackButtonNegative,
+                    ]}
+                    onPress={() => handleFeedback(rec.product_id, 'negativo')}
+                  >
+                    <Ionicons
+                      name={
+                        feedbackStates[rec.product_id] === 'negativo'
+                          ? 'thumbs-down'
+                          : 'thumbs-down-outline'
+                      }
+                      size={24}
+                      color={feedbackStates[rec.product_id] === 'negativo' ? '#fff' : '#FF6B6B'}
+                    />
+                    <Text
+                      style={[
+                        styles.feedbackButtonText,
+                        feedbackStates[rec.product_id] === 'negativo' &&
+                          styles.feedbackButtonTextActive,
+                      ]}
+                    >
+                      Malo
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
           );
         })}
@@ -722,6 +810,55 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#fff',
     lineHeight: 20,
+  },
+
+  // Feedback Section
+  feedbackSection: {
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+  },
+  feedbackQuestion: {
+    fontSize: 15,
+    color: '#ddd',
+    textAlign: 'center',
+    marginBottom: 16,
+    fontWeight: '600',
+  },
+  feedbackButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    gap: 12,
+  },
+  feedbackButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: '#1f1f1f',
+    borderWidth: 2,
+    borderColor: '#333',
+  },
+  feedbackButtonPositive: {
+    backgroundColor: '#4CAF50',
+    borderColor: '#4CAF50',
+  },
+  feedbackButtonNegative: {
+    backgroundColor: '#FF6B6B',
+    borderColor: '#FF6B6B',
+  },
+  feedbackButtonText: {
+    fontSize: 14,
+    color: '#ccc',
+    marginLeft: 8,
+    fontWeight: '600',
+  },
+  feedbackButtonTextActive: {
+    color: '#fff',
   },
 });
 

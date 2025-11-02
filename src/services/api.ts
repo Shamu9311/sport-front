@@ -469,4 +469,31 @@ export const getTrainingRecommendations = async (trainingId: number, userId: num
   }
 };
 
+// Guardar feedback del usuario sobre un producto
+export const saveProductFeedback = async (userId: number, productId: number, feedback: 'positivo' | 'negativo', notes?: string) => {
+  try {
+    const response = await api.post('/recommendations/product-feedback', {
+      userId,
+      productId,
+      feedback,
+      notes
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error saving product feedback:', error);
+    throw error;
+  }
+};
+
+// Obtener historial de feedback del usuario
+export const getUserFeedbackHistory = async (userId: number) => {
+  try {
+    const response = await api.get(`/recommendations/user-feedback/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error getting user feedback:', error);
+    throw error;
+  }
+};
+
 export default api;

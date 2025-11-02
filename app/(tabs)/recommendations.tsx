@@ -15,8 +15,8 @@ import {
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AuthContext from '../../src/context/AuthContext';
-import { getSavedRecommendations } from '../../src/services/api';
-import api from '../../src/services/api';
+import { getSavedRecommendations, getUserFeedbackHistory } from '../../src/services/api';
+// import api from '../../src/services/api';
 import { getProductImageSource } from '../../src/utils/imageUtils';
 
 const { width } = Dimensions.get('window');
@@ -58,13 +58,44 @@ const RecommendationScreen = () => {
       // Obtener recomendaciones guardadas
       const savedRecommendations = await getSavedRecommendations(userId);
 
+      // Obtener feedback del usuario
+      const feedbackResponse = await getUserFeedbackHistory(userId);
+      const feedbackMap: { [key: number]: string } = {};
+
+      if (feedbackResponse.success && feedbackResponse.feedback) {
+        feedbackResponse.feedback.forEach((f: any) => {
+          feedbackMap[f.product_id] = f.feedback;
+        });
+      }
+
       if (
         savedRecommendations &&
         Array.isArray(savedRecommendations) &&
         savedRecommendations.length > 0
       ) {
-        console.log('Recomendaciones guardadas obtenidas:', savedRecommendations.length);
-        setRecommendations(savedRecommendations);
+        // Filtrar solo productos sin feedback negativo
+        const filteredRecommendations = savedRecommendations.filter((rec: any) => {
+          const productId = rec.product_id || rec.product_details?.product_id;
+          const feedback = feedbackMap[productId];
+
+          // Mostrar solo si: sin feedback O feedback positivo
+          return !feedback || feedback === 'positivo';
+        });
+
+        console.log(
+          `Recomendaciones: ${savedRecommendations.length} total, ${filteredRecommendations.length} después de filtrar feedback negativo`
+        );
+        const objetosUnicos = filteredRecommendations.filter(
+          (valor, indice, self) =>
+            indice === self.findIndex((t) => t.product_id === valor.product_id)
+        );
+        setRecommendations(objetosUnicos);
+
+        if (objetosUnicos.length === 0 && savedRecommendations.length > 0) {
+          setError(
+            'Has marcado todas las recomendaciones como no útiles. Crea un nuevo entrenamiento para obtener nuevas sugerencias.'
+          );
+        }
       } else {
         console.log('No se encontraron recomendaciones guardadas');
         setError(
