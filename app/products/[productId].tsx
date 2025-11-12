@@ -146,11 +146,11 @@ const ProductDetailScreen = () => {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Hero Image Section */}
         <View style={styles.imageContainer}>
-          <Image
-            source={getProductImageSource(product.image_url)}
-            style={styles.productImage}
-            resizeMode='contain'
-          />
+        <Image
+          source={getProductImageSource(product.image_url)}
+          style={styles.productImage}
+          resizeMode='contain'
+        />
         </View>
 
         {/* Product Name and Description Card */}
@@ -163,7 +163,7 @@ const ProductDetailScreen = () => {
         <View style={styles.card}>
           <View style={styles.sectionHeader}>
             <Ionicons name='bulb' size={24} color='#D4AF37' />
-            <Text style={styles.sectionTitle}>Recomendaciones de Uso</Text>
+          <Text style={styles.sectionTitle}>Recomendaciones de Uso</Text>
           </View>
           <Text style={styles.sectionContent}>{product.usage_recommendation}</Text>
         </View>
@@ -173,7 +173,7 @@ const ProductDetailScreen = () => {
           <View style={styles.card}>
             <View style={styles.sectionHeader}>
               <Ionicons name='color-palette' size={24} color='#D4AF37' />
-              <Text style={styles.sectionTitle}>Sabores Disponibles</Text>
+            <Text style={styles.sectionTitle}>Sabores Disponibles</Text>
             </View>
             <View style={styles.flavorContainer}>
               {flavors.map((flavor) => (
@@ -190,7 +190,7 @@ const ProductDetailScreen = () => {
           <View style={styles.card}>
             <View style={styles.sectionHeader}>
               <Ionicons name='nutrition' size={24} color='#D4AF37' />
-              <Text style={styles.sectionTitle}>Información Nutricional</Text>
+            <Text style={styles.sectionTitle}>Información Nutricional</Text>
             </View>
             <View style={styles.nutritionGrid}>
               <View style={styles.nutritionItem}>
@@ -204,7 +204,7 @@ const ProductDetailScreen = () => {
               <View style={styles.nutritionItem}>
                 <Text style={styles.nutritionLabel}>Proteína</Text>
                 <Text style={styles.nutritionValue}>{nutrition.protein_g}g</Text>
-              </View>
+            </View>
             </View>
           </View>
         )}
@@ -214,14 +214,14 @@ const ProductDetailScreen = () => {
           <View style={styles.card}>
             <View style={styles.sectionHeader}>
               <Ionicons name='checkmark-circle' size={24} color='#D4AF37' />
-              <Text style={styles.sectionTitle}>Beneficios y Características</Text>
+            <Text style={styles.sectionTitle}>Beneficios y Características</Text>
             </View>
             {attributes.map((attr, index) =>
               attr.description ? (
                 <View key={`attr-${attr.attribute_id}-${index}`} style={styles.attributeItem}>
                   <View style={styles.attributeHeader}>
                     <Ionicons name='star' size={16} color='#D4AF37' />
-                    <Text style={styles.attributeName}>{attr.name}</Text>
+                  <Text style={styles.attributeName}>{attr.name}</Text>
                   </View>
                   <Text style={styles.attributeDescription}>{attr.description}</Text>
                 </View>

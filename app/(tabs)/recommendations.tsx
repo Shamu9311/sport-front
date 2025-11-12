@@ -16,7 +16,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AuthContext from '../../src/context/AuthContext';
 import { getSavedRecommendations, getUserFeedbackHistory } from '../../src/services/api';
-// import api from '../../src/services/api';
+import api from '../../src/services/api';
 import { getProductImageSource } from '../../src/utils/imageUtils';
 
 const { width } = Dimensions.get('window');
@@ -74,7 +74,7 @@ const RecommendationScreen = () => {
         savedRecommendations.length > 0
       ) {
         // Filtrar solo productos sin feedback negativo
-        const filteredRecommendations = savedRecommendations.filter((rec: any) => {
+        const filteredByFeedback = savedRecommendations.filter((rec: any) => {
           const productId = rec.product_id || rec.product_details?.product_id;
           const feedback = feedbackMap[productId];
 
@@ -82,16 +82,30 @@ const RecommendationScreen = () => {
           return !feedback || feedback === 'positivo';
         });
 
+        // Obtener valores únicos por product_name
+        const seenNames = new Set<string>();
+        const filteredRecommendations = filteredByFeedback.filter((rec: any) => {
+          const productName =
+            rec.product_details?.name ||
+            rec.product_details?.product_name ||
+            rec.name ||
+            rec.product_name ||
+            '';
+
+          if (!productName || seenNames.has(productName)) {
+            return false;
+          }
+
+          seenNames.add(productName);
+          return true;
+        });
+
         console.log(
           `Recomendaciones: ${savedRecommendations.length} total, ${filteredRecommendations.length} después de filtrar feedback negativo`
         );
-        const objetosUnicos = filteredRecommendations.filter(
-          (valor, indice, self) =>
-            indice === self.findIndex((t) => t.product_id === valor.product_id)
-        );
-        setRecommendations(objetosUnicos);
+        setRecommendations(filteredRecommendations);
 
-        if (objetosUnicos.length === 0 && savedRecommendations.length > 0) {
+        if (filteredRecommendations.length === 0 && savedRecommendations.length > 0) {
           setError(
             'Has marcado todas las recomendaciones como no útiles. Crea un nuevo entrenamiento para obtener nuevas sugerencias.'
           );

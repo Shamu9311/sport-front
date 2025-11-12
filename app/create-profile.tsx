@@ -139,7 +139,7 @@ const CreateProfileScreen = () => {
       if (response.success) {
         // Update the profile state and then navigate
         setHasProfile(true);
-
+        
         // Small delay to ensure state is updated before navigation
         setTimeout(() => {
           Alert.alert(

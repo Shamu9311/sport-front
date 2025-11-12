@@ -46,7 +46,7 @@ interface Product {
 interface Category {
   category_id: number;
   name: string;
-  // otros campos necesarios...
+   // otros campos necesarios...
 }
 
 const ProductListScreen = () => {
@@ -94,11 +94,11 @@ const ProductListScreen = () => {
       try {
         // Primero verificamos si ya existen recomendaciones guardadas para este usuario
         console.log(`Verificando recomendaciones existentes para usuario ${userId}...`);
-
+        
         // Intentamos obtener recomendaciones guardadas primero
         try {
           const savedRecommendations = await getSavedRecommendations(userId);
-
+          
           // Si hay recomendaciones guardadas, las usamos en lugar de generar nuevas
           if (
             savedRecommendations &&
@@ -121,11 +121,11 @@ const ProductListScreen = () => {
             savedError
           );
         }
-
+        
         // Si no hay recomendaciones guardadas, generamos nuevas
         console.log(`Solicitando nuevas recomendaciones para usuario ${userId}...`);
         const recommendationsResponse = await getRecommendations(userId);
-
+        
         // Verificar si la respuesta es válida
         if (
           recommendationsResponse &&
@@ -168,13 +168,13 @@ const ProductListScreen = () => {
       setSelectedCategory(categoryId);
       setShowingPersonalized(false); // Cambiar a vista por categorías
       setLoading(true);
-
+      
       console.log('Solicitando productos para categoría:', categoryId);
       const productsResponse = await getProductsByCategory(categoryId.toString());
-
+      
       console.log('Respuesta de la API:', productsResponse);
       console.log('Número de productos recibidos:', productsResponse?.length || 0);
-
+      
       if (productsResponse && Array.isArray(productsResponse)) {
         console.log('Productos recibidos:', productsResponse);
         setProducts(productsResponse);
@@ -205,11 +205,11 @@ const ProductListScreen = () => {
         activeOpacity={0.7}
       >
         <View style={styles.productImageContainer}>
-          <Image
-            source={getProductImageSource(item.image_url)}
-            style={styles.productImage}
+        <Image
+          source={getProductImageSource(item.image_url)}
+          style={styles.productImage}
             resizeMode='contain'
-          />
+        />
         </View>
         <View style={styles.productInfo}>
           <Text style={styles.productName} numberOfLines={2}>
@@ -246,7 +246,7 @@ const ProductListScreen = () => {
             Para Ti
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity
+      <TouchableOpacity 
           style={[styles.switchButton, !showingPersonalized && styles.switchButtonActive]}
           onPress={() => setShowingPersonalized(false)}
         >
@@ -255,8 +255,8 @@ const ProductListScreen = () => {
             style={[styles.switchButtonText, !showingPersonalized && styles.switchButtonTextActive]}
           >
             Categorías
-          </Text>
-        </TouchableOpacity>
+        </Text>
+      </TouchableOpacity>
       </View>
     );
   };
@@ -296,10 +296,10 @@ const ProductListScreen = () => {
                 <View style={styles.categoryContainer}>
                   <View style={styles.categoryHeader}>
                     <Ionicons name='apps' size={20} color='#D4AF37' />
-                    <Text style={styles.categoryTitle}>Categorías</Text>
+                  <Text style={styles.categoryTitle}>Categorías</Text>
                   </View>
-                  <ScrollView
-                    horizontal
+                  <ScrollView 
+                    horizontal 
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.categoryScrollContainer}
                   >
@@ -313,9 +313,9 @@ const ProductListScreen = () => {
                         onPress={() => handleCategoryChange(category.category_id)}
                         activeOpacity={0.7}
                       >
-                        <Text
+                        <Text 
                           style={[
-                            styles.categoryText,
+                            styles.categoryText, 
                             selectedCategory === category.category_id &&
                               styles.selectedCategoryText,
                           ]}
@@ -345,7 +345,7 @@ const ProductListScreen = () => {
                   style={{ marginBottom: 15 }}
                 />
                 <Text style={styles.emptyText}>
-                  {showingPersonalized
+                  {showingPersonalized 
                     ? 'No tenemos recomendaciones disponibles aún.'
                     : 'No hay productos disponibles en esta categoría.'}
                 </Text>
