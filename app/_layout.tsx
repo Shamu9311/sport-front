@@ -33,7 +33,6 @@ function RootLayoutNav() {
   return (
     <Stack initialRouteName={user ? '(tabs)' : 'login'}>
       <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
-      <Stack.Screen name='products' options={{ headerShown: false }} />
       <Stack.Screen name='login' options={{ headerShown: false }} />
       <Stack.Screen name='register' options={{ headerShown: false }} />
       <Stack.Screen name='loading-profile' options={{ headerShown: false }} />
