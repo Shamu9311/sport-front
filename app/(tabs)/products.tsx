@@ -180,7 +180,7 @@ const ProductListScreen = () => {
                         selectedCategory === category.category_id && styles.selectedCategoryText,
                       ]}
                     >
-                      {category.name}
+                      {category.name.charAt(0).toUpperCase() + category.name.slice(1)}
                     </Text>
                   </TouchableOpacity>
                 ))}
