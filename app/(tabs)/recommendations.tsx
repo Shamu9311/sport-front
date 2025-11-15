@@ -30,6 +30,8 @@ const RecommendationScreen = () => {
   if (!context) throw new Error('AuthContext must be used within an AuthProvider');
   const { userToken } = context;
   const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [negativeRecommendations, setNegativeRecommendations] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'positivas' | 'negativas'>('positivas');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -73,18 +75,25 @@ const RecommendationScreen = () => {
         Array.isArray(savedRecommendations) &&
         savedRecommendations.length > 0
       ) {
-        // Filtrar solo productos sin feedback negativo
-        const filteredByFeedback = savedRecommendations.filter((rec: any) => {
+        // Separar por feedback positivo y negativo
+        const positiveRecs: any[] = [];
+        const negativeRecs: any[] = [];
+
+        savedRecommendations.forEach((rec: any) => {
           const productId = rec.product_id || rec.product_details?.product_id;
           const feedback = feedbackMap[productId];
 
-          // Mostrar solo si: sin feedback O feedback positivo
-          return !feedback || feedback === 'positivo';
+          if (feedback === 'negativo') {
+            negativeRecs.push(rec);
+          } else {
+            // Sin feedback o feedback positivo
+            positiveRecs.push(rec);
+          }
         });
 
-        // Obtener valores únicos por product_name
-        const seenNames = new Set<string>();
-        const filteredRecommendations = filteredByFeedback.filter((rec: any) => {
+        // Obtener valores únicos por product_name para positivas
+        const seenNamesPos = new Set<string>();
+        const uniquePositiveRecs = positiveRecs.filter((rec: any) => {
           const productName =
             rec.product_details?.name ||
             rec.product_details?.product_name ||
@@ -92,30 +101,41 @@ const RecommendationScreen = () => {
             rec.product_name ||
             '';
 
-          if (!productName || seenNames.has(productName)) {
+          if (!productName || seenNamesPos.has(productName)) {
             return false;
           }
 
-          seenNames.add(productName);
+          seenNamesPos.add(productName);
           return true;
         });
 
-        console.log(
-          `Recomendaciones: ${savedRecommendations.length} total, ${filteredRecommendations.length} después de filtrar feedback negativo`
-        );
-        setRecommendations(filteredRecommendations);
+        // Obtener valores únicos por product_name para negativas
+        const seenNamesNeg = new Set<string>();
+        const uniqueNegativeRecs = negativeRecs.filter((rec: any) => {
+          const productName =
+            rec.product_details?.name ||
+            rec.product_details?.product_name ||
+            rec.name ||
+            rec.product_name ||
+            '';
 
-        if (filteredRecommendations.length === 0 && savedRecommendations.length > 0) {
-          setError(
-            'Has marcado todas las recomendaciones como no útiles. Crea un nuevo entrenamiento para obtener nuevas sugerencias.'
-          );
-        }
+          if (!productName || seenNamesNeg.has(productName)) {
+            return false;
+          }
+
+          seenNamesNeg.add(productName);
+          return true;
+        });
+
+        setRecommendations(uniquePositiveRecs);
+        setNegativeRecommendations(uniqueNegativeRecs);
       } else {
         console.log('No se encontraron recomendaciones guardadas');
         setError(
           'No hay recomendaciones disponibles. Visita la sección de productos para generar recomendaciones personalizadas.'
         );
         setRecommendations([]);
+        setNegativeRecommendations([]);
       }
     } catch (err: any) {
       let errorMessage = 'Error al obtener recomendaciones. Intenta más tarde.';
@@ -299,6 +319,9 @@ const RecommendationScreen = () => {
     return null;
   };
 
+  const currentRecommendations =
+    activeTab === 'positivas' ? recommendations : negativeRecommendations;
+
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
@@ -307,13 +330,43 @@ const RecommendationScreen = () => {
         <Text style={styles.pullHint}>Desliza hacia abajo para actualizar</Text>
       </View>
 
+      {/* Tabs */}
+      <View style={styles.tabsContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'positivas' && styles.tabActive]}
+          onPress={() => setActiveTab('positivas')}
+        >
+          <Ionicons
+            name='checkmark-circle'
+            size={20}
+            color={activeTab === 'positivas' ? '#1a1919' : '#999'}
+          />
+          <Text style={[styles.tabText, activeTab === 'positivas' && styles.tabTextActive]}>
+            Que me sirvieron ({recommendations.length})
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'negativas' && styles.tabActive]}
+          onPress={() => setActiveTab('negativas')}
+        >
+          <Ionicons
+            name='close-circle'
+            size={20}
+            color={activeTab === 'negativas' ? '#1a1919' : '#999'}
+          />
+          <Text style={[styles.tabText, activeTab === 'negativas' && styles.tabTextActive]}>
+            No me sirvieron ({negativeRecommendations.length})
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {loading && !refreshing && (
         <ActivityIndicator size='large' color='#D4AF37' style={styles.loader} />
       )}
 
-      {!loading && (recommendations.length > 0 || error) ? (
+      {!loading && (currentRecommendations.length > 0 || error) ? (
         <FlatList
-          data={recommendations}
+          data={currentRecommendations}
           renderItem={renderRecommendationItem}
           keyExtractor={(item, index) => {
             // Safely extract the product_id regardless of the data structure
@@ -327,7 +380,22 @@ const RecommendationScreen = () => {
             // Fallback usando el índice del array
             return `item-${index}`;
           }}
-          ListEmptyComponent={renderEmptyOrErrorState}
+          ListEmptyComponent={() => {
+            if (activeTab === 'negativas' && negativeRecommendations.length === 0) {
+              return (
+                <View style={styles.centeredMessageContainer}>
+                  <Ionicons
+                    name='checkmark-circle-outline'
+                    size={80}
+                    color='#D4AF37'
+                    style={styles.emptyIcon}
+                  />
+                  <Text style={styles.emptyText}>No tienes productos marcados como no útiles.</Text>
+                </View>
+              );
+            }
+            return renderEmptyOrErrorState();
+          }}
           contentContainerStyle={styles.listContainer}
           refreshControl={
             <RefreshControl
@@ -373,6 +441,42 @@ const styles = StyleSheet.create({
     color: '#666',
     fontStyle: 'italic',
     // textAlign: 'center',
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: '#252525',
+    borderRadius: 12,
+    padding: 4,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    backgroundColor: 'transparent',
+  },
+  tabActive: {
+    backgroundColor: '#D4AF37',
+  },
+  tabText: {
+    color: '#999',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  tabTextActive: {
+    color: '#1a1919',
+    fontWeight: 'bold',
   },
   actionButton: {
     backgroundColor: '#D4AF37',
