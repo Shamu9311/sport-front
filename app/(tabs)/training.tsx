@@ -18,6 +18,7 @@ import {
   getUserTrainingSessions,
   createTrainingSession,
   deleteTrainingSession,
+  getTrainingSession,
 } from '../../src/services/api';
 import TrainingSessionItem from '../../src/components/TrainingSessionItem';
 import AddTrainingModal from '../../src/components/AddTrainingModal';
@@ -59,12 +60,22 @@ export default function TrainingScreen() {
 
     try {
       setLoading(true);
-      await createTrainingSession({
+      const newSession = await createTrainingSession({
         userId: user.id,
         ...trainingData,
       });
       setShowAddModal(false);
-      fetchTrainingSessions(); // Refrescar la lista después de agregar
+      
+      // Obtener la sesión y abrir el modal inmediatamente
+      // El modal se encargará de reintentar obtener las recomendaciones
+      if (newSession && newSession.session_id) {
+        const fullSession = await getTrainingSession(newSession.session_id);
+        setSelectedSession(fullSession);
+        setShowDetailModal(true);
+      }
+      
+      await fetchTrainingSessions(); // Refrescar la lista después de agregar
+      setLoading(false);
     } catch (error) {
       console.error('Error adding training session:', error);
       setLoading(false);

@@ -9,6 +9,7 @@ import {
   ScrollView,
   Alert,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 // Función para formatear fechas en español
@@ -50,6 +51,7 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
   const [sportType, setSportType] = useState('10K');
   const [weather, setWeather] = useState('soleado');
   const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
 
   // Función para incrementar la fecha en un día
   const incrementDate = () => {
@@ -65,7 +67,7 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
     setDate(newDate);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!duration) {
       Alert.alert('Error', 'Por favor ingresa la duración del entrenamiento');
       return;
@@ -87,8 +89,13 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
       notes,
     };
 
-    onSave(trainingData);
-    resetForm();
+    setSaving(true);
+    try {
+      await onSave(trainingData);
+      // No resetear aquí, se hará cuando se cierre el modal
+    } catch (error) {
+      setSaving(false);
+    }
   };
 
   const resetForm = () => {
@@ -96,14 +103,17 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
     setDuration('');
     setIntensity('media');
     setType('cardio');
-    setSportType('');
+    setSportType('10K');
     setWeather('soleado');
     setNotes('');
+    setSaving(false);
   };
 
   const handleClose = () => {
-    resetForm();
-    onClose();
+    if (!saving) {
+      resetForm();
+      onClose();
+    }
   };
 
   // formatDate ya está definida arriba
@@ -112,6 +122,12 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
     <Modal visible={visible} animationType='slide' transparent={true} onRequestClose={handleClose}>
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
+          {saving && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size='large' color='#D4AF37' />
+              <Text style={styles.loadingText}>Generando recomendaciones...</Text>
+            </View>
+          )}
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Agregar Entrenamiento</Text>
             <TouchableOpacity onPress={handleClose}>
@@ -233,11 +249,23 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
           </ScrollView>
 
           <View style={styles.modalFooter}>
-            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleClose}>
+            <TouchableOpacity
+              style={[styles.button, styles.cancelButton]}
+              onPress={handleClose}
+              disabled={saving}
+            >
               <Text style={styles.buttonText}>Cancelar</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={handleSave}>
-              <Text style={[styles.buttonText, styles.saveButtonText]}>Guardar</Text>
+            <TouchableOpacity
+              style={[styles.button, styles.saveButton]}
+              onPress={handleSave}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator size='small' color='#000' />
+              ) : (
+                <Text style={[styles.buttonText, styles.saveButtonText]}>Guardar</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -381,6 +409,24 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: '#000',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(26, 25, 25, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+    borderRadius: 15,
+  },
+  loadingText: {
+    color: '#D4AF37',
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

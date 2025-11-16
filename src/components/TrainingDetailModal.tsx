@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -80,13 +80,84 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [feedbackStates, setFeedbackStates] = useState<{ [key: number]: string }>({});
 
+  const fetchRecommendationsWithRetry = useCallback(
+    async (sessionId: number, retries = 5, delay = 2000) => {
+      if (!sessionId) {
+        console.warn('No hay session_id disponible para obtener recomendaciones');
+        return;
+      }
+      for (let i = 0; i < retries; i++) {
+        try {
+          setLoading(true);
+          console.log(
+            `Intento ${i + 1}/${retries} - Obteniendo recomendaciones para sesión ${sessionId}`
+          );
+          const response = await api.get(`/training/${sessionId}/recommendations`, {
+            params: { userId },
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+            console.log(`Se recibieron ${response.data.length} recomendaciones`);
+            setRecommendations(response.data);
+            setLoading(false);
+            return;
+          }
+
+          // Si no hay recomendaciones y no es el último intento, esperar y reintentar
+          if (i < retries - 1) {
+            console.log(
+              `No hay recomendaciones aún, reintentando en ${delay}ms... (intento ${
+                i + 1
+              }/${retries})`
+            );
+            await new Promise((resolve) => setTimeout(resolve, delay));
+          } else {
+            console.warn('No se encontraron recomendaciones después de varios intentos');
+            setRecommendations([]);
+            setLoading(false);
+          }
+        } catch (error: any) {
+          if (i < retries - 1) {
+            console.log(
+              `Error al obtener recomendaciones, reintentando... (intento ${i + 1}/${retries})`
+            );
+            await new Promise((resolve) => setTimeout(resolve, delay));
+          } else {
+            console.error('Error fetching recommendations después de varios intentos:', error);
+            setRecommendations([]);
+            setLoading(false);
+          }
+        }
+      }
+    },
+    [userId]
+  );
+
   useEffect(() => {
-    console.log('TrainingDetailModal - Props:', { visible, session, userId });
-    if (visible && session) {
-      console.log('Fetching recommendations...');
-      fetchRecommendations();
+    console.log('TrainingDetailModal - useEffect triggered:', {
+      visible,
+      sessionId: session?.session_id,
+      userId,
+    });
+
+    if (visible && session && session.session_id) {
+      console.log('Modal visible, fetching recommendations...');
+      setRecommendations([]); // Limpiar recomendaciones anteriores
+      setLoading(true);
+      // Pequeño delay para asegurar que el modal esté completamente renderizado
+      const timer = setTimeout(() => {
+        fetchRecommendationsWithRetry(session.session_id);
+      }, 100);
+      return () => clearTimeout(timer);
+    } else if (!visible) {
+      // Limpiar cuando se cierra el modal
+      setRecommendations([]);
+      setLoading(false);
     }
-  }, [visible, session, userId]);
+  }, [visible, session?.session_id, userId, fetchRecommendationsWithRetry]);
 
   // Manejar feedback del usuario
   const handleFeedback = async (productId: number, feedback: 'positivo' | 'negativo') => {
@@ -109,53 +180,6 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
     } catch (error) {
       console.error('Error saving feedback:', error);
       Alert.alert('Error', 'No se pudo guardar tu feedback. Intenta de nuevo.');
-    }
-  };
-
-  const fetchRecommendations = async () => {
-    try {
-      setLoading(true);
-
-      console.log(
-        'Obteniendo recomendaciones para sesión:',
-        session.session_id,
-        'usuario:',
-        userId
-      );
-
-      // Usamos la instancia de api que ya tiene configurada la URL base
-      const response = await api.get(`/training/${session.session_id}/recommendations`, {
-        params: { userId },
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      console.log('Respuesta del servidor:', response.data);
-
-      if (response.data && Array.isArray(response.data)) {
-        console.log(`Se recibieron ${response.data.length} recomendaciones`);
-        setRecommendations(response.data);
-      } else {
-        console.warn('La respuesta no contiene un array de recomendaciones:', response.data);
-        setRecommendations([]);
-      }
-    } catch (error: any) {
-      console.error('Error fetching recommendations:', error);
-      if (error.response) {
-        console.error('Error response data:', error.response.data);
-        console.error('Error response status:', error.response.status);
-      } else if (error.request) {
-        console.error('Error request:', error.request);
-      } else {
-        console.error('Error message:', error.message);
-      }
-      Alert.alert(
-        'Error',
-        'No se pudieron cargar las recomendaciones. Por favor, inténtalo de nuevo más tarde.'
-      );
-    } finally {
-      setLoading(false);
     }
   };
 
