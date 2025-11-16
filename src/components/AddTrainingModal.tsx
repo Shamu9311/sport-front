@@ -29,6 +29,17 @@ interface AddTrainingModalProps {
 
 const intensityOptions = ['baja', 'media', 'alta', 'muy alta'];
 const typeOptions = ['cardio', 'fuerza', 'hiit', 'resistencia', 'crossfit', 'otro'];
+const sportTypeOptions = [
+  '10K',
+  '15K',
+  'media marathon',
+  'marathon',
+  'trail',
+  'Triathlon',
+  'ciclismo de ruta',
+  'ciclismo de montaña',
+  'natacion',
+];
 const weatherOptions = ['soleado', 'nublado', 'lluvia', 'fresco', 'caluroso', 'húmedo'];
 
 const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, onSave }) => {
@@ -36,6 +47,7 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
   const [duration, setDuration] = useState('');
   const [intensity, setIntensity] = useState('media');
   const [type, setType] = useState('cardio');
+  const [sportType, setSportType] = useState('10K');
   const [weather, setWeather] = useState('soleado');
   const [notes, setNotes] = useState('');
 
@@ -70,6 +82,7 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
       duration_min: durationNum,
       intensity,
       type,
+      sport_type: sportType || undefined,
       weather,
       notes,
     };
@@ -83,6 +96,7 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
     setDuration('');
     setIntensity('media');
     setType('cardio');
+    setSportType('');
     setWeather('soleado');
     setNotes('');
   };
@@ -163,6 +177,24 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
                   onPress={() => setType(option)}
                 >
                   <Text style={[styles.optionText, type === option && styles.selectedOptionText]}>
+                    {option.charAt(0).toUpperCase() + option.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Tipo de Deporte */}
+            <Text style={styles.label}>Tipo de Deporte</Text>
+            <View style={styles.optionsContainer}>
+              {sportTypeOptions.map((option) => (
+                <TouchableOpacity
+                  key={option}
+                  style={[styles.optionButton, sportType === option && styles.selectedOption]}
+                  onPress={() => setSportType(option)}
+                >
+                  <Text
+                    style={[styles.optionText, sportType === option && styles.selectedOptionText]}
+                  >
                     {option.charAt(0).toUpperCase() + option.slice(1)}
                   </Text>
                 </TouchableOpacity>

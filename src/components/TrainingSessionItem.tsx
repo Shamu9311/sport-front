@@ -11,6 +11,7 @@ interface TrainingSessionItemProps {
     duration_min: number;
     intensity: string;
     type: string;
+    sport_type?: string;
     weather?: string;
     notes?: string;
   };
@@ -92,22 +93,22 @@ const TrainingSessionItem: React.FC<TrainingSessionItemProps> = ({
       overshootRight={false}
       friction={2}
     >
-    <TouchableOpacity 
-      style={styles.container}
-      onPress={() => onPress(session)}
+      <TouchableOpacity
+        style={styles.container}
+        onPress={() => onPress(session)}
         activeOpacity={0.7}
-    >
-      <View style={styles.iconContainer}>
+      >
+        <View style={styles.iconContainer}>
           <MaterialCommunityIcons name={getTypeIcon(session.type)} size={32} color='#D4AF37' />
-      </View>
-      <View style={styles.contentContainer}>
-        <Text style={styles.date}>{formatDate(session.session_date)}</Text>
-        <View style={styles.detailsRow}>
-          <View style={styles.detail}>
+        </View>
+        <View style={styles.contentContainer}>
+          <Text style={styles.date}>{formatDate(session.session_date)}</Text>
+          <View style={styles.detailsRow}>
+            <View style={styles.detail}>
               <MaterialCommunityIcons name='clock-outline' size={16} color='#999' />
-            <Text style={styles.detailText}>{session.duration_min} min</Text>
-          </View>
-          <View style={styles.detail}>
+              <Text style={styles.detailText}>{session.duration_min} min</Text>
+            </View>
+            <View style={styles.detail}>
               <View
                 style={[
                   styles.intensityDot,
@@ -117,16 +118,24 @@ const TrainingSessionItem: React.FC<TrainingSessionItemProps> = ({
               <Text style={styles.detailText}>
                 {session.intensity.charAt(0).toUpperCase() + session.intensity.slice(1)}
               </Text>
-          </View>
-          <View style={styles.detail}>
+            </View>
+            <View style={styles.detail}>
               <Text style={styles.typeText}>
                 {session.type.charAt(0).toUpperCase() + session.type.slice(1)}
               </Text>
             </View>
+            {session.sport_type && (
+              <View style={styles.detail}>
+                <MaterialCommunityIcons name='bike' size={16} color='#999' />
+                <Text style={styles.detailText}>
+                  {session.sport_type.charAt(0).toUpperCase() + session.sport_type.slice(1)}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
         <MaterialCommunityIcons name='chevron-right' size={24} color='#D4AF37' />
-    </TouchableOpacity>
+      </TouchableOpacity>
     </Swipeable>
   );
 };

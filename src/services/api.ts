@@ -402,6 +402,7 @@ export const createTrainingSession = async (trainingData: {
   intensity: string;
   type: string;
   weather?: string;
+  sport_type?: string;
   notes?: string;
 }) => {
   try {
@@ -422,6 +423,7 @@ export const updateTrainingSession = async (
     intensity: string;
     type: string;
     weather?: string;
+    sport_type?: string;
     notes?: string;
   }
 ) => {

@@ -425,6 +425,11 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                   <Text style={styles.typeText}>
                     {session.type.charAt(0).toUpperCase() + session.type.slice(1)}
                   </Text>
+                  {session.sport_type && (
+                    <Text style={styles.sportTypeText}>
+                      {session.sport_type.charAt(0).toUpperCase() + session.sport_type.slice(1)}
+                    </Text>
+                  )}
                 </View>
               </View>
             </View>
@@ -573,6 +578,12 @@ const styles = StyleSheet.create({
   typeText: {
     color: '#ddd',
     fontSize: 16,
+  },
+  sportTypeText: {
+    color: '#D4AF37',
+    fontSize: 14,
+    marginTop: 4,
+    fontWeight: '600',
   },
 
   // Stats Card
