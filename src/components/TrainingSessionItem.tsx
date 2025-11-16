@@ -51,6 +51,31 @@ const getTypeIcon = (type: string) => {
   }
 };
 
+const getSportTypeIcon = (sportType: string) => {
+  const normalized = sportType?.toLowerCase() || '';
+  switch (normalized) {
+    case '10k':
+    case '15k':
+      return 'run-fast';
+    case 'media marathon':
+      return 'run-fast';
+    case 'marathon':
+      return 'run-fast';
+    case 'trail':
+      return 'terrain';
+    case 'ciclismo de ruta':
+      return 'bike';
+    case 'ciclismo de montaña':
+      return 'bike-fast';
+    case 'triathlon':
+      return 'run-fast';
+    case 'natacion':
+      return 'swim';
+    default:
+      return 'run';
+  }
+};
+
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   return date.toLocaleDateString('es-ES', {
@@ -99,7 +124,13 @@ const TrainingSessionItem: React.FC<TrainingSessionItemProps> = ({
         activeOpacity={0.7}
       >
         <View style={styles.iconContainer}>
-          <MaterialCommunityIcons name={getTypeIcon(session.type)} size={32} color='#D4AF37' />
+          <MaterialCommunityIcons
+            name={
+              session.sport_type ? getSportTypeIcon(session.sport_type) : getTypeIcon(session.type)
+            }
+            size={32}
+            color='#D4AF37'
+          />
         </View>
         <View style={styles.contentContainer}>
           <Text style={styles.date}>{formatDate(session.session_date)}</Text>
@@ -126,7 +157,11 @@ const TrainingSessionItem: React.FC<TrainingSessionItemProps> = ({
             </View>
             {session.sport_type && (
               <View style={styles.detail}>
-                <MaterialCommunityIcons name='bike' size={16} color='#999' />
+                <MaterialCommunityIcons
+                  name={getSportTypeIcon(session.sport_type)}
+                  size={16}
+                  color='#999'
+                />
                 <Text style={styles.detailText}>
                   {session.sport_type.charAt(0).toUpperCase() + session.sport_type.slice(1)}
                 </Text>
