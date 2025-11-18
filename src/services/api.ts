@@ -3,7 +3,7 @@ import { UserData, UserProfileData } from '../types/UserTypes';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const API_URL = 'http://192.168.18.12:5000';
+export const API_URL = 'http://192.168.18.222:5000';
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,
@@ -295,6 +295,45 @@ export const getProductsByCategory = async (categoryId: string) => {
     return processedProducts;
   } catch (error) {
     console.error('Error en getProductsByCategory:', error);
+    throw error;
+  }
+};
+
+export const searchProducts = async (filters: {
+  q?: string;
+  category?: string;
+  timing?: string;
+  type?: string;
+}) => {
+  try {
+    const params = new URLSearchParams();
+
+    if (filters.q) params.append('q', filters.q);
+    if (filters.category) params.append('category', filters.category);
+    if (filters.timing) params.append('timing', filters.timing);
+    if (filters.type) params.append('type', filters.type);
+
+    const response = await api.get(`/products/search?${params.toString()}`);
+
+    let products = [];
+    if (response.data && response.data.products && Array.isArray(response.data.products)) {
+      products = response.data.products;
+    } else if (Array.isArray(response.data)) {
+      products = response.data;
+    }
+
+    // Procesar productos para asegurar campos necesarios
+    const processedProducts = products.map((product: any) => ({
+      ...product,
+      product_name: product.product_name || product.name || `Producto ${product.product_id}`,
+      product_description:
+        product.product_description || product.description || 'Descripción no disponible',
+      image_url: product.image_url || '/assets/default-product.png',
+    }));
+
+    return processedProducts;
+  } catch (error) {
+    console.error('Error en searchProducts:', error);
     throw error;
   }
 };

@@ -9,11 +9,17 @@ import {
   ScrollView,
   ActivityIndicator,
   Dimensions,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getProductCategories, getProductsByCategory } from '../../src/services/api';
+import {
+  getProductCategories,
+  getProductsByCategory,
+  searchProducts,
+} from '../../src/services/api';
 import { getProductImageSource } from '../../src/utils/imageUtils';
 import { useRouter } from 'expo-router';
+import ProductFilterModal, { FilterState } from '../../src/components/ProductFilterModal';
 
 const { width } = Dimensions.get('window');
 
@@ -49,6 +55,10 @@ const ProductListScreen = () => {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({ category: '', timing: '' });
+  const [isSearching, setIsSearching] = useState(false);
 
   // Cargar datos iniciales: categorías y productos
   useEffect(() => {
@@ -81,6 +91,9 @@ const ProductListScreen = () => {
       console.log('Categoría seleccionada:', categoryId);
       setSelectedCategory(categoryId);
       setLoading(true);
+      setIsSearching(false);
+      setSearchQuery('');
+      setFilters({ category: '', timing: '' });
 
       console.log('Solicitando productos para categoría:', categoryId);
       const productsResponse = await getProductsByCategory(categoryId.toString());
@@ -100,6 +113,65 @@ const ProductListScreen = () => {
       setProducts([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSearch = async () => {
+    try {
+      setLoading(true);
+      setIsSearching(true);
+      const results = await searchProducts({
+        q: searchQuery,
+        category: filters.category,
+        timing: filters.timing,
+      });
+      setProducts(results);
+    } catch (error) {
+      console.error('Error en búsqueda:', error);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApplyFilters = (newFilters: FilterState) => {
+    setFilters(newFilters);
+    setIsSearching(true);
+    // Sincronizar categoría seleccionada visualmente
+    if (newFilters.category) {
+      setSelectedCategory(parseInt(newFilters.category));
+    } else {
+      setSelectedCategory(null);
+    }
+  };
+
+  // Ejecutar búsqueda cuando cambien los filtros
+  useEffect(() => {
+    if (isSearching) {
+      handleSearch();
+    }
+  }, [filters]);
+
+  // Debounce para búsqueda por texto
+  useEffect(() => {
+    if (!searchQuery.trim() && !isSearching) return;
+
+    const timer = setTimeout(() => {
+      handleSearch();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setFilters({ category: '', timing: '' });
+    setIsSearching(false);
+    // Recargar primera categoría
+    if (categories.length > 0) {
+      const firstCategory = categories[0];
+      setSelectedCategory(firstCategory.category_id);
+      handleCategoryChange(firstCategory.category_id);
     }
   };
 
@@ -140,6 +212,47 @@ const ProductListScreen = () => {
       <View style={styles.pageHeader}>
         <Text style={styles.pageTitle}>Productos</Text>
         <Text style={styles.pageSubtitle}>Encuentra los mejores suplementos</Text>
+
+        {/* Barra de búsqueda */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputContainer}>
+            <Ionicons name='search' size={20} color='#999' style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder='Buscar productos...'
+              placeholderTextColor='#666'
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={clearSearch}>
+                <Ionicons name='close-circle' size={20} color='#999' />
+              </TouchableOpacity>
+            )}
+          </View>
+          <TouchableOpacity style={styles.filterButton} onPress={() => setShowFilterModal(true)}>
+            <Ionicons name='options' size={22} color='#1a1919' />
+          </TouchableOpacity>
+        </View>
+
+        {/* Chips de filtros activos */}
+        {(filters.category || filters.timing) && (
+          <View style={styles.activeFiltersContainer}>
+            {filters.timing && (
+              <View style={styles.filterChip}>
+                <Text style={styles.filterChipText}>
+                  {filters.timing === 'antes' && 'Antes'}
+                  {filters.timing === 'durante' && 'Durante'}
+                  {filters.timing === 'despues' && 'Después'}
+                  {filters.timing === 'diario' && 'Diario'}
+                </Text>
+                <TouchableOpacity onPress={() => setFilters({ ...filters, timing: '' })}>
+                  <Ionicons name='close' size={16} color='#1a1919' />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
       </View>
 
       {loading ? (
@@ -195,6 +308,14 @@ const ProductListScreen = () => {
           }
         />
       )}
+
+      {/* Modal de filtros */}
+      <ProductFilterModal
+        visible={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        onApply={handleApplyFilters}
+        initialFilters={filters}
+      />
     </View>
   );
 };
@@ -221,6 +342,61 @@ const styles = StyleSheet.create({
   pageSubtitle: {
     fontSize: 15,
     color: '#999',
+    marginBottom: 16,
+  },
+
+  // Búsqueda
+  searchContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#252525',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 15,
+    paddingVertical: 12,
+  },
+  filterButton: {
+    backgroundColor: '#D4AF37',
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  activeFiltersContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#D4AF37',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  filterChipText: {
+    color: '#1a1919',
+    fontSize: 13,
+    fontWeight: '600',
   },
 
   // Loading States
