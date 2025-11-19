@@ -537,4 +537,33 @@ export const getUserFeedbackHistory = async (userId: number) => {
   }
 };
 
+// Obtener preferencias de notificaciones
+export const getNotificationPreferences = async (userId: number) => {
+  try {
+    const response = await api.get(`/notifications/preferences/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error getting notification preferences:', error);
+    throw error;
+  }
+};
+
+// Actualizar preferencias de notificaciones
+export const updateNotificationPreferences = async (
+  userId: number,
+  preferences: {
+    consumption_reminders: boolean;
+    training_alerts: boolean;
+    preferred_time: string;
+  }
+) => {
+  try {
+    const response = await api.put(`/notifications/preferences/${userId}`, preferences);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating notification preferences:', error);
+    throw error;
+  }
+};
+
 export default api;

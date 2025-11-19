@@ -45,6 +45,8 @@ const weatherOptions = ['soleado', 'nublado', 'lluvia', 'fresco', 'caluroso', 'h
 
 const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, onSave }) => {
   const [date, setDate] = useState<Date>(new Date());
+  const [startHour, setStartHour] = useState('18');
+  const [startMinute, setStartMinute] = useState('00');
   const [duration, setDuration] = useState('');
   const [intensity, setIntensity] = useState('media');
   const [type, setType] = useState('cardio');
@@ -79,8 +81,23 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
       return;
     }
 
+    const hour = parseInt(startHour) || 0;
+    const minute = parseInt(startMinute) || 0;
+    
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      Alert.alert('Error', 'Hora inválida. Formato: 00-23 : 00-59');
+      return;
+    }
+
+    // Formatear fecha en zona horaria local (YYYY-MM-DD)
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const localDate = `${year}-${month}-${day}`;
+
     const trainingData = {
-      session_date: date.toISOString(), // Convertir a ISO string para el backend
+      session_date: localDate,
+      start_time: `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}:00`,
       duration_min: durationNum,
       intensity,
       type,
@@ -92,7 +109,9 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
     setSaving(true);
     try {
       await onSave(trainingData);
-      // No resetear aquí, se hará cuando se cierre el modal
+      setSaving(false);
+      resetForm();
+      onClose();
     } catch (error) {
       setSaving(false);
     }
@@ -100,6 +119,8 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
 
   const resetForm = () => {
     setDate(new Date());
+    setStartHour('18');
+    setStartMinute('00');
     setDuration('');
     setIntensity('media');
     setType('cardio');
@@ -150,6 +171,41 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
               <TouchableOpacity style={styles.dateButton} onPress={incrementDate}>
                 <MaterialCommunityIcons name='chevron-right' size={24} color='#D4AF37' />
               </TouchableOpacity>
+            </View>
+
+            {/* Hora de inicio */}
+            <Text style={styles.label}>
+              Hora de inicio <Text style={styles.required}>*</Text>
+            </Text>
+            <View style={styles.timeContainer}>
+              <TextInput
+                style={styles.timeInput}
+                value={startHour}
+                onChangeText={(text) => {
+                  if (text.length <= 2 && /^\d*$/.test(text)) {
+                    setStartHour(text);
+                  }
+                }}
+                placeholder='18'
+                placeholderTextColor='#666'
+                keyboardType='numeric'
+                maxLength={2}
+              />
+              <Text style={styles.timeSeparator}>:</Text>
+              <TextInput
+                style={styles.timeInput}
+                value={startMinute}
+                onChangeText={(text) => {
+                  if (text.length <= 2 && /^\d*$/.test(text)) {
+                    setStartMinute(text);
+                  }
+                }}
+                placeholder='00'
+                placeholderTextColor='#666'
+                keyboardType='numeric'
+                maxLength={2}
+              />
+              <Text style={styles.timeHint}>Formato: HH:MM (24hrs)</Text>
             </View>
 
             {/* Duración */}
@@ -338,6 +394,32 @@ const styles = StyleSheet.create({
   dateText: {
     color: '#fff',
     fontSize: 16,
+  },
+  timeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    gap: 8,
+  },
+  timeInput: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 10,
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    width: 60,
+    height: 50,
+  },
+  timeSeparator: {
+    color: '#D4AF37',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  timeHint: {
+    color: '#999',
+    fontSize: 12,
+    marginLeft: 10,
   },
   input: {
     backgroundColor: '#2a2a2a',

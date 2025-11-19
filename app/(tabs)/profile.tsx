@@ -11,14 +11,21 @@ import {
   BackHandler,
   Platform,
   Dimensions,
+  Switch,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
 import CustomButton from '../../src/components/CustomButton';
-import { saveUserProfile, getProfile } from '../../src/services/api';
+import { 
+  saveUserProfile, 
+  getProfile, 
+  getNotificationPreferences, 
+  updateNotificationPreferences 
+} from '../../src/services/api';
 import { useAuth } from '../../src/context/AuthContext';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
+import NotificationService from '../../src/services/notificationService';
 
 const { width } = Dimensions.get('window');
 
@@ -74,6 +81,11 @@ const ProfileScreen = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showEditForm, setShowEditForm] = useState(false);
+  
+  // Estados para notificaciones
+  const [consumptionReminders, setConsumptionReminders] = useState(true);
+  const [trainingAlerts, setTrainingAlerts] = useState(true);
+  const [preferredTime, setPreferredTime] = useState('09:00');
 
   // Función para cargar la información del usuario
   const loadUserProfile = async () => {
@@ -86,7 +98,10 @@ const ProfileScreen = () => {
     setError(null);
 
     try {
-      const profileResponse = await getProfile(user.id);
+      const [profileResponse, notifPrefs] = await Promise.all([
+        getProfile(user.id),
+        getNotificationPreferences(user.id).catch(() => ({ data: null }))
+      ]);
 
       if (profileResponse.success && profileResponse.data) {
         // Extract the user info from the response structure
@@ -110,6 +125,23 @@ const ProfileScreen = () => {
           console.log('Mensaje del servidor:', profileResponse.message);
         }
       }
+      
+      // Cargar preferencias de notificaciones
+      if (notifPrefs?.data) {
+        const consumptionValue = notifPrefs.data.consumption_reminders === true || notifPrefs.data.consumption_reminders === 1;
+        const trainingValue = notifPrefs.data.training_alerts === true || notifPrefs.data.training_alerts === 1;
+        
+        setConsumptionReminders(consumptionValue);
+        setTrainingAlerts(trainingValue);
+        setPreferredTime(notifPrefs.data.preferred_time?.substring(0, 5) ?? '09:00');
+        
+        console.log('Preferencias cargadas:', { 
+          consumption: consumptionValue, 
+          training: trainingValue 
+        });
+      } else {
+        console.log('No se encontraron preferencias, usando valores por defecto');
+      }
     } catch (err: any) {
       console.error('Error al cargar perfil:', err);
       setError(err.message || 'Error al cargar la información del perfil');
@@ -121,7 +153,9 @@ const ProfileScreen = () => {
   // Cargar perfil cuando se enfoca la pantalla
   useFocusEffect(
     useCallback(() => {
-      loadUserProfile();
+      if (user?.id) {
+        loadUserProfile();
+      }
       return () => {};
     }, [user?.id])
   );
@@ -138,6 +172,47 @@ const ProfileScreen = () => {
         },
       },
     ]);
+  };
+
+  // Manejadores de notificaciones
+  const handleToggleConsumptionReminders = async (value: boolean) => {
+    setConsumptionReminders(value);
+    await updateNotificationPrefs(value, trainingAlerts, preferredTime);
+  };
+
+  const handleToggleTrainingAlerts = async (value: boolean) => {
+    setTrainingAlerts(value);
+    await updateNotificationPrefs(consumptionReminders, value, preferredTime);
+    
+    if (value) {
+      // Programar alerta de entrenamiento
+      await NotificationService.scheduleTrainingAlert(preferredTime);
+    } else {
+      // Cancelar notificaciones
+      await NotificationService.cancelAllNotifications();
+    }
+  };
+
+  const updateNotificationPrefs = async (
+    consumption: boolean,
+    training: boolean,
+    time: string
+  ) => {
+    if (!user?.id) return;
+
+    try {
+      const response = await updateNotificationPreferences(user.id, {
+        consumption_reminders: consumption,
+        training_alerts: training,
+        preferred_time: time + ':00',
+      });
+      console.log('Preferencias guardadas:', response);
+    } catch (error) {
+      console.error('Error actualizando preferencias:', error);
+      Alert.alert('Error', 'No se pudieron guardar las preferencias de notificaciones');
+      // Revertir el cambio en caso de error
+      await loadUserProfile();
+    }
   };
 
   // Manejar cierre de aplicación
@@ -344,6 +419,46 @@ const ProfileScreen = () => {
           </Text>
         </View>
       )}
+
+      {/* Card de Notificaciones */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Ionicons name='notifications' size={24} color='#D4AF37' />
+          <Text style={styles.cardTitle}>Notificaciones</Text>
+        </View>
+
+        <View style={styles.switchRow}>
+          <View style={styles.switchInfo}>
+            <Ionicons name='time' size={20} color='#999' />
+            <View style={styles.switchTextContainer}>
+              <Text style={styles.switchLabel}>Recordatorios de consumo</Text>
+              <Text style={styles.switchSubtext}>Notificaciones sobre productos recomendados</Text>
+            </View>
+          </View>
+          <Switch
+            value={consumptionReminders}
+            onValueChange={handleToggleConsumptionReminders}
+            trackColor={{ false: '#333', true: '#D4AF3780' }}
+            thumbColor={consumptionReminders ? '#D4AF37' : '#ccc'}
+          />
+        </View>
+
+        <View style={styles.switchRow}>
+          <View style={styles.switchInfo}>
+            <Ionicons name='barbell' size={20} color='#999' />
+            <View style={styles.switchTextContainer}>
+              <Text style={styles.switchLabel}>Alertas de entrenamientos</Text>
+              <Text style={styles.switchSubtext}>Recordatorio diario para entrenar</Text>
+            </View>
+          </View>
+          <Switch
+            value={trainingAlerts}
+            onValueChange={handleToggleTrainingAlerts}
+            trackColor={{ false: '#333', true: '#D4AF3780' }}
+            thumbColor={trainingAlerts ? '#D4AF37' : '#ccc'}
+          />
+        </View>
+      </View>
 
       {/* Botones de acción */}
       <View style={styles.buttonContainer}>
@@ -869,6 +984,35 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     textAlign: 'right',
+  },
+
+  // Notificaciones
+  switchRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2a2a2a',
+  },
+  switchInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  switchTextContainer: {
+    flex: 1,
+  },
+  switchLabel: {
+    fontSize: 15,
+    color: '#fff',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  switchSubtext: {
+    fontSize: 13,
+    color: '#999',
   },
 
   // Estado vacío
