@@ -20,6 +20,7 @@ import {
   deleteTrainingSession,
   getTrainingSession,
   getNotificationPreferences,
+  API_URL,
 } from '../../src/services/api';
 import TrainingSessionItem from '../../src/components/TrainingSessionItem';
 import AddTrainingModal from '../../src/components/AddTrainingModal';
@@ -67,18 +68,18 @@ export default function TrainingScreen() {
         ...trainingData,
       });
       setShowAddModal(false);
-      
+
       // Obtener la sesión y abrir el modal inmediatamente
       // El modal se encargará de reintentar obtener las recomendaciones
       if (newSession && newSession.session_id) {
         const fullSession = await getTrainingSession(newSession.session_id);
         setSelectedSession(fullSession);
         setShowDetailModal(true);
-        
+
         // Programar notificaciones de consumo si están habilitadas
         await scheduleConsumptionNotifications(fullSession);
       }
-      
+
       await fetchTrainingSessions(); // Refrescar la lista después de agregar
       setLoading(false);
     } catch (error) {
@@ -94,37 +95,90 @@ export default function TrainingScreen() {
     try {
       // Verificar si el usuario tiene habilitadas las notificaciones de consumo
       const prefs = await getNotificationPreferences(user.id);
-      if (!prefs?.data?.consumption_reminders) return;
+      if (!prefs?.data?.consumption_reminders) {
+        console.log('❌ Notificaciones de consumo desactivadas');
+        return;
+      }
 
-      // Esperar un momento para que se generen las recomendaciones
-      setTimeout(async () => {
-        try {
-          const updatedSession = await getTrainingSession(session.session_id);
-          const recommendations = updatedSession?.recommendations || [];
-          
-          // Combinar fecha y hora del entrenamiento
-          const sessionDate = new Date(updatedSession.session_date);
-          if (updatedSession.start_time) {
-            const [hours, minutes] = updatedSession.start_time.split(':');
-            sessionDate.setHours(parseInt(hours), parseInt(minutes), 0);
+      console.log('✅ Notificaciones de consumo activadas, programando...');
+
+      // Función para intentar obtener recomendaciones con reintentos
+      const fetchRecommendationsWithRetry = async (maxAttempts = 3, delayMs = 4000) => {
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          console.log(`🔄 Intento ${attempt}/${maxAttempts} de obtener recomendaciones...`);
+
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+
+          // Obtener recomendaciones directamente del endpoint correcto
+          const response = await fetch(
+            `${API_URL}/api/training/${session.session_id}/recommendations?userId=${user.id}`
+          );
+          const recommendations = await response.json();
+
+          console.log(`📦 Respuesta del servidor:`, recommendations);
+
+          if (recommendations && recommendations.length > 0) {
+            console.log(`✅ ${recommendations.length} recomendaciones encontradas!`);
+            const updatedSession = await getTrainingSession(session.session_id);
+            return { session: updatedSession, recommendations };
           }
 
-          for (const rec of recommendations) {
-            if (rec.consumption_timing && rec.product_name) {
-              await NotificationService.scheduleConsumptionReminder(
-                rec.product_name,
-                rec.consumption_timing,
-                rec.timing_minutes,
-                sessionDate
-              );
-            }
-          }
-          
-          console.log(`📅 ${recommendations.length} notificaciones programadas para el entrenamiento`);
-        } catch (error) {
-          console.error('Error programando notificaciones:', error);
+          console.log(`⏳ Aún no hay recomendaciones (intento ${attempt}/${maxAttempts})`);
         }
-      }, 5000); // Esperar 5 segundos para que se generen las recomendaciones
+
+        console.log('❌ No se generaron recomendaciones después de varios intentos');
+        return null;
+      };
+
+      const result = await fetchRecommendationsWithRetry();
+
+      if (!result) {
+        Alert.alert(
+          'Sin recomendaciones',
+          'No se pudieron generar recomendaciones para este entrenamiento. Intenta de nuevo más tarde.'
+        );
+        return;
+      }
+
+      const { session: updatedSession, recommendations } = result;
+
+      // Combinar fecha y hora del entrenamiento correctamente
+      const dateStr = updatedSession.session_date.split('T')[0]; // YYYY-MM-DD
+      const timeStr = updatedSession.start_time || '18:00:00'; // HH:MM:SS
+
+      // Crear fecha en zona horaria local
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const [hours, minutes] = timeStr.split(':').map(Number);
+
+      const sessionDate = new Date(year, month - 1, day, hours, minutes, 0);
+
+      console.log(`🕐 Fecha del entrenamiento: ${dateStr}`);
+      console.log(`🕐 Hora del entrenamiento: ${timeStr}`);
+      console.log(`🕐 Fecha completa: ${sessionDate.toLocaleString()}`);
+      console.log(`🕐 Hora actual: ${new Date().toLocaleString()}`);
+
+      let programadas = 0;
+      for (const rec of recommendations) {
+        if (rec.consumption_timing && rec.product_name) {
+          const notifId = await NotificationService.scheduleConsumptionReminder(
+            rec.product_name,
+            rec.consumption_timing,
+            rec.timing_minutes,
+            sessionDate
+          );
+          if (notifId) programadas++;
+        }
+      }
+
+      console.log(`📅 ${programadas} notificaciones programadas exitosamente`);
+
+      if (programadas > 0) {
+        Alert.alert(
+          '🔔 Notificaciones programadas',
+          `Se programaron ${programadas} recordatorios de consumo`,
+          [{ text: 'OK' }]
+        );
+      }
     } catch (error) {
       console.error('Error verificando preferencias:', error);
     }

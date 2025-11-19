@@ -12,15 +12,16 @@ import {
   Platform,
   Dimensions,
   Switch,
+  Linking,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
 import CustomButton from '../../src/components/CustomButton';
-import { 
-  saveUserProfile, 
-  getProfile, 
-  getNotificationPreferences, 
-  updateNotificationPreferences 
+import {
+  saveUserProfile,
+  getProfile,
+  getNotificationPreferences,
+  updateNotificationPreferences,
 } from '../../src/services/api';
 import { useAuth } from '../../src/context/AuthContext';
 import { useRouter } from 'expo-router';
@@ -81,7 +82,7 @@ const ProfileScreen = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showEditForm, setShowEditForm] = useState(false);
-  
+
   // Estados para notificaciones
   const [consumptionReminders, setConsumptionReminders] = useState(true);
   const [trainingAlerts, setTrainingAlerts] = useState(true);
@@ -100,7 +101,7 @@ const ProfileScreen = () => {
     try {
       const [profileResponse, notifPrefs] = await Promise.all([
         getProfile(user.id),
-        getNotificationPreferences(user.id).catch(() => ({ data: null }))
+        getNotificationPreferences(user.id).catch(() => ({ data: null })),
       ]);
 
       if (profileResponse.success && profileResponse.data) {
@@ -125,19 +126,22 @@ const ProfileScreen = () => {
           console.log('Mensaje del servidor:', profileResponse.message);
         }
       }
-      
+
       // Cargar preferencias de notificaciones
       if (notifPrefs?.data) {
-        const consumptionValue = notifPrefs.data.consumption_reminders === true || notifPrefs.data.consumption_reminders === 1;
-        const trainingValue = notifPrefs.data.training_alerts === true || notifPrefs.data.training_alerts === 1;
-        
+        const consumptionValue =
+          notifPrefs.data.consumption_reminders === true ||
+          notifPrefs.data.consumption_reminders === 1;
+        const trainingValue =
+          notifPrefs.data.training_alerts === true || notifPrefs.data.training_alerts === 1;
+
         setConsumptionReminders(consumptionValue);
         setTrainingAlerts(trainingValue);
         setPreferredTime(notifPrefs.data.preferred_time?.substring(0, 5) ?? '09:00');
-        
-        console.log('Preferencias cargadas:', { 
-          consumption: consumptionValue, 
-          training: trainingValue 
+
+        console.log('Preferencias cargadas:', {
+          consumption: consumptionValue,
+          training: trainingValue,
         });
       } else {
         console.log('No se encontraron preferencias, usando valores por defecto');
@@ -176,28 +180,74 @@ const ProfileScreen = () => {
 
   // Manejadores de notificaciones
   const handleToggleConsumptionReminders = async (value: boolean) => {
+    if (value) {
+      // Solicitar permisos antes de activar
+      const hasPermission = await NotificationService.requestPermissions();
+      if (!hasPermission) {
+        Alert.alert(
+          'Permisos de notificaciones',
+          'Para recibir recordatorios, debes permitir las notificaciones en la configuración de tu dispositivo.',
+          [
+            { text: 'Cancelar', style: 'cancel' },
+            {
+              text: 'Abrir Configuración',
+              onPress: () => openAppSettings(),
+            },
+          ]
+        );
+        return;
+      }
+    }
+
     setConsumptionReminders(value);
     await updateNotificationPrefs(value, trainingAlerts, preferredTime);
   };
 
   const handleToggleTrainingAlerts = async (value: boolean) => {
-    setTrainingAlerts(value);
-    await updateNotificationPrefs(consumptionReminders, value, preferredTime);
-    
     if (value) {
+      // Solicitar permisos antes de activar
+      const hasPermission = await NotificationService.requestPermissions();
+      if (!hasPermission) {
+        Alert.alert(
+          'Permisos de notificaciones',
+          'Para recibir alertas de entrenamiento, debes permitir las notificaciones en la configuración de tu dispositivo.',
+          [
+            { text: 'Cancelar', style: 'cancel' },
+            {
+              text: 'Abrir Configuración',
+              onPress: () => openAppSettings(),
+            },
+          ]
+        );
+        return;
+      }
+
       // Programar alerta de entrenamiento
       await NotificationService.scheduleTrainingAlert(preferredTime);
     } else {
       // Cancelar notificaciones
       await NotificationService.cancelAllNotifications();
     }
+
+    setTrainingAlerts(value);
+    await updateNotificationPrefs(consumptionReminders, value, preferredTime);
   };
 
-  const updateNotificationPrefs = async (
-    consumption: boolean,
-    training: boolean,
-    time: string
-  ) => {
+  const openAppSettings = async () => {
+    try {
+      if (Platform.OS === 'ios') {
+        await Linking.openURL('app-settings:');
+      } else {
+        // Android - abrir configuración de la app
+        await Linking.openSettings();
+      }
+    } catch (error) {
+      console.error('Error abriendo configuración:', error);
+      Alert.alert('Error', 'No se pudo abrir la configuración');
+    }
+  };
+
+  const updateNotificationPrefs = async (consumption: boolean, training: boolean, time: string) => {
     if (!user?.id) return;
 
     try {
