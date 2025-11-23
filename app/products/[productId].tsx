@@ -18,6 +18,8 @@ import {
 
 import { getProductImageSource } from '../../src/utils/imageUtils';
 import { useLocalSearchParams, Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -141,8 +143,13 @@ const ProductDetailScreen = () => {
           headerTitleStyle: {
             color: '#D4AF37',
           },
+          headerShadowVisible: false,
+          contentStyle: {
+            backgroundColor: '#1a1919',
+          },
         }}
       />
+      <StatusBar style='light' />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Hero Image Section */}
         <View style={styles.imageContainer}>
@@ -245,6 +252,10 @@ const ProductDetailScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#1a1919',
+  },
   container: {
     flex: 1,
     backgroundColor: '#1a1919',

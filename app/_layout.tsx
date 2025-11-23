@@ -31,12 +31,40 @@ function RootLayoutNav() {
   }
 
   return (
-    <Stack initialRouteName={user ? '(tabs)' : 'login'}>
+    <Stack
+      initialRouteName={user ? '(tabs)' : 'login'}
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: '#1a1919',
+        },
+        headerTintColor: '#D4AF37',
+        headerTitleStyle: {
+          color: '#D4AF37',
+        },
+        contentStyle: {
+          backgroundColor: '#1a1919',
+        },
+      }}
+    >
       <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
       <Stack.Screen name='login' options={{ headerShown: false }} />
       <Stack.Screen name='register' options={{ headerShown: false }} />
       <Stack.Screen name='loading-profile' options={{ headerShown: false }} />
       <Stack.Screen name='create-profile' options={{ headerShown: false }} />
+      <Stack.Screen
+        name='products/[productId]'
+        options={{
+          headerStyle: {
+            backgroundColor: '#1a1919',
+          },
+          headerTintColor: '#D4AF37',
+          headerTitleStyle: {
+            color: '#D4AF37',
+          },
+          headerShadowVisible: false,
+          presentation: 'card',
+        }}
+      />
     </Stack>
   );
 }
