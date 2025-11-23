@@ -304,6 +304,8 @@ export const searchProducts = async (filters: {
   category?: string;
   timing?: string;
   type?: string;
+  limit?: number;
+  offset?: number;
 }) => {
   try {
     const params = new URLSearchParams();
@@ -312,6 +314,8 @@ export const searchProducts = async (filters: {
     if (filters.category) params.append('category', filters.category);
     if (filters.timing) params.append('timing', filters.timing);
     if (filters.type) params.append('type', filters.type);
+    if (filters.limit) params.append('limit', filters.limit.toString());
+    if (filters.offset) params.append('offset', filters.offset.toString());
 
     const response = await api.get(`/products/search?${params.toString()}`);
 
@@ -331,7 +335,11 @@ export const searchProducts = async (filters: {
       image_url: product.image_url || '/assets/default-product.png',
     }));
 
-    return processedProducts;
+    return {
+      products: processedProducts,
+      total: response.data?.total || processedProducts.length,
+      hasMore: response.data?.hasMore || false,
+    };
   } catch (error) {
     console.error('Error en searchProducts:', error);
     throw error;

@@ -58,6 +58,10 @@ const ProductListScreen = () => {
   const [selectedTiming, setSelectedTiming] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [productCount, setProductCount] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSize = 20;
 
   // Cargar datos iniciales: categorías y productos
   useEffect(() => {
@@ -67,10 +71,19 @@ const ProductListScreen = () => {
         const categoriesResponse = await getProductCategories();
         setCategories(categoriesResponse);
 
-        // Cargar todos los productos por defecto (sin filtro de categoría)
-        const allProducts = await searchProducts({ q: '', category: '', timing: '', type: '' });
-        setProducts(allProducts);
-        setProductCount(allProducts.length);
+        // Cargar productos por defecto (con paginación)
+        const result = await searchProducts({
+          q: '',
+          category: '',
+          timing: '',
+          type: '',
+          limit: pageSize,
+          offset: 0,
+        });
+        setProducts(result.products);
+        setProductCount(result.total);
+        setHasMore(result.hasMore);
+        setCurrentPage(0);
         setSelectedCategory(null); // null = "Todos"
       } catch (error) {
         console.error('Error loading products:', error);
@@ -90,43 +103,75 @@ const ProductListScreen = () => {
       setIsSearching(true);
       setSelectedTiming('');
 
-      const results = await searchProducts({
+      const result = await searchProducts({
         q: searchQuery,
         category: categoryId.toString(),
         timing: selectedTiming,
+        limit: pageSize,
+        offset: 0,
       });
 
-      setProducts(results);
-      setProductCount(results.length);
+      setProducts(result.products);
+      setProductCount(result.total);
+      setHasMore(result.hasMore);
+      setCurrentPage(0);
     } catch (error) {
       console.error('Error al cargar productos:', error);
       setProducts([]);
       setProductCount(0);
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = async () => {
+  const handleSearch = async (resetPage = true) => {
     try {
-      setLoading(true);
+      if (resetPage) {
+        setLoading(true);
+        setCurrentPage(0);
+      } else {
+        setLoadingMore(true);
+      }
       setIsSearching(true);
 
       const categoryFilter = selectedCategory !== null ? selectedCategory.toString() : '';
-      const results = await searchProducts({
+      const offset = resetPage ? 0 : currentPage * pageSize;
+
+      const result = await searchProducts({
         q: searchQuery,
         category: categoryFilter,
         timing: selectedTiming,
+        limit: pageSize,
+        offset,
       });
 
-      setProducts(results);
-      setProductCount(results.length);
+      if (resetPage) {
+        setProducts(result.products);
+        setCurrentPage(1);
+      } else {
+        setProducts([...products, ...result.products]);
+        setCurrentPage(currentPage + 1);
+      }
+
+      setProductCount(result.total);
+      setHasMore(result.hasMore);
     } catch (error) {
       console.error('Error en búsqueda:', error);
-      setProducts([]);
-      setProductCount(0);
+      if (resetPage) {
+        setProducts([]);
+        setProductCount(0);
+        setHasMore(false);
+      }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMoreProducts = () => {
+    if (!loadingMore && hasMore && !loading) {
+      handleSearch(false);
     }
   };
 
@@ -143,7 +188,7 @@ const ProductListScreen = () => {
   // Ejecutar búsqueda cuando cambien los filtros
   useEffect(() => {
     if (isSearching || selectedTiming || selectedCategory !== null) {
-      handleSearch();
+      handleSearch(true);
     }
   }, [selectedTiming, selectedCategory]);
 
@@ -163,10 +208,14 @@ const ProductListScreen = () => {
     setSelectedTiming('');
     setSelectedCategory(null);
     setIsSearching(false);
-    searchProducts({ q: '', category: '', timing: '', type: '' }).then((results) => {
-      setProducts(results);
-      setProductCount(results.length);
-    });
+    setCurrentPage(0);
+    searchProducts({ q: '', category: '', timing: '', type: '', limit: pageSize, offset: 0 }).then(
+      (result) => {
+        setProducts(result.products);
+        setProductCount(result.total);
+        setHasMore(result.hasMore);
+      }
+    );
   };
 
   const renderProductItem = ({ item }: { item: Product }) => {
@@ -244,9 +293,18 @@ const ProductListScreen = () => {
                 setSelectedTiming('');
                 setSearchQuery('');
                 setIsSearching(true);
-                searchProducts({ q: '', category: '', timing: '', type: '' }).then((results) => {
-                  setProducts(results);
-                  setProductCount(results.length);
+                searchProducts({
+                  q: '',
+                  category: '',
+                  timing: '',
+                  type: '',
+                  limit: pageSize,
+                  offset: 0,
+                }).then((result) => {
+                  setProducts(result.products);
+                  setProductCount(result.total);
+                  setHasMore(result.hasMore);
+                  setCurrentPage(0);
                 });
               }}
             >
@@ -356,6 +414,16 @@ const ProductListScreen = () => {
           renderItem={renderProductItem}
           keyExtractor={(item, index) => `product-${item.product_id}-${index}`}
           contentContainerStyle={styles.listContainer}
+          onEndReached={loadMoreProducts}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={styles.loadingMoreContainer}>
+                <ActivityIndicator size='small' color='#D4AF37' />
+                <Text style={styles.loadingMoreText}>Cargando más productos...</Text>
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name='cube-outline' size={60} color='#999' style={{ marginBottom: 15 }} />
@@ -556,6 +624,16 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingHorizontal: 16,
     paddingBottom: 20,
+  },
+  loadingMoreContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingMoreText: {
+    color: '#999',
+    fontSize: 14,
+    marginTop: 8,
   },
   productItem: {
     flexDirection: 'row',
