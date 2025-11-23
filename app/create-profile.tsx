@@ -139,21 +139,18 @@ const CreateProfileScreen = () => {
       if (response.success) {
         // Update the profile state and then navigate
         setHasProfile(true);
-        
+
         // Small delay to ensure state is updated before navigation
         setTimeout(() => {
           Alert.alert(
             'Perfil Guardado',
-            '¡Tu perfil ha sido creado con éxito! Ahora analizaremos tus datos para ofrecerte recomendaciones personalizadas.',
+            '¡Tu perfil ha sido creado con éxito! Estamos generando tus recomendaciones personalizadas...',
             [
               {
-                text: 'Continuar',
+                text: 'Ver Recomendaciones',
                 onPress: () => {
-                  // Use replace to prevent going back to the profile creation
-                  router.replace({
-                    pathname: '/loading-profile',
-                    params: { fromProfileCreation: 'true' },
-                  });
+                  // Navigate to recommendations screen
+                  router.replace('/(tabs)/recommendations');
                 },
               },
             ]

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -12,7 +12,7 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { getUserTrainingSessions } from '../../src/services/api';
 
@@ -42,40 +42,48 @@ const HomeScreen = () => {
     }).start();
   }, []);
 
-  // Cargar estadísticas del usuario
+  // Función para cargar estadísticas
+  const loadStats = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      const sessions = await getUserTrainingSessions(user.id);
+
+      // Calcular estadísticas
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      const thisWeekSessions = sessions.filter((s: any) => {
+        const sessionDate = new Date(s.session_date);
+        return sessionDate >= weekAgo;
+      });
+
+      const totalMinutes = sessions.reduce(
+        (sum: number, s: any) => sum + (s.duration_min || 0),
+        0
+      );
+
+      setStats({
+        trainings: sessions.length,
+        totalMinutes: totalMinutes,
+        thisWeek: thisWeekSessions.length,
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  }, [user?.id]);
+
+  // Cargar estadísticas cuando se monta el componente
   useEffect(() => {
-    const loadStats = async () => {
-      if (!user?.id) return;
-
-      try {
-        const sessions = await getUserTrainingSessions(user.id);
-
-        // Calcular estadísticas
-        const now = new Date();
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-        const thisWeekSessions = sessions.filter((s: any) => {
-          const sessionDate = new Date(s.session_date);
-          return sessionDate >= weekAgo;
-        });
-
-        const totalMinutes = sessions.reduce(
-          (sum: number, s: any) => sum + (s.duration_min || 0),
-          0
-        );
-
-        setStats({
-          trainings: sessions.length,
-          totalMinutes: totalMinutes,
-          thisWeek: thisWeekSessions.length,
-        });
-      } catch (error) {
-        console.error('Error loading stats:', error);
-      }
-    };
-
     loadStats();
-  }, [user]);
+  }, [loadStats]);
+
+  // Recargar estadísticas cada vez que la pantalla se enfoca
+  useFocusEffect(
+    useCallback(() => {
+      loadStats();
+    }, [loadStats])
+  );
 
   // Features para el carrusel
   const features = [

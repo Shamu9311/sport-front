@@ -35,6 +35,8 @@ const RecommendationScreen = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [pollingAttempts, setPollingAttempts] = useState(0);
 
   const fetchRecommendations = async (isRefresh = false) => {
     if (!userToken) {
@@ -68,6 +70,20 @@ const RecommendationScreen = () => {
         feedbackResponse.feedback.forEach((f: any) => {
           feedbackMap[f.product_id] = f.feedback;
         });
+      }
+
+      // Siempre inicializar arrays vacíos
+      setRecommendations([]);
+      setNegativeRecommendations([]);
+      setError(null);
+
+      // Si no hay recomendaciones, activar modo de generación
+      if (!savedRecommendations || !Array.isArray(savedRecommendations) || savedRecommendations.length === 0) {
+        setIsGenerating(true);
+        setPollingAttempts(0);
+      } else {
+        setIsGenerating(false);
+        setPollingAttempts(0);
       }
 
       if (
@@ -129,14 +145,8 @@ const RecommendationScreen = () => {
 
         setRecommendations(uniquePositiveRecs);
         setNegativeRecommendations(uniqueNegativeRecs);
-      } else {
-        console.log('No se encontraron recomendaciones guardadas');
-        setError(
-          'No hay recomendaciones disponibles. Visita la sección de productos para generar recomendaciones personalizadas.'
-        );
-        setRecommendations([]);
-        setNegativeRecommendations([]);
       }
+      // Si no hay recomendaciones, simplemente dejar los arrays vacíos sin mostrar error
     } catch (err: any) {
       let errorMessage = 'Error al obtener recomendaciones. Intenta más tarde.';
       if (err.response && err.response.data && err.response.data.message) {
@@ -152,6 +162,50 @@ const RecommendationScreen = () => {
       else setRefreshing(false);
     }
   };
+
+  // Polling para verificar si las recomendaciones ya están listas
+  useEffect(() => {
+    if (!isGenerating) {
+      return;
+    }
+
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    const pollingInterval = setInterval(async () => {
+      attempts += 1;
+      console.log(`🔄 Verificando recomendaciones (intento ${attempts}/${maxAttempts})...`);
+      
+      if (attempts >= maxAttempts) {
+        console.log('⏱️ Tiempo máximo de espera alcanzado. Deteniendo polling...');
+        setIsGenerating(false);
+        setPollingAttempts(0);
+        clearInterval(pollingInterval);
+        return;
+      }
+
+      try {
+        const { user } = context;
+        const userId = user?.id;
+        if (userId) {
+          const savedRecommendations = await getSavedRecommendations(userId);
+          if (savedRecommendations && Array.isArray(savedRecommendations) && savedRecommendations.length > 0) {
+            console.log(`✅ Recomendaciones encontradas! Deteniendo polling...`);
+            setIsGenerating(false);
+            setPollingAttempts(0);
+            clearInterval(pollingInterval);
+            // Recargar las recomendaciones completas
+            await fetchRecommendations(true);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('Error en polling de recomendaciones:', err);
+      }
+    }, 3000); // Verificar cada 3 segundos
+
+    return () => clearInterval(pollingInterval);
+  }, [isGenerating, userToken]);
 
   useFocusEffect(
     useCallback(() => {
@@ -360,11 +414,19 @@ const RecommendationScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {loading && !refreshing && (
-        <ActivityIndicator size='large' color='#D4AF37' style={styles.loader} />
+      {(loading || isGenerating) && !refreshing && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size='large' color='#D4AF37' style={styles.loader} />
+          {isGenerating && (
+            <Text style={styles.generatingText}>
+              Generando recomendaciones personalizadas...
+              {'\n'}Esto puede tomar unos momentos
+            </Text>
+          )}
+        </View>
       )}
 
-      {!loading && (currentRecommendations.length > 0 || error) ? (
+      {!loading && !isGenerating && (currentRecommendations.length > 0 || error) ? (
         <FlatList
           data={currentRecommendations}
           renderItem={renderRecommendationItem}
@@ -408,7 +470,7 @@ const RecommendationScreen = () => {
           }
         />
       ) : (
-        !loading && renderEmptyOrErrorState()
+        !loading && !isGenerating && renderEmptyOrErrorState()
       )}
     </View>
   );
@@ -500,6 +562,19 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginTop: 100,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 30,
+  },
+  generatingText: {
+    color: '#D4AF37',
+    textAlign: 'center',
+    fontSize: 16,
+    marginTop: 20,
+    lineHeight: 24,
   },
   centeredMessageContainer: {
     flex: 1,

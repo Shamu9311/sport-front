@@ -385,10 +385,16 @@ export const getSavedRecommendations = async (userId: number) => {
     ) {
       recommendations = response.data.recommendations;
     }
+    // Si no hay recomendaciones, retornar array vacío sin error
     return recommendations;
-  } catch (error) {
+  } catch (error: any) {
+    // Si el error es porque no hay recomendaciones, retornar array vacío
+    if (error.response?.status === 200 && error.response?.data?.recommendations?.length === 0) {
+      return [];
+    }
     console.error('Error al obtener recomendaciones guardadas:', error);
-    throw error;
+    // Retornar array vacío en lugar de lanzar error
+    return [];
   }
 };
 
