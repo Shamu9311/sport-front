@@ -1,68 +1,92 @@
 // Sport/app/(tabs)/_layout.tsx
 import React from 'react';
 import { Tabs } from 'expo-router';
-import FontAwesome from '@expo/vector-icons/FontAwesome'; // Usas FontAwesome
-import { MaterialCommunityIcons } from '@expo/vector-icons'; // Necesitamos este para el ícono 'brain'
+import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-// Función helper para el icono de FontAwesome (la mantienes)
+// Función helper para el icono de FontAwesome
 function TabBarIconFA(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
+  focused?: boolean;
 }) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+  const iconSize = props.focused ? 26 : 24;
+  return <FontAwesome size={iconSize} {...props} />;
 }
 
-// Función helper para el icono de MaterialCommunityIcons (nueva)
+// Función helper para el icono de MaterialCommunityIcons
 function TabBarIconMCI(props: {
   name: keyof typeof MaterialCommunityIcons.glyphMap;
   color: string;
   focused?: boolean;
 }) {
-  // Hacemos el ícono 'focused' un poco más grande si lo deseas, como en mi ejemplo JS
-  const iconSize = props.focused ? 30 : 28;
-  return (
-    <MaterialCommunityIcons
-      size={iconSize}
-      style={{ marginBottom: -3 }}
-      name={props.name}
-      color={props.color}
-    />
-  );
+  const iconSize = props.focused ? 26 : 24;
+  return <MaterialCommunityIcons size={iconSize} name={props.name} color={props.color} />;
 }
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#D4AF37', // Tu color activo
-        tabBarInactiveTintColor: 'gray',
-        tabBarStyle: { backgroundColor: '#1a1a19' }, // Color de fondo de la barra
-        // headerShown: true, // Lo mantenemos si esa es tu preferencia global
-        // Si quieres controlar headerShown individualmente por pantalla, ponlo en 'options' de cada Tab.Screen
-        // Por ejemplo, para Recommendations podríamos querer un header diferente o ninguno,
-        // pero por ahora, usaremos el default.
+        tabBarActiveTintColor: '#D4AF37',
+        tabBarInactiveTintColor: '#666',
+        tabBarStyle: {
+          backgroundColor: '#1a1919',
+          borderTopWidth: 1,
+          borderTopColor: '#333',
+          height: Platform.OS === 'ios' ? 38 + insets.bottom : 38,
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom : 3,
+          paddingTop: 6,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.25,
+          shadowRadius: 3.84,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+          marginTop: 4,
+          marginBottom: 0,
+        },
+        tabBarIconStyle: {
+          marginTop: 0,
+          marginBottom: 0,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 0,
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+        },
       }}
     >
       <Tabs.Screen
-        name='index' // Asume que tienes un archivo app/(tabs)/index.tsx
+        name='index'
         options={{
           title: 'Inicio',
-          tabBarIcon: ({ color }) => <TabBarIconFA name='home' color={color} />,
-          headerShown: false, // Ejemplo: Si quieres que solo esta tab no tenga header global
-        }}
-      />
-      <Tabs.Screen
-        name='products' // Nombre de tu archivo para la lista de productos (ej. products.tsx)
-        options={{
-          title: 'Productos',
-          tabBarIcon: ({ color }) => <TabBarIconFA name='shopping-bag' color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIconFA name='home' color={color} focused={focused} />
+          ),
           headerShown: false,
         }}
       />
-
-      {/* --- PANTALLA DE ENTRENAMIENTO --- */}
       <Tabs.Screen
-        name='training' // DEBE COINCIDIR con el nombre del archivo: app/(tabs)/training.tsx
+        name='products'
+        options={{
+          title: 'Productos',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIconFA name='shopping-bag' color={color} focused={focused} />
+          ),
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
+        name='training'
         options={{
           title: 'Entrenar',
           tabBarIcon: ({ color, focused }) => (
@@ -71,10 +95,8 @@ export default function TabLayout() {
           headerShown: false,
         }}
       />
-
-      {/* --- PANTALLA DE RECOMENDACIONES --- */}
       <Tabs.Screen
-        name='recommendations' // DEBE COINCIDIR con el nombre del archivo: app/(tabs)/recommendations.tsx
+        name='recommendations'
         options={{
           title: 'Sugerencias',
           tabBarIcon: ({ color, focused }) => (
@@ -84,17 +106,16 @@ export default function TabLayout() {
               focused={focused}
             />
           ),
-          // headerTitle: 'Tus Recomendaciones', // Título para la cabecera de esta pantalla si headerShown es true
-          headerShown: false, // Decide si quieres cabecera para esta pantalla específica
+          headerShown: false,
         }}
       />
-      {/* --- FIN NUEVA PANTALLA --- */}
-
       <Tabs.Screen
-        name='profile' // Nombre de tu archivo para el perfil (ej. profile.tsx)
+        name='profile'
         options={{
           title: 'Perfil',
-          tabBarIcon: ({ color }) => <TabBarIconFA name='user' color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIconFA name='user' color={color} focused={focused} />
+          ),
           headerShown: false,
         }}
       />

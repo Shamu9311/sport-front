@@ -3,7 +3,7 @@ import { UserData, UserProfileData } from '../types/UserTypes';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const API_URL = 'http://192.168.18.222:5000';
+export const API_URL = 'http://192.168.18.12:5000';
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,

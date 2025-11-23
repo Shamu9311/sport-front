@@ -86,53 +86,61 @@ const ProductFilterModal: React.FC<ProductFilterModalProps> = ({
             {/* Categorías */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Categoría</Text>
-              <View style={styles.optionsContainer}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.categoryScrollContainer}
+              >
                 {categories.map((cat) => (
                   <TouchableOpacity
                     key={cat.category_id}
                     style={[
-                      styles.optionButton,
-                      selectedCategory === cat.category_id.toString() && styles.optionButtonActive,
+                      styles.categoryButton,
+                      selectedCategory === cat.category_id.toString() && styles.categoryButtonActive,
                     ]}
                     onPress={() => setSelectedCategory(cat.category_id.toString())}
                   >
                     <Text
                       style={[
-                        styles.optionText,
-                        selectedCategory === cat.category_id.toString() && styles.optionTextActive,
+                        styles.categoryText,
+                        selectedCategory === cat.category_id.toString() && styles.categoryTextActive,
                       ]}
                     >
                       {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </View>
+              </ScrollView>
             </View>
 
             {/* Timing de consumo */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Momento de consumo</Text>
-              <View style={styles.optionsContainer}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.timingScrollContainer}
+              >
                 {timingOptions.map((option) => (
                   <TouchableOpacity
                     key={option.value}
                     style={[
-                      styles.optionButton,
-                      selectedTiming === option.value && styles.optionButtonActive,
+                      styles.timingButton,
+                      selectedTiming === option.value && styles.timingButtonActive,
                     ]}
                     onPress={() => setSelectedTiming(option.value)}
                   >
                     <Text
                       style={[
-                        styles.optionText,
-                        selectedTiming === option.value && styles.optionTextActive,
+                        styles.timingText,
+                        selectedTiming === option.value && styles.timingTextActive,
                       ]}
                     >
                       {option.label}
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </View>
+              </ScrollView>
             </View>
           </ScrollView>
 
@@ -190,27 +198,58 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginBottom: 12,
   },
-  optionsContainer: {
-    gap: 10,
+  categoryScrollContainer: {
+    paddingHorizontal: 4,
+    paddingBottom: 5,
   },
-  optionButton: {
-    backgroundColor: '#252525',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+  categoryButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    marginRight: 10,
+    borderRadius: 25,
+    backgroundColor: '#1f1f1f',
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: '#444',
+    minWidth: 110,
+    alignItems: 'center',
   },
-  optionButtonActive: {
+  categoryButtonActive: {
     backgroundColor: '#D4AF37',
     borderColor: '#D4AF37',
   },
-  optionText: {
+  categoryText: {
     color: '#ccc',
-    fontSize: 15,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '600',
   },
-  optionTextActive: {
+  categoryTextActive: {
+    color: '#1a1919',
+    fontWeight: 'bold',
+  },
+  timingScrollContainer: {
+    paddingHorizontal: 4,
+    paddingBottom: 5,
+  },
+  timingButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    marginRight: 10,
+    borderRadius: 25,
+    backgroundColor: '#1f1f1f',
+    borderWidth: 1,
+    borderColor: '#444',
+    alignItems: 'center',
+  },
+  timingButtonActive: {
+    backgroundColor: '#D4AF37',
+    borderColor: '#D4AF37',
+  },
+  timingText: {
+    color: '#ccc',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  timingTextActive: {
     color: '#1a1919',
     fontWeight: 'bold',
   },

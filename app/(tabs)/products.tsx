@@ -19,7 +19,6 @@ import {
 } from '../../src/services/api';
 import { getProductImageSource } from '../../src/utils/imageUtils';
 import { useRouter } from 'expo-router';
-import ProductFilterModal, { FilterState } from '../../src/components/ProductFilterModal';
 
 const { width } = Dimensions.get('window');
 
@@ -56,9 +55,9 @@ const ProductListScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showFilterModal, setShowFilterModal] = useState(false);
-  const [filters, setFilters] = useState<FilterState>({ category: '', timing: '' });
+  const [selectedTiming, setSelectedTiming] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [productCount, setProductCount] = useState(0);
 
   // Cargar datos iniciales: categorías y productos
   useEffect(() => {
@@ -68,14 +67,11 @@ const ProductListScreen = () => {
         const categoriesResponse = await getProductCategories();
         setCategories(categoriesResponse);
 
-        if (categoriesResponse && categoriesResponse.length > 0) {
-          const firstCategory = categoriesResponse[0];
-          const productsResponse = await getProductsByCategory(
-            firstCategory.category_id.toString()
-          );
-          setProducts(productsResponse);
-          setSelectedCategory(firstCategory.category_id);
-        }
+        // Cargar todos los productos por defecto (sin filtro de categoría)
+        const allProducts = await searchProducts({ q: '', category: '', timing: '', type: '' });
+        setProducts(allProducts);
+        setProductCount(allProducts.length);
+        setSelectedCategory(null); // null = "Todos"
       } catch (error) {
         console.error('Error loading products:', error);
       } finally {
@@ -91,26 +87,21 @@ const ProductListScreen = () => {
       console.log('Categoría seleccionada:', categoryId);
       setSelectedCategory(categoryId);
       setLoading(true);
-      setIsSearching(false);
-      setSearchQuery('');
-      setFilters({ category: '', timing: '' });
+      setIsSearching(true);
+      setSelectedTiming('');
 
-      console.log('Solicitando productos para categoría:', categoryId);
-      const productsResponse = await getProductsByCategory(categoryId.toString());
+      const results = await searchProducts({
+        q: searchQuery,
+        category: categoryId.toString(),
+        timing: selectedTiming,
+      });
 
-      console.log('Respuesta de la API:', productsResponse);
-      console.log('Número de productos recibidos:', productsResponse?.length || 0);
-
-      if (productsResponse && Array.isArray(productsResponse)) {
-        console.log('Productos recibidos:', productsResponse);
-        setProducts(productsResponse);
-      } else {
-        console.warn('La respuesta no es un array de productos:', productsResponse);
-        setProducts([]);
-      }
+      setProducts(results);
+      setProductCount(results.length);
     } catch (error) {
       console.error('Error al cargar productos:', error);
       setProducts([]);
+      setProductCount(0);
     } finally {
       setLoading(false);
     }
@@ -120,37 +111,41 @@ const ProductListScreen = () => {
     try {
       setLoading(true);
       setIsSearching(true);
+
+      const categoryFilter = selectedCategory !== null ? selectedCategory.toString() : '';
       const results = await searchProducts({
         q: searchQuery,
-        category: filters.category,
-        timing: filters.timing,
+        category: categoryFilter,
+        timing: selectedTiming,
       });
+
       setProducts(results);
+      setProductCount(results.length);
     } catch (error) {
       console.error('Error en búsqueda:', error);
       setProducts([]);
+      setProductCount(0);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApplyFilters = (newFilters: FilterState) => {
-    setFilters(newFilters);
+  const handleTimingFilter = (timing: string) => {
+    setSelectedTiming(timing);
     setIsSearching(true);
-    // Sincronizar categoría seleccionada visualmente
-    if (newFilters.category) {
-      setSelectedCategory(parseInt(newFilters.category));
-    } else {
-      setSelectedCategory(null);
-    }
+  };
+
+  const removeTimingFilter = () => {
+    setSelectedTiming('');
+    setIsSearching(true);
   };
 
   // Ejecutar búsqueda cuando cambien los filtros
   useEffect(() => {
-    if (isSearching) {
+    if (isSearching || selectedTiming || selectedCategory !== null) {
       handleSearch();
     }
-  }, [filters]);
+  }, [selectedTiming, selectedCategory]);
 
   // Debounce para búsqueda por texto
   useEffect(() => {
@@ -165,14 +160,13 @@ const ProductListScreen = () => {
 
   const clearSearch = () => {
     setSearchQuery('');
-    setFilters({ category: '', timing: '' });
+    setSelectedTiming('');
+    setSelectedCategory(null);
     setIsSearching(false);
-    // Recargar primera categoría
-    if (categories.length > 0) {
-      const firstCategory = categories[0];
-      setSelectedCategory(firstCategory.category_id);
-      handleCategoryChange(firstCategory.category_id);
-    }
+    searchProducts({ q: '', category: '', timing: '', type: '' }).then((results) => {
+      setProducts(results);
+      setProductCount(results.length);
+    });
   };
 
   const renderProductItem = ({ item }: { item: Product }) => {
@@ -230,23 +224,119 @@ const ProductListScreen = () => {
               </TouchableOpacity>
             )}
           </View>
-          <TouchableOpacity style={styles.filterButton} onPress={() => setShowFilterModal(true)}>
-            <Ionicons name='options' size={22} color='#1a1919' />
-          </TouchableOpacity>
         </View>
 
-        {/* Chips de filtros activos */}
-        {(filters.category || filters.timing) && (
+        {/* Filtros inline - Categorías */}
+        <View style={styles.filtersContainer}>
+          <Text style={styles.filtersLabel}>Categoría:</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.timingScrollContainer}
+          >
+            <TouchableOpacity
+              style={[
+                styles.timingFilterButton,
+                selectedCategory === null && styles.timingFilterButtonActive,
+              ]}
+              onPress={() => {
+                setSelectedCategory(null);
+                setSelectedTiming('');
+                setSearchQuery('');
+                setIsSearching(true);
+                searchProducts({ q: '', category: '', timing: '', type: '' }).then((results) => {
+                  setProducts(results);
+                  setProductCount(results.length);
+                });
+              }}
+            >
+              <Text
+                style={[
+                  styles.timingFilterText,
+                  selectedCategory === null && styles.timingFilterTextActive,
+                ]}
+              >
+                Todos
+              </Text>
+            </TouchableOpacity>
+            {categories.map((category) => (
+              <TouchableOpacity
+                key={category.category_id}
+                style={[
+                  styles.timingFilterButton,
+                  selectedCategory === category.category_id && styles.timingFilterButtonActive,
+                ]}
+                onPress={() => handleCategoryChange(category.category_id)}
+              >
+                <Text
+                  style={[
+                    styles.timingFilterText,
+                    selectedCategory === category.category_id && styles.timingFilterTextActive,
+                  ]}
+                >
+                  {category.name.charAt(0).toUpperCase() + category.name.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Filtros inline - Timing */}
+        <View style={styles.filtersContainer}>
+          <Text style={styles.filtersLabel}>Momento:</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.timingScrollContainer}
+          >
+            {[
+              { value: '', label: 'Todos' },
+              { value: 'antes', label: 'Antes' },
+              { value: 'durante', label: 'Durante' },
+              { value: 'despues', label: 'Después' },
+            ].map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                style={[
+                  styles.timingFilterButton,
+                  selectedTiming === option.value && styles.timingFilterButtonActive,
+                ]}
+                onPress={() => handleTimingFilter(option.value)}
+              >
+                <Text
+                  style={[
+                    styles.timingFilterText,
+                    selectedTiming === option.value && styles.timingFilterTextActive,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Chips de filtros activos y contador */}
+        {(selectedTiming || searchQuery) && (
           <View style={styles.activeFiltersContainer}>
-            {filters.timing && (
+            <Text style={styles.resultsCount}>{productCount} productos</Text>
+            {selectedTiming && (
               <View style={styles.filterChip}>
                 <Text style={styles.filterChipText}>
-                  {filters.timing === 'antes' && 'Antes'}
-                  {filters.timing === 'durante' && 'Durante'}
-                  {filters.timing === 'despues' && 'Después'}
-                  {filters.timing === 'diario' && 'Diario'}
+                  {selectedTiming === 'antes' && 'Antes'}
+                  {selectedTiming === 'durante' && 'Durante'}
+                  {selectedTiming === 'despues' && 'Después'}
+                  {selectedTiming === 'diario' && 'Diario'}
                 </Text>
-                <TouchableOpacity onPress={() => setFilters({ ...filters, timing: '' })}>
+                <TouchableOpacity onPress={removeTimingFilter}>
+                  <Ionicons name='close' size={16} color='#1a1919' />
+                </TouchableOpacity>
+              </View>
+            )}
+            {searchQuery && (
+              <View style={styles.filterChip}>
+                <Text style={styles.filterChipText}>{searchQuery}</Text>
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
                   <Ionicons name='close' size={16} color='#1a1919' />
                 </TouchableOpacity>
               </View>
@@ -266,40 +356,6 @@ const ProductListScreen = () => {
           renderItem={renderProductItem}
           keyExtractor={(item, index) => `product-${item.product_id}-${index}`}
           contentContainerStyle={styles.listContainer}
-          ListHeaderComponent={
-            <View style={styles.categoryContainer}>
-              <View style={styles.categoryHeader}>
-                <Ionicons name='apps' size={20} color='#D4AF37' />
-                <Text style={styles.categoryTitle}>Categorías</Text>
-              </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.categoryScrollContainer}
-              >
-                {categories.map((category) => (
-                  <TouchableOpacity
-                    key={category.category_id}
-                    style={[
-                      styles.categoryButton,
-                      selectedCategory === category.category_id && styles.selectedCategory,
-                    ]}
-                    onPress={() => handleCategoryChange(category.category_id)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.categoryText,
-                        selectedCategory === category.category_id && styles.selectedCategoryText,
-                      ]}
-                    >
-                      {category.name.charAt(0).toUpperCase() + category.name.slice(1)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name='cube-outline' size={60} color='#999' style={{ marginBottom: 15 }} />
@@ -308,14 +364,6 @@ const ProductListScreen = () => {
           }
         />
       )}
-
-      {/* Modal de filtros */}
-      <ProductFilterModal
-        visible={showFilterModal}
-        onClose={() => setShowFilterModal(false)}
-        onApply={handleApplyFilters}
-        initialFilters={filters}
-      />
     </View>
   );
 };
@@ -370,19 +418,57 @@ const styles = StyleSheet.create({
     fontSize: 15,
     paddingVertical: 12,
   },
-  filterButton: {
-    backgroundColor: '#D4AF37',
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
+  filtersContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  filtersLabel: {
+    color: '#D4AF37',
+    fontSize: 14,
+    fontWeight: '600',
+    marginRight: 12,
+    minWidth: 70,
+  },
+  timingScrollContainer: {
+    paddingHorizontal: 4,
+  },
+  timingFilterButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
+    borderRadius: 20,
+    backgroundColor: '#252525',
+    borderWidth: 1,
+    borderColor: '#444',
+  },
+  timingFilterButtonActive: {
+    backgroundColor: '#D4AF37',
+    borderColor: '#D4AF37',
+  },
+  timingFilterText: {
+    color: '#ccc',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  timingFilterTextActive: {
+    color: '#1a1919',
+    fontWeight: 'bold',
   },
   activeFiltersContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    alignItems: 'center',
     gap: 8,
-    marginTop: 12,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  resultsCount: {
+    color: '#999',
+    fontSize: 13,
+    fontWeight: '600',
+    marginRight: 8,
   },
   filterChip: {
     flexDirection: 'row',
