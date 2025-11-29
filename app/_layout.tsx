@@ -44,6 +44,8 @@ function RootLayoutNav() {
         contentStyle: {
           backgroundColor: '#1a1919',
         },
+        animation: 'slide_from_right',
+        animationDuration: 300,
       }}
     >
       <Stack.Screen name='(tabs)' options={{ headerShown: false }} />

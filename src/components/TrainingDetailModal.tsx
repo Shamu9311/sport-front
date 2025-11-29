@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Image,
   Alert,
   Dimensions,
+  Animated,
 } from 'react-native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -79,6 +80,31 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [feedbackStates, setFeedbackStates] = useState<{ [key: number]: string }>({});
+  
+  // Animaciones
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      fadeAnim.setValue(0);
+      slideAnim.setValue(50);
+    }
+  }, [visible]);
 
   const fetchRecommendationsWithRetry = useCallback(
     async (sessionId: number, retries = 5, delay = 2000) => {
@@ -159,26 +185,25 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
     }
   }, [visible, session?.session_id, userId, fetchRecommendationsWithRetry]);
 
-  // Manejar feedback del usuario
+  // Manejar feedback del usuario con animación
   const handleFeedback = async (productId: number, feedback: 'positivo' | 'negativo') => {
+    // Actualizar estado inmediatamente para feedback visual
+    setFeedbackStates((prev) => ({
+      ...prev,
+      [productId]: feedback,
+    }));
+
     try {
       await saveProductFeedback(userId, productId, feedback);
-
-      // Actualizar estado local
-      setFeedbackStates((prev) => ({
-        ...prev,
-        [productId]: feedback,
-      }));
-
-      Alert.alert(
-        'Gracias por tu feedback',
-        feedback === 'positivo'
-          ? '✅ Seguiremos recomendando productos similares'
-          : '👎 No volveremos a recomendar este producto',
-        [{ text: 'OK' }]
-      );
+      // Feedback exitoso - no mostrar alert, el estado visual es suficiente
     } catch (error) {
       console.error('Error saving feedback:', error);
+      // Revertir estado en caso de error
+      setFeedbackStates((prev) => {
+        const newState = { ...prev };
+        delete newState[productId];
+        return newState;
+      });
       Alert.alert('Error', 'No se pudo guardar tu feedback. Intenta de nuevo.');
     }
   };
@@ -357,6 +382,8 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                         styles.feedbackButtonPositive,
                     ]}
                     onPress={() => handleFeedback(rec.product_id, 'positivo')}
+                    activeOpacity={0.7}
+                    disabled={feedbackStates[rec.product_id] === 'positivo'}
                   >
                     <Ionicons
                       name={
@@ -385,6 +412,8 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                         styles.feedbackButtonNegative,
                     ]}
                     onPress={() => handleFeedback(rec.product_id, 'negativo')}
+                    activeOpacity={0.7}
+                    disabled={feedbackStates[rec.product_id] === 'negativo'}
                   >
                     <Ionicons
                       name={
@@ -419,9 +448,22 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
   }
 
   return (
-    <Modal visible={visible} animationType='slide' transparent={true} onRequestClose={onClose}>
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
+    <Modal visible={visible} animationType='none' transparent={true} onRequestClose={onClose}>
+      <Animated.View style={[styles.centeredView, { opacity: fadeAnim }]}>
+        <TouchableOpacity 
+          style={styles.backdrop} 
+          activeOpacity={1} 
+          onPress={onClose}
+        />
+        <Animated.View 
+          style={[
+            styles.modalView,
+            {
+              transform: [{ translateY: slideAnim }],
+              opacity: fadeAnim,
+            },
+          ]}
+        >
           {/* Header del modal */}
           <View style={styles.modalHeader}>
             <View style={styles.modalHeaderContent}>
@@ -516,8 +558,8 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
             {/* Bottom spacing */}
             <View style={{ height: 20 }} />
           </ScrollView>
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 };
@@ -526,6 +568,10 @@ const styles = StyleSheet.create({
   centeredView: {
     flex: 1,
     justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
   },
   modalView: {

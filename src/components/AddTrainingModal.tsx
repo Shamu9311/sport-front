@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 // Función para formatear fechas en español
@@ -55,6 +56,35 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Estados de validación
+  const [durationError, setDurationError] = useState('');
+  const [timeError, setTimeError] = useState('');
+
+  // Animaciones
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      fadeAnim.setValue(0);
+      slideAnim.setValue(50);
+    }
+  }, [visible]);
+
   // Función para incrementar la fecha en un día
   const incrementDate = () => {
     const newDate = new Date(date);
@@ -70,24 +100,37 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
   };
 
   const handleSave = async () => {
+    // Validación de duración
+    let isValid = true;
     if (!duration) {
-      Alert.alert('Error', 'Por favor ingresa la duración del entrenamiento');
+      setDurationError('La duración es requerida');
+      isValid = false;
+    } else {
+      const durationNum = parseInt(duration);
+      if (isNaN(durationNum) || durationNum <= 0) {
+        setDurationError('La duración debe ser un número positivo');
+        isValid = false;
+      } else {
+        setDurationError('');
+      }
+    }
+
+    // Validación de hora
+    const hour = parseInt(startHour) || 0;
+    const minute = parseInt(startMinute) || 0;
+
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      setTimeError('Hora inválida. Formato: 00-23 : 00-59');
+      isValid = false;
+    } else {
+      setTimeError('');
+    }
+
+    if (!isValid) {
       return;
     }
 
     const durationNum = parseInt(duration);
-    if (isNaN(durationNum) || durationNum <= 0) {
-      Alert.alert('Error', 'La duración debe ser un número positivo');
-      return;
-    }
-
-    const hour = parseInt(startHour) || 0;
-    const minute = parseInt(startMinute) || 0;
-    
-    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
-      Alert.alert('Error', 'Hora inválida. Formato: 00-23 : 00-59');
-      return;
-    }
 
     // Formatear fecha en zona horaria local (YYYY-MM-DD)
     const year = date.getFullYear();
@@ -97,7 +140,9 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
 
     const trainingData = {
       session_date: localDate,
-      start_time: `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}:00`,
+      start_time: `${startHour.toString().padStart(2, '0')}:${startMinute
+        .toString()
+        .padStart(2, '0')}:00`,
       duration_min: durationNum,
       intensity,
       type,
@@ -128,6 +173,8 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
     setWeather('soleado');
     setNotes('');
     setSaving(false);
+    setDurationError('');
+    setTimeError('');
   };
 
   const handleClose = () => {
@@ -140,9 +187,18 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
   // formatDate ya está definida arriba
 
   return (
-    <Modal visible={visible} animationType='slide' transparent={true} onRequestClose={handleClose}>
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
+    <Modal visible={visible} animationType='none' transparent={true} onRequestClose={handleClose}>
+      <Animated.View style={[styles.centeredView, { opacity: fadeAnim }]}>
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
+        <Animated.View
+          style={[
+            styles.modalView,
+            {
+              transform: [{ translateY: slideAnim }],
+              opacity: fadeAnim,
+            },
+          ]}
+        >
           {saving && (
             <View style={styles.loadingOverlay}>
               <ActivityIndicator size='large' color='#D4AF37' />
@@ -179,11 +235,12 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
             </Text>
             <View style={styles.timeContainer}>
               <TextInput
-                style={styles.timeInput}
+                style={[styles.timeInput, timeError ? styles.inputError : null]}
                 value={startHour}
                 onChangeText={(text) => {
                   if (text.length <= 2 && /^\d*$/.test(text)) {
                     setStartHour(text);
+                    setTimeError('');
                   }
                 }}
                 placeholder='18'
@@ -193,11 +250,12 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
               />
               <Text style={styles.timeSeparator}>:</Text>
               <TextInput
-                style={styles.timeInput}
+                style={[styles.timeInput, timeError ? styles.inputError : null]}
                 value={startMinute}
                 onChangeText={(text) => {
                   if (text.length <= 2 && /^\d*$/.test(text)) {
                     setStartMinute(text);
+                    setTimeError('');
                   }
                 }}
                 placeholder='00'
@@ -205,21 +263,26 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
                 keyboardType='numeric'
                 maxLength={2}
               />
-              <Text style={styles.timeHint}>Formato: HH:MM (24hrs)</Text>
             </View>
+            {timeError ? <Text style={styles.errorText}>{timeError}</Text> : null}
+            <Text style={styles.timeHint}>Formato: HH:MM (24hrs)</Text>
 
             {/* Duración */}
             <Text style={styles.label}>
               Duración (minutos) <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, durationError ? styles.inputError : null]}
               value={duration}
-              onChangeText={setDuration}
+              onChangeText={(text) => {
+                setDuration(text);
+                setDurationError('');
+              }}
               placeholder='Ej: 45'
               placeholderTextColor='#666'
               keyboardType='numeric'
             />
+            {durationError ? <Text style={styles.errorText}>{durationError}</Text> : null}
 
             {/* Intensidad */}
             <Text style={styles.label}>Intensidad</Text>
@@ -229,6 +292,7 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
                   key={option}
                   style={[styles.optionButton, intensity === option && styles.selectedOption]}
                   onPress={() => setIntensity(option)}
+                  activeOpacity={0.7}
                 >
                   <Text
                     style={[styles.optionText, intensity === option && styles.selectedOptionText]}
@@ -306,16 +370,18 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
 
           <View style={styles.modalFooter}>
             <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
+              style={[styles.button, styles.cancelButton, saving && styles.buttonDisabled]}
               onPress={handleClose}
               disabled={saving}
+              activeOpacity={0.7}
             >
               <Text style={styles.buttonText}>Cancelar</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, styles.saveButton]}
+              style={[styles.button, styles.saveButton, saving && styles.buttonDisabled]}
               onPress={handleSave}
               disabled={saving}
+              activeOpacity={0.8}
             >
               {saving ? (
                 <ActivityIndicator size='small' color='#000' />
@@ -324,8 +390,8 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
               )}
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 };
@@ -334,6 +400,10 @@ const styles = StyleSheet.create({
   centeredView: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalView: {
@@ -426,8 +496,21 @@ const styles = StyleSheet.create({
     color: '#fff',
     borderRadius: 10,
     padding: 15,
-    marginBottom: 20,
+    marginBottom: 8,
     fontSize: 16,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  inputError: {
+    borderColor: '#ff4d4d',
+    borderWidth: 1,
+  },
+  errorText: {
+    color: '#ff4d4d',
+    fontSize: 12,
+    marginTop: -12,
+    marginBottom: 12,
+    marginLeft: 4,
   },
   notesInput: {
     minHeight: 100,
@@ -473,6 +556,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 50,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   cancelButton: {
     backgroundColor: 'transparent',

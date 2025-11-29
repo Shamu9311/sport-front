@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -36,6 +37,7 @@ export default function TrainingScreen() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState<any>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (user && user.id) {
@@ -43,19 +45,28 @@ export default function TrainingScreen() {
     }
   }, [user]);
 
-  const fetchTrainingSessions = async () => {
+  const fetchTrainingSessions = async (isRefresh = false) => {
     if (!user || !user.id) return;
 
     try {
-      setLoading(true);
+      if (!isRefresh) setLoading(true);
       const sessions = await getUserTrainingSessions(user.id);
       setTrainingSessions(sessions);
       setLoading(false);
+      setRefreshing(false);
     } catch (error) {
       console.error('Error fetching training sessions:', error);
       setLoading(false);
-      Alert.alert('Error', 'No se pudieron cargar los entrenamientos');
+      setRefreshing(false);
+      if (!isRefresh) {
+        Alert.alert('Error', 'No se pudieron cargar los entrenamientos');
+      }
     }
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchTrainingSessions(true);
   };
 
   const handleAddTraining = async (trainingData: any) => {
@@ -226,7 +237,18 @@ export default function TrainingScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={styles.content} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor='#D4AF37'
+              colors={['#D4AF37']}
+            />
+          }
+        >
           {loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size='large' color='#D4AF37' />

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   Dimensions,
   TextInput,
+  RefreshControl,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -61,7 +63,11 @@ const ProductListScreen = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
   const pageSize = 20;
+  
+  // Animaciones para chips
+  const chipAnimations = useRef<{ [key: number]: Animated.Value }>({}).current;
 
   // Cargar datos iniciales: categorías y productos
   useEffect(() => {
@@ -95,7 +101,45 @@ const ProductListScreen = () => {
     fetchProductData();
   }, []);
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const result = await searchProducts({
+        q: searchQuery,
+        category: selectedCategory !== null ? selectedCategory.toString() : '',
+        timing: selectedTiming,
+        limit: pageSize,
+        offset: 0,
+      });
+      setProducts(result.products);
+      setProductCount(result.total);
+      setHasMore(result.hasMore);
+      setCurrentPage(0);
+    } catch (error) {
+      console.error('Error refreshing products:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const handleCategoryChange = async (categoryId: number) => {
+    // Animación del chip
+    if (!chipAnimations[categoryId]) {
+      chipAnimations[categoryId] = new Animated.Value(1);
+    }
+    Animated.sequence([
+      Animated.timing(chipAnimations[categoryId], {
+        toValue: 0.8,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(chipAnimations[categoryId], {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
     try {
       console.log('Categoría seleccionada:', categoryId);
       setSelectedCategory(categoryId);
@@ -219,7 +263,6 @@ const ProductListScreen = () => {
   };
 
   const renderProductItem = ({ item }: { item: Product }) => {
-    console.log('Renderizando producto:', item);
     return (
       <TouchableOpacity
         style={styles.productItem}
@@ -416,6 +459,14 @@ const ProductListScreen = () => {
           contentContainerStyle={styles.listContainer}
           onEndReached={loadMoreProducts}
           onEndReachedThreshold={0.5}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor='#D4AF37'
+              colors={['#D4AF37']}
+            />
+          }
           ListFooterComponent={
             loadingMore ? (
               <View style={styles.loadingMoreContainer}>

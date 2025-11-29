@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { getUserTrainingSessions } from '../../src/services/api';
+import AnimatedNumber from '../../src/components/AnimatedNumber';
 
 // Obtener dimensiones de la pantalla para hacer el diseño responsivo
 const { width, height } = Dimensions.get('window');
@@ -42,7 +43,7 @@ const HomeScreen = () => {
     }).start();
   }, []);
 
-  // Función para cargar estadísticas
+  // Función para cargar estadísticas con animación
   const loadStats = useCallback(async () => {
     if (!user?.id) return;
 
@@ -157,7 +158,7 @@ const HomeScreen = () => {
             <View style={styles.statsGrid}>
               <View style={styles.statItem}>
                 <Ionicons name='barbell' size={30} color='#F8D930' />
-                <Text style={styles.statValue}>{stats.thisWeek}</Text>
+                <AnimatedNumber value={stats.thisWeek} style={styles.statValue} />
                 <Text style={styles.statLabel}>Esta semana</Text>
               </View>
 
@@ -173,7 +174,7 @@ const HomeScreen = () => {
 
               <View style={styles.statItem}>
                 <Ionicons name='trophy' size={30} color='#FF6B35' />
-                <Text style={styles.statValue}>{stats.trainings}</Text>
+                <AnimatedNumber value={stats.trainings} style={styles.statValue} />
                 <Text style={styles.statLabel}>Entrenamientos</Text>
               </View>
             </View>

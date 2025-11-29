@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Dimensions,
+  Animated,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +19,7 @@ import AuthContext from '../../src/context/AuthContext';
 import { getSavedRecommendations, getUserFeedbackHistory } from '../../src/services/api';
 import api from '../../src/services/api';
 import { getProductImageSource } from '../../src/utils/imageUtils';
+import EmptyState from '../../src/components/EmptyState';
 
 const { width } = Dimensions.get('window');
 
@@ -389,6 +391,7 @@ const RecommendationScreen = () => {
         <TouchableOpacity
           style={[styles.tab, activeTab === 'positivas' && styles.tabActive]}
           onPress={() => setActiveTab('positivas')}
+          activeOpacity={0.7}
         >
           <Ionicons
             name='checkmark-circle'
@@ -402,6 +405,7 @@ const RecommendationScreen = () => {
         <TouchableOpacity
           style={[styles.tab, activeTab === 'negativas' && styles.tabActive]}
           onPress={() => setActiveTab('negativas')}
+          activeOpacity={0.7}
         >
           <Ionicons
             name='close-circle'
