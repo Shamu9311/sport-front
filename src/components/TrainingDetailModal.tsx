@@ -81,6 +81,23 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [feedbackStates, setFeedbackStates] = useState<{ [key: number]: string }>({});
   
+  // Refs para control de estado
+  const isMountedRef = useRef(true);
+  const isVisibleRef = useRef(visible);
+  
+  // Actualizar ref de visible
+  useEffect(() => {
+    isVisibleRef.current = visible;
+  }, [visible]);
+  
+  // Cleanup al desmontar
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+  
   // Animaciones
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -113,6 +130,12 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
         return;
       }
       for (let i = 0; i < retries; i++) {
+        // Verificar si el modal sigue visible antes de continuar
+        if (!isVisibleRef.current || !isMountedRef.current) {
+          console.log('Modal cerrado, cancelando fetch...');
+          return;
+        }
+        
         try {
           setLoading(true);
           console.log(
@@ -124,6 +147,12 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
               'Content-Type': 'application/json',
             },
           });
+
+          // Verificar nuevamente antes de actualizar estado
+          if (!isVisibleRef.current || !isMountedRef.current) {
+            console.log('Modal cerrado durante fetch, ignorando resultado...');
+            return;
+          }
 
           if (response.data && Array.isArray(response.data) && response.data.length > 0) {
             console.log(`Se recibieron ${response.data.length} recomendaciones`);
@@ -142,8 +171,10 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
             await new Promise((resolve) => setTimeout(resolve, delay));
           } else {
             console.warn('No se encontraron recomendaciones después de varios intentos');
-            setRecommendations([]);
-            setLoading(false);
+            if (isVisibleRef.current && isMountedRef.current) {
+              setRecommendations([]);
+              setLoading(false);
+            }
           }
         } catch (error: any) {
           if (i < retries - 1) {
@@ -153,8 +184,10 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
             await new Promise((resolve) => setTimeout(resolve, delay));
           } else {
             console.error('Error fetching recommendations después de varios intentos:', error);
-            setRecommendations([]);
-            setLoading(false);
+            if (isVisibleRef.current && isMountedRef.current) {
+              setRecommendations([]);
+              setLoading(false);
+            }
           }
         }
       }

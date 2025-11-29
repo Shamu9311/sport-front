@@ -171,12 +171,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user]);
 
+  // Refs para evitar re-renders innecesarios en navegación
+  const lastNavigationRef = React.useRef<string>('');
+  
   // Efecto para manejar navegación automática basada en el estado actual
   useEffect(() => {
-    if (!isLoadingAuth && !isCheckingProfile) {
-      handleRouteChanges();
+    if (!isLoadingAuth && !isCheckingProfile && profileVerified) {
+      // Crear una key única para el estado actual
+      const stateKey = `${user?.id}-${hasProfile}-${segments[0]}`;
+      
+      // Solo ejecutar si el estado cambió significativamente
+      if (lastNavigationRef.current !== stateKey) {
+        lastNavigationRef.current = stateKey;
+        handleRouteChanges();
+      }
     }
-  }, [user, hasProfile, profileVerified, segments, isLoadingAuth, isCheckingProfile]);
+  }, [user?.id, hasProfile, profileVerified, segments[0], isLoadingAuth, isCheckingProfile]);
 
   // Resetear el flag de redirección cuando cambia la ruta
   useEffect(() => {

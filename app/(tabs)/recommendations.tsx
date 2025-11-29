@@ -1,5 +1,5 @@
 // Sport/app/(tabs)/recommendations.tsx
-import React, { useState, useContext, useCallback, useEffect } from 'react';
+import React, { useState, useContext, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -39,14 +39,36 @@ const RecommendationScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [pollingAttempts, setPollingAttempts] = useState(0);
+  
+  // Refs para evitar operaciones duplicadas
+  const isPollingActiveRef = useRef(false);
+  const isFetchingRef = useRef(false);
+  const isMountedRef = useRef(true);
+  
+  // Cleanup al desmontar
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      isPollingActiveRef.current = false;
+    };
+  }, []);
 
   const fetchRecommendations = async (isRefresh = false) => {
+    // Evitar fetches duplicados
+    if (isFetchingRef.current && !isRefresh) {
+      console.log('⏳ Fetch en progreso, ignorando...');
+      return;
+    }
+    
     if (!userToken) {
       setError('Debes iniciar sesión para obtener recomendaciones.');
       if (!isRefresh) setLoading(false);
       else setRefreshing(false);
       return;
     }
+    
+    isFetchingRef.current = true;
     if (!isRefresh) setLoading(true);
     setError(null);
 
@@ -160,6 +182,7 @@ const RecommendationScreen = () => {
       setError(errorMessage);
       setRecommendations([]);
     } finally {
+      isFetchingRef.current = false;
       if (!isRefresh) setLoading(false);
       else setRefreshing(false);
     }
@@ -168,21 +191,39 @@ const RecommendationScreen = () => {
   // Polling para verificar si las recomendaciones ya están listas
   useEffect(() => {
     if (!isGenerating) {
+      isPollingActiveRef.current = false;
       return;
     }
-
+    
+    // Evitar múltiples pollings simultáneos
+    if (isPollingActiveRef.current) {
+      console.log('⏳ Polling ya activo, ignorando...');
+      return;
+    }
+    
+    isPollingActiveRef.current = true;
     let attempts = 0;
     const maxAttempts = 10;
 
     const pollingInterval = setInterval(async () => {
+      // Verificar si el componente sigue montado
+      if (!isMountedRef.current) {
+        clearInterval(pollingInterval);
+        isPollingActiveRef.current = false;
+        return;
+      }
+      
       attempts += 1;
       console.log(`🔄 Verificando recomendaciones (intento ${attempts}/${maxAttempts})...`);
       
       if (attempts >= maxAttempts) {
         console.log('⏱️ Tiempo máximo de espera alcanzado. Deteniendo polling...');
-        setIsGenerating(false);
-        setPollingAttempts(0);
+        if (isMountedRef.current) {
+          setIsGenerating(false);
+          setPollingAttempts(0);
+        }
         clearInterval(pollingInterval);
+        isPollingActiveRef.current = false;
         return;
       }
 
@@ -193,11 +234,16 @@ const RecommendationScreen = () => {
           const savedRecommendations = await getSavedRecommendations(userId);
           if (savedRecommendations && Array.isArray(savedRecommendations) && savedRecommendations.length > 0) {
             console.log(`✅ Recomendaciones encontradas! Deteniendo polling...`);
-            setIsGenerating(false);
-            setPollingAttempts(0);
+            if (isMountedRef.current) {
+              setIsGenerating(false);
+              setPollingAttempts(0);
+            }
             clearInterval(pollingInterval);
+            isPollingActiveRef.current = false;
             // Recargar las recomendaciones completas
-            await fetchRecommendations(true);
+            if (isMountedRef.current) {
+              await fetchRecommendations(true);
+            }
             return;
           }
         }
@@ -206,7 +252,10 @@ const RecommendationScreen = () => {
       }
     }, 3000); // Verificar cada 3 segundos
 
-    return () => clearInterval(pollingInterval);
+    return () => {
+      clearInterval(pollingInterval);
+      isPollingActiveRef.current = false;
+    };
   }, [isGenerating, userToken]);
 
   useFocusEffect(

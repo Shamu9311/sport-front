@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -87,6 +87,10 @@ const ProfileScreen = () => {
   const [consumptionReminders, setConsumptionReminders] = useState(true);
   const [trainingAlerts, setTrainingAlerts] = useState(true);
   const [preferredTime, setPreferredTime] = useState('09:00');
+  
+  // Ref para evitar cargas innecesarias
+  const isLoadedRef = useRef(false);
+  const lastUserIdRef = useRef<number | null>(null);
 
   // Función para cargar la información del usuario
   const loadUserProfile = async () => {
@@ -154,15 +158,26 @@ const ProfileScreen = () => {
     }
   };
 
-  // Cargar perfil cuando se enfoca la pantalla
+  // Cargar perfil cuando se enfoca la pantalla (solo si no está cargado o cambió el usuario)
   useFocusEffect(
     useCallback(() => {
       if (user?.id) {
-        loadUserProfile();
+        // Solo recargar si: no está cargado, cambió el usuario, o hay error
+        if (!isLoadedRef.current || lastUserIdRef.current !== user.id || error) {
+          loadUserProfile();
+          lastUserIdRef.current = user.id;
+          isLoadedRef.current = true;
+        }
       }
       return () => {};
-    }, [user?.id])
+    }, [user?.id, error])
   );
+  
+  // Resetear flag cuando se edita el perfil
+  const forceReload = useCallback(() => {
+    isLoadedRef.current = false;
+    loadUserProfile();
+  }, [user?.id]);
 
   // Manejar cierre de sesión
   const handleLogout = () => {
