@@ -3,11 +3,15 @@ import React, { useEffect } from 'react';
 import { Stack, useRouter, useSegments, Slot } from 'expo-router';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ActivityIndicator, View } from 'react-native';
+import NetworkErrorBanner from '../src/components/NetworkErrorBanner';
 
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <View style={{ flex: 1 }}>
+        <RootLayoutNav />
+        <NetworkErrorBanner />
+      </View>
     </AuthProvider>
   );
 }

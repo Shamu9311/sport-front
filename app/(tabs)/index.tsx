@@ -16,6 +16,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { getUserTrainingSessions } from '../../src/services/api';
 import AnimatedNumber from '../../src/components/AnimatedNumber';
+import SkeletonLoader from '../../src/components/SkeletonLoader';
 
 // Obtener dimensiones de la pantalla para hacer el diseño responsivo
 const { width, height } = Dimensions.get('window');
@@ -31,6 +32,7 @@ const HomeScreen = () => {
     totalMinutes: 0,
     thisWeek: 0,
   });
+  const [statsLoading, setStatsLoading] = useState(true);
   const [currentFeature, setCurrentFeature] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -45,12 +47,15 @@ const HomeScreen = () => {
 
   // Función para cargar estadísticas con animación
   const loadStats = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setStatsLoading(false);
+      return;
+    }
 
+    setStatsLoading(true);
     try {
       const sessions = await getUserTrainingSessions(user.id);
 
-      // Calcular estadísticas
       const now = new Date();
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
@@ -71,6 +76,8 @@ const HomeScreen = () => {
       });
     } catch (error) {
       console.error('Error loading stats:', error);
+    } finally {
+      setStatsLoading(false);
     }
   }, [user?.id]);
 
@@ -149,6 +156,10 @@ const HomeScreen = () => {
 
         {/* OPCIÓN 2: Estadísticas del Usuario */}
         {user && (
+          <>
+            {statsLoading ? (
+              <SkeletonLoader type="stats" />
+            ) : (
           <View style={styles.statsCard}>
             <View style={styles.statsHeader}>
               <Ionicons name='analytics' size={24} color='#D4AF37' />
@@ -179,6 +190,8 @@ const HomeScreen = () => {
               </View>
             </View>
           </View>
+            )}
+          </>
         )}
 
         {/* OPCIÓN 3: Carrusel de Features */}

@@ -1,9 +1,12 @@
 import axios from 'axios';
+import Constants from 'expo-constants';
 import { UserData, UserProfileData } from '../types/UserTypes';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setNetworkError, clearNetworkError } from './errorService';
 
-export const API_URL = 'http://192.168.18.222:5000';
+export const API_URL =
+  Constants.expoConfig?.extra?.apiUrl || 'http://192.168.0.6:5000';
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,
@@ -32,12 +35,14 @@ api.interceptors.request.use(
 
 // Configura interceptores para manejar errores y tokens expirados
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    clearNetworkError();
+    return response;
+  },
   async (error) => {
     // Manejar token expirado o inválido
     if (error.response?.status === 401) {
       try {
-        // Limpiar sesión si el token es inválido
         await AsyncStorage.removeItem('user');
         await AsyncStorage.removeItem('token');
         console.log('⚠️ Token inválido, sesión limpiada');
@@ -47,23 +52,23 @@ api.interceptors.response.use(
     }
 
     if (error.response) {
-      // El servidor respondió con un código de estado fuera del rango 2xx
+      clearNetworkError();
       return Promise.reject({
         message: error.response.data.message || 'Error en la solicitud',
         status: error.response.status,
         response: error.response,
       });
-    } else if (error.request) {
-      // La solicitud fue hecha pero no se recibió respuesta
+    }
+    if (error.request) {
+      setNetworkError('Sin conexión. Verifica tu red e intenta de nuevo.');
       return Promise.reject({
         message: 'No se recibió respuesta del servidor',
       });
-    } else {
-      // Algo sucedió al configurar la solicitud
-      return Promise.reject({
-        message: 'Error al configurar la solicitud',
-      });
     }
+    setNetworkError('Error de conexión. Intenta de nuevo.');
+    return Promise.reject({
+      message: 'Error al configurar la solicitud',
+    });
   }
 );
 

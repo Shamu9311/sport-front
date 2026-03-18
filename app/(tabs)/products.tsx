@@ -21,6 +21,7 @@ import {
 } from '../../src/services/api';
 import { getProductImageSource } from '../../src/utils/imageUtils';
 import { useRouter } from 'expo-router';
+import SkeletonLoader from '../../src/components/SkeletonLoader';
 
 const { width } = Dimensions.get('window');
 
@@ -448,8 +449,7 @@ const ProductListScreen = () => {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color='#D4AF37' />
-          <Text style={styles.loadingText}>Cargando productos...</Text>
+          <SkeletonLoader type="productList" />
         </View>
       ) : (
         <FlatList
