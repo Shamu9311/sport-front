@@ -1,5 +1,5 @@
 // Sport/app/(tabs)/recommendations.tsx
-import React, { useState, useContext, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useContext, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -17,9 +17,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AuthContext from '../../src/context/AuthContext';
 import { getSavedRecommendations, getUserFeedbackHistory } from '../../src/services/api';
-import api from '../../src/services/api';
 import { getProductImageSource } from '../../src/utils/imageUtils';
-import EmptyState from '../../src/components/EmptyState';
 
 const { width } = Dimensions.get('window');
 
@@ -37,22 +35,9 @@ const RecommendationScreen = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [pollingAttempts, setPollingAttempts] = useState(0);
   
   // Refs para evitar operaciones duplicadas
-  const isPollingActiveRef = useRef(false);
   const isFetchingRef = useRef(false);
-  const isMountedRef = useRef(true);
-  
-  // Cleanup al desmontar
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-      isPollingActiveRef.current = false;
-    };
-  }, []);
 
   const fetchRecommendations = async (isRefresh = false) => {
     // Evitar fetches duplicados
@@ -101,25 +86,17 @@ const RecommendationScreen = () => {
       setNegativeRecommendations([]);
       setError(null);
 
-      // Si no hay recomendaciones, activar modo de generación
-      if (!savedRecommendations || !Array.isArray(savedRecommendations) || savedRecommendations.length === 0) {
-        setIsGenerating(true);
-        setPollingAttempts(0);
-      } else {
-        setIsGenerating(false);
-        setPollingAttempts(0);
-      }
+      // Filtrar solo recomendaciones con session_id (vinculadas a sesión deportiva)
+      const sessionBasedRecs = (savedRecommendations && Array.isArray(savedRecommendations))
+        ? savedRecommendations.filter((rec: any) => rec.session_id != null && rec.session_id !== '')
+        : [];
 
-      if (
-        savedRecommendations &&
-        Array.isArray(savedRecommendations) &&
-        savedRecommendations.length > 0
-      ) {
+      if (sessionBasedRecs.length > 0) {
         // Separar por feedback positivo y negativo
         const positiveRecs: any[] = [];
         const negativeRecs: any[] = [];
 
-        savedRecommendations.forEach((rec: any) => {
+        sessionBasedRecs.forEach((rec: any) => {
           const productId = rec.product_id || rec.product_details?.product_id;
           const feedback = feedbackMap[productId];
 
@@ -187,76 +164,6 @@ const RecommendationScreen = () => {
       else setRefreshing(false);
     }
   };
-
-  // Polling para verificar si las recomendaciones ya están listas
-  useEffect(() => {
-    if (!isGenerating) {
-      isPollingActiveRef.current = false;
-      return;
-    }
-    
-    // Evitar múltiples pollings simultáneos
-    if (isPollingActiveRef.current) {
-      console.log('⏳ Polling ya activo, ignorando...');
-      return;
-    }
-    
-    isPollingActiveRef.current = true;
-    let attempts = 0;
-    const maxAttempts = 10;
-
-    const pollingInterval = setInterval(async () => {
-      // Verificar si el componente sigue montado
-      if (!isMountedRef.current) {
-        clearInterval(pollingInterval);
-        isPollingActiveRef.current = false;
-        return;
-      }
-      
-      attempts += 1;
-      console.log(`🔄 Verificando recomendaciones (intento ${attempts}/${maxAttempts})...`);
-      
-      if (attempts >= maxAttempts) {
-        console.log('⏱️ Tiempo máximo de espera alcanzado. Deteniendo polling...');
-        if (isMountedRef.current) {
-          setIsGenerating(false);
-          setPollingAttempts(0);
-        }
-        clearInterval(pollingInterval);
-        isPollingActiveRef.current = false;
-        return;
-      }
-
-      try {
-        const { user } = context;
-        const userId = user?.id;
-        if (userId) {
-          const savedRecommendations = await getSavedRecommendations(userId);
-          if (savedRecommendations && Array.isArray(savedRecommendations) && savedRecommendations.length > 0) {
-            console.log(`✅ Recomendaciones encontradas! Deteniendo polling...`);
-            if (isMountedRef.current) {
-              setIsGenerating(false);
-              setPollingAttempts(0);
-            }
-            clearInterval(pollingInterval);
-            isPollingActiveRef.current = false;
-            // Recargar las recomendaciones completas
-            if (isMountedRef.current) {
-              await fetchRecommendations(true);
-            }
-            return;
-          }
-        }
-      } catch (err) {
-        console.error('Error en polling de recomendaciones:', err);
-      }
-    }, 3000); // Verificar cada 3 segundos
-
-    return () => {
-      clearInterval(pollingInterval);
-      isPollingActiveRef.current = false;
-    };
-  }, [isGenerating, userToken]);
 
   useFocusEffect(
     useCallback(() => {
@@ -409,15 +316,21 @@ const RecommendationScreen = () => {
         </View>
       );
     }
-    if (!loading && recommendations.length === 0) {
+    if (!loading && recommendations.length === 0 && negativeRecommendations.length === 0) {
       return (
         <View style={styles.centeredMessageContainer}>
-          <Ionicons name='rocket-outline' size={80} color='#D4AF37' style={styles.emptyIcon} />
+          <Ionicons name='barbell-outline' size={80} color='#D4AF37' style={styles.emptyIcon} />
           <Text style={styles.emptyText}>
-            Aún no hay recomendaciones para ti.
-            {'\n\n'}Presiona el botón Actualizar o desliza hacia abajo para generar recomendaciones
-            personalizadas.
+            Las recomendaciones se generan automáticamente cuando registras una sesión de entrenamiento.
+            {'\n\n'}Ve a la pestaña Entrenamiento para comenzar.
           </Text>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push('/(tabs)/training')}
+          >
+            <Ionicons name='fitness' size={20} color='#1a1919' />
+            <Text style={styles.actionButtonText}>Ir a Entrenamiento</Text>
+          </TouchableOpacity>
         </View>
       );
     }
@@ -467,19 +380,13 @@ const RecommendationScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {(loading || isGenerating) && !refreshing && (
+      {loading && !refreshing && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color='#D4AF37' style={styles.loader} />
-          {isGenerating && (
-            <Text style={styles.generatingText}>
-              Generando recomendaciones personalizadas...
-              {'\n'}Esto puede tomar unos momentos
-            </Text>
-          )}
         </View>
       )}
 
-      {!loading && !isGenerating && (currentRecommendations.length > 0 || error) ? (
+      {!loading && (currentRecommendations.length > 0 || error) ? (
         <FlatList
           data={currentRecommendations}
           renderItem={renderRecommendationItem}
@@ -523,7 +430,7 @@ const RecommendationScreen = () => {
           }
         />
       ) : (
-        !loading && !isGenerating && renderEmptyOrErrorState()
+        !loading && renderEmptyOrErrorState()
       )}
     </View>
   );
@@ -621,13 +528,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 30,
-  },
-  generatingText: {
-    color: '#D4AF37',
-    textAlign: 'center',
-    fontSize: 16,
-    marginTop: 20,
-    lineHeight: 24,
   },
   centeredMessageContainer: {
     flex: 1,

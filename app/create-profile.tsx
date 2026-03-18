@@ -182,11 +182,11 @@ const CreateProfileScreen = () => {
         setTimeout(() => {
           Alert.alert(
             'Perfil Guardado',
-            '¡Tu perfil ha sido creado con éxito! Estamos generando tus recomendaciones personalizadas...',
+            '¡Perfil creado! Las recomendaciones de suplementos se generan para cada sesión de entrenamiento que registres.',
             [
               {
-                text: 'Ver Recomendaciones',
-                onPress: () => router.replace('/(tabs)/recommendations'),
+                text: 'Registrar mi primera sesión',
+                onPress: () => router.replace('/(tabs)/training'),
               },
             ]
           );
