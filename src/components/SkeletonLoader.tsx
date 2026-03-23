@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Dimensions } from 'react-native';
+import { colors } from '../theme';
 
 const { width } = Dimensions.get('window');
 
@@ -8,29 +9,61 @@ interface SkeletonLoaderProps {
 }
 
 const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({ type = 'stats' }) => {
-  const pulseAnim = useRef(new Animated.Value(0.3)).current;
+  const pulseAnim = useRef(new Animated.Value(0.35)).current;
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const animation = Animated.loop(
+    const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
-          toValue: 0.6,
-          duration: 600,
+          toValue: 0.65,
+          duration: 700,
           useNativeDriver: true,
         }),
         Animated.timing(pulseAnim, {
-          toValue: 0.3,
-          duration: 600,
+          toValue: 0.35,
+          duration: 700,
           useNativeDriver: true,
         }),
       ])
     );
-    animation.start();
-    return () => animation.stop();
-  }, [pulseAnim]);
+    pulse.start();
+
+    const shimmer = Animated.loop(
+      Animated.timing(shimmerAnim, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: true,
+      })
+    );
+    shimmer.start();
+
+    return () => {
+      pulse.stop();
+      shimmer.stop();
+    };
+  }, [pulseAnim, shimmerAnim]);
+
+  const shimmerTranslate = shimmerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-width * 0.4, width],
+  });
 
   const SkeletonBox = ({ style }: { style?: object }) => (
     <Animated.View style={[styles.skeletonBox, style, { opacity: pulseAnim }]} />
+  );
+
+  const ShimmerOverlay = () => (
+    <View style={styles.shimmerWrap}>
+      <Animated.View
+        style={[
+          styles.shimmerBar,
+          {
+            transform: [{ translateX: shimmerTranslate }],
+          },
+        ]}
+      />
+    </View>
   );
 
   if (type === 'stats') {
@@ -59,6 +92,7 @@ const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({ type = 'stats' }) => {
             <SkeletonBox style={{ width: 90, height: 14, marginTop: 8 }} />
           </View>
         </View>
+        <ShimmerOverlay />
       </View>
     );
   }
@@ -85,17 +119,30 @@ const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({ type = 'stats' }) => {
 
 const styles = StyleSheet.create({
   skeletonBox: {
-    backgroundColor: '#333',
+    backgroundColor: colors.borderStrong,
     borderRadius: 4,
   },
   statsCard: {
     width: '100%',
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  shimmerWrap: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+  },
+  shimmerBar: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: width * 0.35,
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   statsHeader: {
     flexDirection: 'row',
@@ -103,7 +150,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingBottom: 15,
     borderBottomWidth: 2,
-    borderBottomColor: '#333',
+    borderBottomColor: colors.border,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -117,7 +164,7 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 50,
-    backgroundColor: '#333',
+    backgroundColor: colors.border,
   },
   productListContainer: {
     paddingHorizontal: 16,
@@ -125,17 +172,17 @@ const styles = StyleSheet.create({
   },
   productCard: {
     flexDirection: 'row',
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     marginBottom: 12,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
   },
   productImageSkeleton: {
     width: 120,
     height: 120,
-    backgroundColor: '#333',
+    backgroundColor: colors.borderStrong,
   },
   productInfoSkeleton: {
     flex: 1,

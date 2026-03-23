@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { colors } from '../../src/theme';
 
 // Función helper para el icono de FontAwesome
 function TabBarIconFA(props: {
@@ -32,17 +33,17 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#D4AF37',
-        tabBarInactiveTintColor: '#666',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.tabInactive,
         tabBarStyle: {
-          backgroundColor: '#1a1919',
+          backgroundColor: colors.background,
           borderTopWidth: 1,
-          borderTopColor: '#333',
+          borderTopColor: colors.border,
           height: Platform.OS === 'ios' ? 38 + insets.bottom : 38,
           paddingBottom: Platform.OS === 'ios' ? insets.bottom : 3,
           paddingTop: 6,
           elevation: 8,
-          shadowColor: '#000',
+          shadowColor: colors.shadow,
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.25,
           shadowRadius: 3.84,

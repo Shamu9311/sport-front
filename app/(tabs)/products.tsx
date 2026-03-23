@@ -22,6 +22,7 @@ import {
 import { getProductImageSource } from '../../src/utils/imageUtils';
 import { useRouter } from 'expo-router';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
+import { colors } from '../../src/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -285,7 +286,7 @@ const ProductListScreen = () => {
             {item.product_description || item.description || 'Sin descripción'}
           </Text>
           <View style={styles.productFooter}>
-            <Ionicons name='arrow-forward-circle' size={18} color='#D4AF37' />
+            <Ionicons name='arrow-forward-circle' size={18} color={colors.primary} />
             <Text style={styles.viewDetailsText}>Ver producto</Text>
           </View>
         </View>
@@ -303,17 +304,17 @@ const ProductListScreen = () => {
         {/* Barra de búsqueda */}
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
-            <Ionicons name='search' size={20} color='#999' style={styles.searchIcon} />
+            <Ionicons name='search' size={20} color={colors.textSecondary} style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
               placeholder='Buscar productos...'
-              placeholderTextColor='#666'
+              placeholderTextColor={colors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={clearSearch}>
-                <Ionicons name='close-circle' size={20} color='#999' />
+                <Ionicons name='close-circle' size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
           </View>
@@ -431,7 +432,7 @@ const ProductListScreen = () => {
                   {selectedTiming === 'diario' && 'Diario'}
                 </Text>
                 <TouchableOpacity onPress={removeTimingFilter}>
-                  <Ionicons name='close' size={16} color='#1a1919' />
+                  <Ionicons name='close' size={16} color={colors.textOnPrimary} />
                 </TouchableOpacity>
               </View>
             )}
@@ -439,7 +440,7 @@ const ProductListScreen = () => {
               <View style={styles.filterChip}>
                 <Text style={styles.filterChipText}>{searchQuery}</Text>
                 <TouchableOpacity onPress={() => setSearchQuery('')}>
-                  <Ionicons name='close' size={16} color='#1a1919' />
+                  <Ionicons name='close' size={16} color={colors.textOnPrimary} />
                 </TouchableOpacity>
               </View>
             )}
@@ -463,21 +464,21 @@ const ProductListScreen = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor='#D4AF37'
-              colors={['#D4AF37']}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
             />
           }
           ListFooterComponent={
             loadingMore ? (
               <View style={styles.loadingMoreContainer}>
-                <ActivityIndicator size='small' color='#D4AF37' />
+                <ActivityIndicator size='small' color={colors.primary} />
                 <Text style={styles.loadingMoreText}>Cargando más productos...</Text>
               </View>
             ) : null
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Ionicons name='cube-outline' size={60} color='#999' style={{ marginBottom: 15 }} />
+              <Ionicons name='cube-outline' size={60} color={colors.textSecondary} style={{ marginBottom: 15 }} />
               <Text style={styles.emptyText}>No hay productos disponibles en esta categoría.</Text>
             </View>
           }
@@ -490,29 +491,27 @@ const ProductListScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1919',
+    backgroundColor: colors.background,
   },
 
-  // Page Header
   pageHeader: {
     paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,
-    backgroundColor: '#1a1919',
+    backgroundColor: colors.background,
   },
   pageTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#D4AF37',
+    fontSize: 26,
+    fontWeight: '700',
+    color: colors.primary,
     marginBottom: 5,
   },
   pageSubtitle: {
     fontSize: 15,
-    color: '#999',
+    color: colors.textSecondary,
     marginBottom: 16,
   },
 
-  // Búsqueda
   searchContainer: {
     flexDirection: 'row',
     gap: 10,
@@ -522,18 +521,18 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
   },
   searchIcon: {
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    color: '#fff',
+    color: colors.textPrimary,
     fontSize: 15,
     paddingVertical: 12,
   },
@@ -544,7 +543,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   filtersLabel: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '600',
     marginRight: 12,
@@ -558,22 +557,23 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginRight: 8,
     borderRadius: 20,
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: colors.borderStrong,
   },
   timingFilterButtonActive: {
-    backgroundColor: '#D4AF37',
-    borderColor: '#D4AF37',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   timingFilterText: {
-    color: '#ccc',
+    color: colors.textPrimary,
+    opacity: 0.85,
     fontSize: 13,
     fontWeight: '600',
   },
   timingFilterTextActive: {
-    color: '#1a1919',
-    fontWeight: 'bold',
+    color: colors.textOnPrimary,
+    fontWeight: '700',
   },
   activeFiltersContainer: {
     flexDirection: 'row',
@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   resultsCount: {
-    color: '#999',
+    color: colors.textSecondary,
     fontSize: 13,
     fontWeight: '600',
     marginRight: 8,
@@ -592,40 +592,38 @@ const styles = StyleSheet.create({
   filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#D4AF37',
+    backgroundColor: colors.primary,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
     gap: 6,
   },
   filterChipText: {
-    color: '#1a1919',
+    color: colors.textOnPrimary,
     fontSize: 13,
     fontWeight: '600',
   },
 
-  // Loading States
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    color: '#999',
+    color: colors.textSecondary,
     fontSize: 16,
     marginTop: 15,
   },
 
-  // Categories Section
   categoryContainer: {
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     marginBottom: 16,
     paddingVertical: 16,
     paddingHorizontal: 12,
     borderRadius: 16,
     marginHorizontal: 0,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -637,9 +635,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   categoryTitle: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginLeft: 10,
   },
   categoryScrollContainer: {
@@ -651,27 +649,27 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginRight: 10,
     borderRadius: 25,
-    backgroundColor: '#1f1f1f',
+    backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: colors.borderStrong,
     minWidth: 110,
     alignItems: 'center',
   },
   selectedCategory: {
-    backgroundColor: '#D4AF37',
-    borderColor: '#D4AF37',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   categoryText: {
-    color: '#ccc',
+    color: colors.textPrimary,
+    opacity: 0.88,
     fontSize: 14,
     fontWeight: '600',
   },
   selectedCategoryText: {
-    color: '#1a1919',
-    fontWeight: 'bold',
+    color: colors.textOnPrimary,
+    fontWeight: '700',
   },
 
-  // Product List
   listContainer: {
     paddingHorizontal: 16,
     paddingBottom: 20,
@@ -682,32 +680,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loadingMoreText: {
-    color: '#999',
+    color: colors.textSecondary,
     fontSize: 14,
     marginTop: 8,
   },
   productItem: {
     flexDirection: 'row',
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     marginBottom: 12,
     overflow: 'hidden',
     elevation: 5,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
   },
   productImageContainer: {
     width: 120,
     height: 120,
-    backgroundColor: '#1f1f1f',
+    backgroundColor: colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
     borderRightWidth: 1,
-    borderRightColor: '#333',
+    borderRightColor: colors.border,
   },
   productImage: {
     width: 100,
@@ -719,14 +717,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   productName: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 17,
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginBottom: 8,
     lineHeight: 22,
   },
   productDescription: {
-    color: '#ccc',
+    color: colors.textPrimary,
+    opacity: 0.88,
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 10,
@@ -737,16 +736,15 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#333',
+    borderTopColor: colors.border,
   },
   viewDetailsText: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 6,
   },
 
-  // Empty State
   emptyContainer: {
     flex: 1,
     padding: 40,
@@ -755,7 +753,8 @@ const styles = StyleSheet.create({
     minHeight: 300,
   },
   emptyText: {
-    color: '#ddd',
+    color: colors.textPrimary,
+    opacity: 0.85,
     textAlign: 'center',
     fontSize: 16,
     marginBottom: 10,

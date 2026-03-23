@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { colors } from '../src/theme';
 import { useAuth } from '../src/context/AuthContext';
 import { saveUserProfile } from '../src/services/api';
 import CustomButton from '../src/components/CustomButton';
@@ -208,7 +209,7 @@ const CreateProfileScreen = () => {
     return (
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Ionicons name="arrow-back-outline" size={28} color="#D4AF37" />
+          <Ionicons name="arrow-back-outline" size={28} color={colors.primary} />
         </TouchableOpacity>
       </View>
     );
@@ -244,7 +245,7 @@ const CreateProfileScreen = () => {
         <Text style={styles.tappableValueFull}>{getOptionLabel(field, value)}</Text>
         <Text style={styles.tappableLabel}>{label}</Text>
       </View>
-      <Ionicons name="chevron-down" size={20} color="#D4AF37" />
+      <Ionicons name="chevron-down" size={20} color={colors.primary} />
     </TouchableOpacity>
   );
 
@@ -255,7 +256,7 @@ const CreateProfileScreen = () => {
   ) => (
     <View style={styles.stepBanner}>
       <View style={styles.stepIcon}>
-        <Ionicons name={iconName} size={40} color="#D4AF37" />
+        <Ionicons name={iconName} size={40} color={colors.primary} />
       </View>
       <Text style={styles.label}>{title}</Text>
       <Text style={styles.motivationText}>{motivationText}</Text>
@@ -270,7 +271,7 @@ const CreateProfileScreen = () => {
             <View style={styles.contentBlock}>
               <View style={styles.stepBanner}>
                 <View style={styles.stepIcon}>
-                  <Ionicons name="fitness-outline" size={40} color="#D4AF37" />
+                  <Ionicons name="fitness-outline" size={40} color={colors.primary} />
                 </View>
                 <Text style={styles.title}>¡Bienvenido!</Text>
                 <Text style={styles.subtitle}>
@@ -285,7 +286,7 @@ const CreateProfileScreen = () => {
                   iconName="arrow-forward-outline"
                   iconPosition="right"
                   iconSize={24}
-                  iconColor="#1a1919"
+                  iconColor={colors.textOnPrimary}
                 />
               </View>
             </View>
@@ -310,7 +311,7 @@ const CreateProfileScreen = () => {
                   >
                     <Text style={styles.tappableValue}>{profileData.age || '25'}</Text>
                     <Text style={styles.tappableLabel}>Edad (años)</Text>
-                    <Ionicons name="chevron-down" size={18} color="#D4AF37" />
+                    <Ionicons name="chevron-down" size={18} color={colors.primary} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.tappableField}
@@ -319,7 +320,7 @@ const CreateProfileScreen = () => {
                   >
                     <Text style={styles.tappableValue}>{profileData.weight || '70'}</Text>
                     <Text style={styles.tappableLabel}>Peso (kg)</Text>
-                    <Ionicons name="chevron-down" size={18} color="#D4AF37" />
+                    <Ionicons name="chevron-down" size={18} color={colors.primary} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.tappableField}
@@ -328,7 +329,7 @@ const CreateProfileScreen = () => {
                   >
                     <Text style={styles.tappableValue}>{profileData.height || '170'}</Text>
                     <Text style={styles.tappableLabel}>Altura (cm)</Text>
-                    <Ionicons name="chevron-down" size={18} color="#D4AF37" />
+                    <Ionicons name="chevron-down" size={18} color={colors.primary} />
                   </TouchableOpacity>
                 </View>
                 {renderTappableOption('gender', 'Género', profileData.gender)}
@@ -341,7 +342,7 @@ const CreateProfileScreen = () => {
                   iconName="arrow-forward-outline"
                   iconPosition="right"
                   iconSize={24}
-                  iconColor="#1a1919"
+                  iconColor={colors.textOnPrimary}
                 />
               </View>
             </View>
@@ -377,7 +378,7 @@ const CreateProfileScreen = () => {
                   iconName="arrow-forward-outline"
                   iconPosition="right"
                   iconSize={24}
-                  iconColor="#1a1919"
+                  iconColor={colors.textOnPrimary}
                 />
               </View>
             </View>
@@ -413,7 +414,7 @@ const CreateProfileScreen = () => {
                   iconName="arrow-forward-outline"
                   iconPosition="right"
                   iconSize={24}
-                  iconColor="#1a1919"
+                  iconColor={colors.textOnPrimary}
                 />
               </View>
             </View>
@@ -450,7 +451,7 @@ const CreateProfileScreen = () => {
                   iconName="save-outline"
                   iconPosition="right"
                   iconSize={24}
-                  iconColor="#1a1919"
+                  iconColor={colors.textOnPrimary}
                   onPress={handleSaveProfile}
                   style={styles.button}
                 />
@@ -499,10 +500,10 @@ const CreateProfileScreen = () => {
                 onValueChange={(v) => handleChange('age', v)}
                 style={styles.modalPicker}
                 itemStyle={styles.pickerItem}
-                dropdownIconColor="#D4AF37"
+                dropdownIconColor={colors.primary}
               >
                 {Array.from({ length: 109 }, (_, i) => i + 12).map((age) => (
-                  <Picker.Item key={age} label={`${age} años`} value={age.toString()} color="#fff" />
+                  <Picker.Item key={age} label={`${age} años`} value={age.toString()} color={colors.textPrimary} />
                 ))}
               </Picker>
             )}
@@ -512,10 +513,10 @@ const CreateProfileScreen = () => {
                 onValueChange={(v) => handleChange('weight', v)}
                 style={styles.modalPicker}
                 itemStyle={styles.pickerItem}
-                dropdownIconColor="#D4AF37"
+                dropdownIconColor={colors.primary}
               >
                 {Array.from({ length: 171 }, (_, i) => i + 30).map((w) => (
-                  <Picker.Item key={w} label={`${w} kg`} value={w.toString()} color="#fff" />
+                  <Picker.Item key={w} label={`${w} kg`} value={w.toString()} color={colors.textPrimary} />
                 ))}
               </Picker>
             )}
@@ -525,10 +526,10 @@ const CreateProfileScreen = () => {
                 onValueChange={(v) => handleChange('height', v)}
                 style={styles.modalPicker}
                 itemStyle={styles.pickerItem}
-                dropdownIconColor="#D4AF37"
+                dropdownIconColor={colors.primary}
               >
                 {Array.from({ length: 101 }, (_, i) => i + 130).map((h) => (
-                  <Picker.Item key={h} label={`${h} cm`} value={h.toString()} color="#fff" />
+                  <Picker.Item key={h} label={`${h} cm`} value={h.toString()} color={colors.textPrimary} />
                 ))}
               </Picker>
             )}
@@ -544,14 +545,14 @@ const CreateProfileScreen = () => {
                   }
                   style={styles.modalPicker}
                   itemStyle={styles.pickerItem}
-                  dropdownIconColor="#D4AF37"
+                  dropdownIconColor={colors.primary}
                 >
                   {OPTION_SETS[modalField].map((opt) => (
                     <Picker.Item
                       key={opt.value}
                       label={opt.label}
                       value={opt.value}
-                      color="#fff"
+                      color={colors.textPrimary}
                     />
                   ))}
                 </Picker>
@@ -572,7 +573,7 @@ const CreateProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1919',
+    backgroundColor: colors.background,
   },
   inner: {
     flex: 1,
@@ -598,13 +599,13 @@ const styles = StyleSheet.create({
   },
   progressBarBg: {
     height: 4,
-    backgroundColor: '#333',
+    backgroundColor: colors.border,
     borderRadius: 2,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#D4AF37',
+    backgroundColor: colors.primary,
     borderRadius: 2,
   },
   stepContainer: {
@@ -628,12 +629,12 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
   },
   inputsZone: {
     width: '100%',
@@ -645,41 +646,43 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#D4AF37',
+    fontSize: 26,
+    fontWeight: '700',
+    color: colors.primary,
     marginBottom: 10,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: '#fff',
+    color: colors.textPrimary,
     marginBottom: 16,
     textAlign: 'center',
   },
   subtitleCompact: {
     fontSize: 14,
-    color: '#ddd',
+    color: colors.textPrimary,
+    opacity: 0.9,
     marginBottom: 8,
     textAlign: 'center',
   },
   motivationText: {
     fontSize: 13,
-    color: '#D4AF37',
+    color: colors.primary,
     textAlign: 'center',
     marginBottom: 4,
     lineHeight: 20,
   },
   label: {
     fontSize: 16,
-    color: '#D4AF37',
+    color: colors.primary,
     marginBottom: 4,
     textAlign: 'center',
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   fieldLabel: {
     fontSize: 13,
-    color: '#ddd',
+    color: colors.textPrimary,
+    opacity: 0.88,
     marginTop: 10,
     marginBottom: 6,
     alignSelf: 'flex-start',
@@ -695,21 +698,21 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     paddingVertical: 18,
     paddingHorizontal: 8,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
   },
   tappableValue: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#D4AF37',
+    fontWeight: '700',
+    color: colors.primary,
   },
   tappableLabel: {
     fontSize: 11,
-    color: '#999',
+    color: colors.textSecondary,
     marginTop: 4,
     marginBottom: 4,
   },
@@ -718,22 +721,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     paddingVertical: 18,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
     marginBottom: 8,
   },
   tappableValueFull: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#D4AF37',
+    color: colors.primary,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
@@ -741,43 +744,43 @@ const styles = StyleSheet.create({
   modalContent: {
     width: '100%',
     maxWidth: 320,
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#D4AF37',
+    fontWeight: '700',
+    color: colors.primary,
     textAlign: 'center',
     marginBottom: 16,
   },
   modalPicker: {
     width: '100%',
-    color: '#fff',
+    color: colors.textPrimary,
     marginBottom: 16,
-    backgroundColor: Platform.OS === 'android' ? '#252525' : 'transparent',
+    backgroundColor: Platform.OS === 'android' ? colors.surface : 'transparent',
   },
   pickerItem: {
     fontSize: 18,
-    color: '#fff',
+    color: colors.textPrimary,
   },
   modalButton: {
-    backgroundColor: '#D4AF37',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
   },
   modalButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1a1919',
+    fontWeight: '700',
+    color: colors.textOnPrimary,
   },
   button: {
     width: '100%',
-    backgroundColor: '#D4AF37',
+    backgroundColor: colors.primary,
     marginTop: 12,
     marginBottom: 8,
   },

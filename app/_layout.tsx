@@ -4,6 +4,7 @@ import { Stack, useRouter, useSegments, Slot } from 'expo-router';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ActivityIndicator, View } from 'react-native';
 import NetworkErrorBanner from '../src/components/NetworkErrorBanner';
+import { colors } from '../src/theme';
 
 export default function RootLayout() {
   return (
@@ -26,10 +27,10 @@ function RootLayoutNav() {
           flex: 1,
           justifyContent: 'center',
           alignItems: 'center',
-          backgroundColor: '#1a1919',
+          backgroundColor: colors.background,
         }}
       >
-        <ActivityIndicator size='large' color='#D4AF37' />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -39,14 +40,14 @@ function RootLayoutNav() {
       initialRouteName={user ? '(tabs)' : 'login'}
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#1a1919',
+          backgroundColor: colors.background,
         },
-        headerTintColor: '#D4AF37',
+        headerTintColor: colors.primary,
         headerTitleStyle: {
-          color: '#D4AF37',
+          color: colors.primary,
         },
         contentStyle: {
-          backgroundColor: '#1a1919',
+          backgroundColor: colors.background,
         },
         animation: 'slide_from_right',
         animationDuration: 300,
@@ -61,11 +62,11 @@ function RootLayoutNav() {
         name='products/[productId]'
         options={{
           headerStyle: {
-            backgroundColor: '#1a1919',
+            backgroundColor: colors.background,
           },
-          headerTintColor: '#D4AF37',
+          headerTintColor: colors.primary,
           headerTitleStyle: {
-            color: '#D4AF37',
+            color: colors.primary,
           },
           headerShadowVisible: false,
           presentation: 'card',

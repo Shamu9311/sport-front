@@ -4,16 +4,18 @@ import {
   Alert,
   StyleSheet,
   Image,
-  Text,
   KeyboardAvoidingView,
   TouchableWithoutFeedback,
   Keyboard,
+  Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AuthForm from '../src/components/AuthForm';
 import CustomButton from '../src/components/CustomButton';
 import { registerUser, loginUser } from '../src/services/api';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
+import { colors, spacing } from '../src/theme';
 
 const RegisterScreen = () => {
   const router = useRouter();
@@ -22,20 +24,13 @@ const RegisterScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
   const handleRegister = async () => {
-    // Validación básica
     if (!username || !email || !password) {
       Alert.alert('Error', 'Por favor completa todos los campos');
       return;
     }
 
     try {
-      // Llamada a la API para registrar al usuario
       const response = await registerUser({ username, email, password });
 
       if (response.success) {
@@ -46,11 +41,9 @@ const RegisterScreen = () => {
             {
               text: 'Continuar',
               onPress: async () => {
-                // Intentar iniciar sesión automáticamente
                 try {
                   const loginResponse = await loginUser(email, password);
                   if (loginResponse && loginResponse.user) {
-                    // Llamar a la función login del contexto
                     const userData = {
                       id: loginResponse.user.id,
                       username: loginResponse.user.username,
@@ -59,13 +52,10 @@ const RegisterScreen = () => {
                     };
 
                     await login(userData, loginResponse.token);
-
-                    // Navegar a la pantalla de creación de perfil
                     router.replace('/create-profile');
                   }
                 } catch (loginError) {
                   console.error('Error al iniciar sesión automáticamente:', loginError);
-                  // Si falla el login automático, ir a la pantalla de login
                   router.replace('/login');
                 }
               },
@@ -73,7 +63,6 @@ const RegisterScreen = () => {
           ]
         );
       } else {
-        // Caso donde el API devuelve { success: false, message: '...' }
         Alert.alert('Error de Registro', response.message || 'No se pudo completar el registro.');
       }
     } catch (error: any) {
@@ -83,7 +72,6 @@ const RegisterScreen = () => {
 
       if (errorResponse) {
         if (errorResponse.status === 409) {
-          // Conflicto (ej: email ya existe)
           errorMessage =
             errorResponse.data?.message ||
             'El correo electrónico o nombre de usuario ya están en uso.';
@@ -100,81 +88,93 @@ const RegisterScreen = () => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.container}>
-        <Image
-          source={require('../assets/images/login.png')} // <-- VERIFICA RUTA
-          style={styles.logo}
-          resizeMode='contain'
-        />
-        <AuthForm
-          fields={[
-            {
-              label: 'Nombre de usuario',
-              value: username,
-              onChangeText: setUsername,
-              autoCapitalize: 'none',
-            }, // autoCapitalize none para username suele ser mejor
-            {
-              label: 'Email',
-              value: email,
-              onChangeText: setEmail,
-              keyboardType: 'email-address',
-              autoCapitalize: 'none',
-            },
-            {
-              label: 'Contraseña',
-              value: password,
-              onChangeText: setPassword,
-              secure: true,
-              autoCapitalize: 'none',
-            },
-          ]}
-        />
-        <CustomButton
-          title='GUARDAR REGISTRO' // Más específico
-          iconColor='#1a1919'
-          iconName='save-outline'
-          iconPosition='right'
-          iconSize={24}
-          onPress={handleRegister}
-          style={styles.button}
-        />
-        <CustomButton
-          title='YA TENGO CUENTA (LOGIN)' // Más claro
-          iconColor='#1a1919'
-          iconName='log-in-outline'
-          iconPosition='right'
-          iconSize={24}
-          // 4. CAMBIA navigation.navigate a router.push (o goBack si prefieres)
-          onPress={() => router.push('/login')} // push añade login al historial
-          // Alternativa: si quieres que actúe como el botón 'atrás':
-          // onPress={() => router.back()}
-          style={styles.button}
-        />
-      </View>
-    </TouchableWithoutFeedback>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View style={styles.container}>
+            <Image
+              source={require('../assets/images/login.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <AuthForm
+              fields={[
+                {
+                  label: 'Nombre de usuario',
+                  value: username,
+                  onChangeText: setUsername,
+                  autoCapitalize: 'none',
+                },
+                {
+                  label: 'Email',
+                  value: email,
+                  onChangeText: setEmail,
+                  keyboardType: 'email-address',
+                  autoCapitalize: 'none',
+                },
+                {
+                  label: 'Contraseña',
+                  value: password,
+                  onChangeText: setPassword,
+                  secure: true,
+                  autoCapitalize: 'none',
+                },
+              ]}
+            />
+            <CustomButton
+              title="GUARDAR REGISTRO"
+              iconName="save-outline"
+              iconPosition="right"
+              iconSize={24}
+              variant="primary"
+              onPress={handleRegister}
+              style={styles.buttonPrimary}
+            />
+            <CustomButton
+              title="YA TENGO CUENTA (LOGIN)"
+              iconName="log-in-outline"
+              iconPosition="right"
+              iconSize={24}
+              variant="outline"
+              onPress={() => router.push('/login')}
+              style={styles.buttonSecondary}
+            />
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
-// ... (estilos igual)
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  keyboardView: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#1a1919',
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xl,
   },
   logo: {
-    height: 110,
-    marginTop: -50, // Ajusta
-    marginBottom: 30, // Espacio
+    width: '70%',
+    maxWidth: 280,
+    height: 100,
+    marginBottom: spacing.xl,
   },
-  button: {
-    width: '80%',
-    backgroundColor: '#D4AF37',
-    marginTop: 15, // Espaciado entre botones y form
+  buttonPrimary: {
+    marginTop: spacing.md,
+  },
+  buttonSecondary: {
+    marginTop: spacing.sm,
   },
 });
 

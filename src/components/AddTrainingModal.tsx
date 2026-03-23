@@ -13,6 +13,7 @@ import {
   Animated,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { colors } from '../theme';
 // Función para formatear fechas en español
 const formatDate = (date: Date) => {
   return date.toLocaleDateString('es-ES', {
@@ -201,14 +202,14 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
         >
           {saving && (
             <View style={styles.loadingOverlay}>
-              <ActivityIndicator size='large' color='#D4AF37' />
+              <ActivityIndicator size='large' color={colors.primary} />
               <Text style={styles.loadingText}>Generando recomendaciones...</Text>
             </View>
           )}
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Agregar Entrenamiento</Text>
             <TouchableOpacity onPress={handleClose}>
-              <MaterialCommunityIcons name='close' size={24} color='#fff' />
+              <MaterialCommunityIcons name='close' size={24} color={colors.textPrimary} />
             </TouchableOpacity>
           </View>
 
@@ -217,7 +218,7 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
             <Text style={styles.label}>Fecha</Text>
             <View style={styles.dateContainer}>
               <TouchableOpacity style={styles.dateButton} onPress={decrementDate}>
-                <MaterialCommunityIcons name='chevron-left' size={24} color='#D4AF37' />
+                <MaterialCommunityIcons name='chevron-left' size={24} color={colors.primary} />
               </TouchableOpacity>
 
               <View style={styles.dateDisplay}>
@@ -225,7 +226,7 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
               </View>
 
               <TouchableOpacity style={styles.dateButton} onPress={incrementDate}>
-                <MaterialCommunityIcons name='chevron-right' size={24} color='#D4AF37' />
+                <MaterialCommunityIcons name='chevron-right' size={24} color={colors.primary} />
               </TouchableOpacity>
             </View>
 
@@ -244,7 +245,7 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
                   }
                 }}
                 placeholder='18'
-                placeholderTextColor='#666'
+                placeholderTextColor={colors.textMuted}
                 keyboardType='numeric'
                 maxLength={2}
               />
@@ -259,7 +260,7 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
                   }
                 }}
                 placeholder='00'
-                placeholderTextColor='#666'
+                placeholderTextColor={colors.textMuted}
                 keyboardType='numeric'
                 maxLength={2}
               />
@@ -279,7 +280,7 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
                 setDurationError('');
               }}
               placeholder='Ej: 45'
-              placeholderTextColor='#666'
+              placeholderTextColor={colors.textMuted}
               keyboardType='numeric'
             />
             {durationError ? <Text style={styles.errorText}>{durationError}</Text> : null}
@@ -362,7 +363,7 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
               value={notes}
               onChangeText={setNotes}
               placeholder='Agrega alguna nota sobre tu entrenamiento'
-              placeholderTextColor='#666'
+              placeholderTextColor={colors.textMuted}
               multiline
               numberOfLines={4}
             />
@@ -384,7 +385,7 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
               activeOpacity={0.8}
             >
               {saving ? (
-                <ActivityIndicator size='small' color='#000' />
+                <ActivityIndicator size='small' color={colors.textOnPrimary} />
               ) : (
                 <Text style={[styles.buttonText, styles.saveButtonText]}>Guardar</Text>
               )}
@@ -404,14 +405,14 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: colors.overlay,
   },
   modalView: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.background,
     margin: 20,
     borderRadius: 15,
     maxHeight: '80%',
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -426,31 +427,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: colors.border,
   },
   modalTitle: {
-    color: '#fff',
+    color: colors.textPrimary,
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   formContainer: {
     padding: 20,
   },
   label: {
-    color: '#fff',
+    color: colors.textPrimary,
     fontSize: 16,
     marginBottom: 8,
     fontWeight: '500',
   },
   required: {
-    color: '#ff4d4d',
+    color: colors.error,
   },
   dateContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 20,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 10,
     padding: 5,
   },
@@ -462,7 +463,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dateText: {
-    color: '#fff',
+    color: colors.textPrimary,
     fontSize: 16,
   },
   timeContainer: {
@@ -472,9 +473,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   timeInput: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 10,
-    color: '#fff',
+    color: colors.textPrimary,
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -482,18 +483,18 @@ const styles = StyleSheet.create({
     height: 50,
   },
   timeSeparator: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 24,
     fontWeight: 'bold',
   },
   timeHint: {
-    color: '#999',
+    color: colors.textSecondary,
     fontSize: 12,
     marginLeft: 10,
   },
   input: {
-    backgroundColor: '#2a2a2a',
-    color: '#fff',
+    backgroundColor: colors.surfaceElevated,
+    color: colors.textPrimary,
     borderRadius: 10,
     padding: 15,
     marginBottom: 8,
@@ -502,11 +503,11 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   inputError: {
-    borderColor: '#ff4d4d',
+    borderColor: colors.error,
     borderWidth: 1,
   },
   errorText: {
-    color: '#ff4d4d',
+    color: colors.error,
     fontSize: 12,
     marginTop: -12,
     marginBottom: 12,
@@ -526,29 +527,29 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: colors.borderStrong,
   },
   selectedOption: {
-    backgroundColor: '#D4AF37',
-    borderColor: '#D4AF37',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   optionText: {
-    color: '#fff',
+    color: colors.textPrimary,
     textAlign: 'center',
     fontSize: 14,
   },
   selectedOptionText: {
-    color: '#000',
-    fontWeight: 'bold',
+    color: colors.textOnPrimary,
+    fontWeight: '700',
   },
   modalFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: '#333',
+    borderTopColor: colors.border,
   },
   button: {
     flex: 1,
@@ -564,20 +565,20 @@ const styles = StyleSheet.create({
   cancelButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#666',
+    borderColor: colors.textMuted,
     marginRight: 10,
   },
   saveButton: {
-    backgroundColor: '#D4AF37',
+    backgroundColor: colors.primary,
     marginLeft: 10,
   },
   buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: colors.textPrimary,
+    fontWeight: '700',
     fontSize: 16,
   },
   saveButtonText: {
-    color: '#000',
+    color: colors.textOnPrimary,
   },
   loadingOverlay: {
     position: 'absolute',
@@ -585,14 +586,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(26, 25, 25, 0.95)',
+    backgroundColor: colors.overlayLoading,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
     borderRadius: 15,
   },
   loadingText: {
-    color: '#D4AF37',
+    color: colors.primary,
     marginTop: 16,
     fontSize: 16,
     fontWeight: '600',

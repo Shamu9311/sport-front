@@ -27,6 +27,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import NotificationService from '../../src/services/notificationService';
+import { colors } from '../../src/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -304,7 +305,7 @@ const ProfileScreen = () => {
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size='large' color='#D4AF37' />
+        <ActivityIndicator size='large' color={colors.primary} />
         <Text style={styles.loadingText}>Cargando información del perfil...</Text>
       </View>
     );
@@ -314,10 +315,10 @@ const ProfileScreen = () => {
   if (error) {
     return (
       <View style={styles.centeredContainer}>
-        <Ionicons name='alert-circle' size={60} color='#FF6B6B' style={{ marginBottom: 20 }} />
+        <Ionicons name='alert-circle' size={60} color={colors.error} style={{ marginBottom: 20 }} />
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.refreshButton} onPress={loadUserProfile}>
-          <Ionicons name='refresh' size={20} color='#1a1919' style={{ marginRight: 8 }} />
+          <Ionicons name='refresh' size={20} color={colors.textOnPrimary} style={{ marginRight: 8 }} />
           <Text style={styles.refreshButtonText}>Reintentar</Text>
         </TouchableOpacity>
       </View>
@@ -343,7 +344,7 @@ const ProfileScreen = () => {
       {/* Header con Avatar */}
       <View style={styles.profileHeader}>
         <View style={styles.avatarContainer}>
-          <Ionicons name='person-circle' size={100} color='#D4AF37' />
+          <Ionicons name='person-circle' size={100} color={colors.primary} />
         </View>
         <Text style={styles.profileTitle}>{userInfo?.username || 'Usuario'}</Text>
         <Text style={styles.profileEmail}>{userInfo?.email || 'No disponible'}</Text>
@@ -352,13 +353,13 @@ const ProfileScreen = () => {
       {/* Card de Información Personal y Datos Físicos */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Ionicons name='person' size={24} color='#D4AF37' />
+          <Ionicons name='person' size={24} color={colors.primary} />
           <Text style={styles.cardTitle}>Información Personal</Text>
         </View>
 
         <View style={styles.infoRow}>
           <View style={styles.infoItem}>
-            <Ionicons name='calendar' size={18} color='#999' />
+            <Ionicons name='calendar' size={18} color={colors.textSecondary} />
             <Text style={styles.infoLabel}>Miembro desde</Text>
           </View>
           <Text style={styles.infoValue}>
@@ -375,19 +376,19 @@ const ProfileScreen = () => {
 
             <View style={styles.statsGrid}>
               <View style={styles.statItem}>
-                <Ionicons name='calendar-outline' size={24} color='#D4AF37' />
+                <Ionicons name='calendar-outline' size={24} color={colors.primary} />
                 <Text style={styles.statValue}>{userInfo.profile.age}</Text>
                 <Text style={styles.statLabel}>Años</Text>
               </View>
 
               <View style={styles.statItem}>
-                <Ionicons name='scale-outline' size={24} color='#D4AF37' />
+                <Ionicons name='scale-outline' size={24} color={colors.primary} />
                 <Text style={styles.statValue}>{userInfo.profile.weight}</Text>
                 <Text style={styles.statLabel}>kg</Text>
               </View>
 
               <View style={styles.statItem}>
-                <Ionicons name='resize-outline' size={24} color='#D4AF37' />
+                <Ionicons name='resize-outline' size={24} color={colors.primary} />
                 <Text style={styles.statValue}>{userInfo.profile.height}</Text>
                 <Text style={styles.statLabel}>cm</Text>
               </View>
@@ -395,7 +396,7 @@ const ProfileScreen = () => {
 
             <View style={styles.infoRow}>
               <View style={styles.infoItem}>
-                <Ionicons name='male-female' size={18} color='#999' />
+                <Ionicons name='male-female' size={18} color={colors.textSecondary} />
                 <Text style={styles.infoLabel}>Género</Text>
               </View>
               <Text style={styles.infoValue}>{userInfo.profile.gender}</Text>
@@ -409,13 +410,13 @@ const ProfileScreen = () => {
         <>
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Ionicons name='barbell' size={24} color='#D4AF37' />
+              <Ionicons name='barbell' size={24} color={colors.primary} />
               <Text style={styles.cardTitle}>Actividad Deportiva</Text>
             </View>
 
             <View style={styles.infoRow}>
               <View style={styles.infoItem}>
-                <Ionicons name='trending-up' size={18} color='#999' />
+                <Ionicons name='trending-up' size={18} color={colors.textSecondary} />
                 <Text style={styles.infoLabel}>Nivel de actividad</Text>
               </View>
               <Text style={styles.infoValue}>{userInfo.profile.activity_level}</Text>
@@ -423,7 +424,7 @@ const ProfileScreen = () => {
 
             <View style={styles.infoRow}>
               <View style={styles.infoItem}>
-                <Ionicons name='repeat' size={18} color='#999' />
+                <Ionicons name='repeat' size={18} color={colors.textSecondary} />
                 <Text style={styles.infoLabel}>Frecuencia</Text>
               </View>
               <Text style={styles.infoValue}>{userInfo.profile.training_frequency} veces/sem</Text>
@@ -431,7 +432,7 @@ const ProfileScreen = () => {
 
             <View style={styles.infoRow}>
               <View style={styles.infoItem}>
-                <Ionicons name='trophy' size={18} color='#999' />
+                <Ionicons name='trophy' size={18} color={colors.textSecondary} />
                 <Text style={styles.infoLabel}>Objetivo</Text>
               </View>
               <Text style={styles.infoValue}>{userInfo.profile.primary_goal}</Text>
@@ -441,13 +442,13 @@ const ProfileScreen = () => {
           {/* Card de Preferencias */}
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Ionicons name='settings' size={24} color='#D4AF37' />
+              <Ionicons name='settings' size={24} color={colors.primary} />
               <Text style={styles.cardTitle}>Preferencias</Text>
             </View>
 
             <View style={styles.infoRow}>
               <View style={styles.infoItem}>
-                <Ionicons name='water' size={18} color='#999' />
+                <Ionicons name='water' size={18} color={colors.textSecondary} />
                 <Text style={styles.infoLabel}>Sudoración</Text>
               </View>
               <Text style={styles.infoValue}>{userInfo.profile.sweat_level}</Text>
@@ -455,7 +456,7 @@ const ProfileScreen = () => {
 
             <View style={styles.infoRow}>
               <View style={styles.infoItem}>
-                <Ionicons name='cafe' size={18} color='#999' />
+                <Ionicons name='cafe' size={18} color={colors.textSecondary} />
                 <Text style={styles.infoLabel}>Tolerancia cafeína</Text>
               </View>
               <Text style={styles.infoValue}>{userInfo.profile.caffeine_tolerance}</Text>
@@ -463,7 +464,7 @@ const ProfileScreen = () => {
 
             <View style={styles.infoRow}>
               <View style={styles.infoItem}>
-                <Ionicons name='restaurant' size={18} color='#999' />
+                <Ionicons name='restaurant' size={18} color={colors.textSecondary} />
                 <Text style={styles.infoLabel}>Restricciones</Text>
               </View>
               <Text style={styles.infoValue}>{userInfo.profile.dietary_restrictions}</Text>
@@ -475,7 +476,7 @@ const ProfileScreen = () => {
           <Ionicons
             name='information-circle-outline'
             size={60}
-            color='#999'
+            color={colors.textSecondary}
             style={{ marginBottom: 15 }}
           />
           <Text style={styles.noProfileText}>No has completado tu perfil deportivo</Text>
@@ -488,13 +489,13 @@ const ProfileScreen = () => {
       {/* Card de Notificaciones */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Ionicons name='notifications' size={24} color='#D4AF37' />
+          <Ionicons name='notifications' size={24} color={colors.primary} />
           <Text style={styles.cardTitle}>Notificaciones</Text>
         </View>
 
         <View style={styles.switchRow}>
           <View style={styles.switchInfo}>
-            <Ionicons name='time' size={20} color='#999' />
+            <Ionicons name='time' size={20} color={colors.textSecondary} />
             <View style={styles.switchTextContainer}>
               <Text style={styles.switchLabel}>Recordatorios de consumo</Text>
               <Text style={styles.switchSubtext}>Notificaciones sobre productos recomendados</Text>
@@ -503,14 +504,14 @@ const ProfileScreen = () => {
           <Switch
             value={consumptionReminders}
             onValueChange={handleToggleConsumptionReminders}
-            trackColor={{ false: '#333', true: '#D4AF3780' }}
-            thumbColor={consumptionReminders ? '#D4AF37' : '#ccc'}
+            trackColor={{ false: colors.border, true: `${colors.primary}80` }}
+            thumbColor={consumptionReminders ? colors.primary : colors.textSecondary}
           />
         </View>
 
         <View style={styles.switchRow}>
           <View style={styles.switchInfo}>
-            <Ionicons name='barbell' size={20} color='#999' />
+            <Ionicons name='barbell' size={20} color={colors.textSecondary} />
             <View style={styles.switchTextContainer}>
               <Text style={styles.switchLabel}>Alertas de entrenamientos</Text>
               <Text style={styles.switchSubtext}>Recordatorio diario para entrenar</Text>
@@ -519,8 +520,8 @@ const ProfileScreen = () => {
           <Switch
             value={trainingAlerts}
             onValueChange={handleToggleTrainingAlerts}
-            trackColor={{ false: '#333', true: '#D4AF3780' }}
-            thumbColor={trainingAlerts ? '#D4AF37' : '#ccc'}
+            trackColor={{ false: colors.border, true: `${colors.primary}80` }}
+            thumbColor={trainingAlerts ? colors.primary : colors.textSecondary}
           />
         </View>
       </View>
@@ -528,17 +529,17 @@ const ProfileScreen = () => {
       {/* Botones de acción */}
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
-          <Ionicons name='create-outline' size={22} color='#1a1919' />
+          <Ionicons name='create-outline' size={22} color={colors.textOnPrimary} />
           <Text style={styles.buttonText}>Editar Perfil</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Ionicons name='log-out-outline' size={22} color='#fff' />
+          <Ionicons name='log-out-outline' size={22} color={colors.textPrimary} />
           <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
         </TouchableOpacity>
 
         {/* <TouchableOpacity style={styles.exitButton} onPress={handleExitApp}>
-          <Ionicons name='exit-outline' size={22} color='#fff' />
+          <Ionicons name='exit-outline' size={22} color={colors.textPrimary} />
           <Text style={styles.exitButtonText}>Salir de la Aplicación</Text>
         </TouchableOpacity> */}
       </View>
@@ -688,7 +689,7 @@ const PersonalDataForm = ({
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size='large' color='#D4AF37' />
+        <ActivityIndicator size='large' color={colors.primary} />
         <Text style={styles.loadingText}>Cargando datos del perfil...</Text>
       </View>
     );
@@ -696,7 +697,7 @@ const PersonalDataForm = ({
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: '#1a1919' }}
+      style={{ flex: 1, backgroundColor: colors.background }}
       contentContainerStyle={{ paddingBottom: 100 }}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps='handled'
@@ -704,7 +705,7 @@ const PersonalDataForm = ({
       {/* Header con título y botón de regresar */}
       <View style={styles.editHeader}>
         <TouchableOpacity onPress={onCancel} style={styles.backButtonEdit}>
-          <Ionicons name='arrow-back' size={24} color='#D4AF37' />
+          <Ionicons name='arrow-back' size={24} color={colors.primary} />
           <Text style={styles.backButtonText}>Volver</Text>
         </TouchableOpacity>
         <Text style={styles.editHeaderTitle}>Editar Perfil</Text>
@@ -715,7 +716,7 @@ const PersonalDataForm = ({
         {/* Datos Básicos Card */}
         <View style={styles.formCard}>
           <View style={styles.formCardHeader}>
-            <Ionicons name='person-outline' size={20} color='#D4AF37' />
+            <Ionicons name='person-outline' size={20} color={colors.primary} />
             <Text style={styles.formCardTitle}>Datos Básicos</Text>
           </View>
 
@@ -724,7 +725,7 @@ const PersonalDataForm = ({
             style={styles.input}
             keyboardType='numeric'
             placeholder='Ej: 25'
-            placeholderTextColor='#666'
+            placeholderTextColor={colors.textMuted}
             value={String(userData.age)}
             onChangeText={(text) => handleNumericChange('age', text)}
           />
@@ -734,7 +735,7 @@ const PersonalDataForm = ({
             style={styles.input}
             keyboardType='numeric'
             placeholder='Ej: 70.5'
-            placeholderTextColor='#666'
+            placeholderTextColor={colors.textMuted}
             value={String(userData.weight)}
             onChangeText={(text) => handleNumericChange('weight', text)}
           />
@@ -744,7 +745,7 @@ const PersonalDataForm = ({
             style={styles.input}
             keyboardType='numeric'
             placeholder='Ej: 175'
-            placeholderTextColor='#666'
+            placeholderTextColor={colors.textMuted}
             value={String(userData.height)}
             onChangeText={(text) => handleNumericChange('height', text)}
           />
@@ -753,7 +754,7 @@ const PersonalDataForm = ({
         {/* Género y Características Card */}
         <View style={styles.formCard}>
           <View style={styles.formCardHeader}>
-            <Ionicons name='body-outline' size={20} color='#D4AF37' />
+            <Ionicons name='body-outline' size={20} color={colors.primary} />
             <Text style={styles.formCardTitle}>Características Personales</Text>
           </View>
 
@@ -762,7 +763,7 @@ const PersonalDataForm = ({
             selectedValue={userData.gender}
             onValueChange={(value) => setUserData({ ...userData, gender: value })}
             style={styles.picker}
-            dropdownIconColor='#D4AF37'
+            dropdownIconColor={colors.primary}
             mode='dialog'
           >
             <Picker.Item label='Hombre' value='hombre' />
@@ -775,7 +776,7 @@ const PersonalDataForm = ({
         {/* Actividad Deportiva Card */}
         <View style={styles.formCard}>
           <View style={styles.formCardHeader}>
-            <Ionicons name='barbell-outline' size={20} color='#D4AF37' />
+            <Ionicons name='barbell-outline' size={20} color={colors.primary} />
             <Text style={styles.formCardTitle}>Actividad Deportiva</Text>
           </View>
 
@@ -784,7 +785,7 @@ const PersonalDataForm = ({
             selectedValue={userData.activity_level}
             onValueChange={(value) => setUserData({ ...userData, activity_level: value })}
             style={styles.picker}
-            dropdownIconColor='#D4AF37'
+            dropdownIconColor={colors.primary}
             mode='dialog'
           >
             <Picker.Item label='Sedentario' value='sedentario' />
@@ -798,7 +799,7 @@ const PersonalDataForm = ({
             selectedValue={userData.training_frequency}
             onValueChange={(value) => setUserData({ ...userData, training_frequency: value })}
             style={styles.picker}
-            dropdownIconColor='#D4AF37'
+            dropdownIconColor={colors.primary}
             mode='dialog'
           >
             <Picker.Item label='1-2 veces por semana' value='1-2' />
@@ -812,7 +813,7 @@ const PersonalDataForm = ({
             selectedValue={userData.primary_goal}
             onValueChange={(value) => setUserData({ ...userData, primary_goal: value })}
             style={styles.picker}
-            dropdownIconColor='#D4AF37'
+            dropdownIconColor={colors.primary}
             mode='dialog'
           >
             <Picker.Item label='Mejor rendimiento' value='mejor rendimiento' />
@@ -827,7 +828,7 @@ const PersonalDataForm = ({
         {/* Preferencias Card */}
         <View style={styles.formCard}>
           <View style={styles.formCardHeader}>
-            <Ionicons name='settings-outline' size={20} color='#D4AF37' />
+            <Ionicons name='settings-outline' size={20} color={colors.primary} />
             <Text style={styles.formCardTitle}>Preferencias</Text>
           </View>
 
@@ -836,7 +837,7 @@ const PersonalDataForm = ({
             selectedValue={userData.sweat_level}
             onValueChange={(value) => setUserData({ ...userData, sweat_level: value })}
             style={styles.picker}
-            dropdownIconColor='#D4AF37'
+            dropdownIconColor={colors.primary}
             mode='dialog'
           >
             <Picker.Item label='Bajo' value='bajo' />
@@ -849,7 +850,7 @@ const PersonalDataForm = ({
             selectedValue={userData.caffeine_tolerance}
             onValueChange={(value) => setUserData({ ...userData, caffeine_tolerance: value })}
             style={styles.picker}
-            dropdownIconColor='#D4AF37'
+            dropdownIconColor={colors.primary}
             mode='dialog'
           >
             <Picker.Item label='No consumo' value='no' />
@@ -863,7 +864,7 @@ const PersonalDataForm = ({
             selectedValue={userData.dietary_restrictions}
             onValueChange={(value) => setUserData({ ...userData, dietary_restrictions: value })}
             style={styles.picker}
-            dropdownIconColor='#D4AF37'
+            dropdownIconColor={colors.primary}
             mode='dialog'
           >
             <Picker.Item label='Ninguna' value='no' />
@@ -882,7 +883,7 @@ const PersonalDataForm = ({
             onPress={hasChanges ? handleSubmit : () => {}}
             iconName={hasChanges ? 'save-outline' : 'checkmark-circle-outline'}
             iconPosition='right'
-            iconColor='#1a1919'
+            iconColor={colors.textOnPrimary}
             iconSize={24}
             style={[styles.button, !hasChanges && styles.buttonDisabled]}
           />
@@ -903,7 +904,7 @@ const PersonalDataForm = ({
             }}
             iconName='log-out-outline'
             iconPosition='right'
-            iconColor='#1a1919'
+            iconColor={colors.textOnPrimary}
             iconSize={20}
             style={styles.logoutButton}
           />
@@ -914,66 +915,63 @@ const PersonalDataForm = ({
 };
 
 const styles = StyleSheet.create({
-  // Vista principal
   container: {
     flex: 1,
-    backgroundColor: '#1a1919',
+    backgroundColor: colors.background,
   },
   centeredContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#1a1919',
+    backgroundColor: colors.background,
     padding: 30,
   },
   loadingText: {
-    color: '#999',
+    color: colors.textSecondary,
     marginTop: 15,
     fontSize: 16,
   },
   errorText: {
-    color: '#FF6B6B',
+    color: colors.error,
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 20,
     lineHeight: 24,
   },
 
-  // Header del perfil
   profileHeader: {
     alignItems: 'center',
     paddingTop: 60,
     paddingBottom: 30,
-    backgroundColor: '#1a1919',
+    backgroundColor: colors.background,
   },
   avatarContainer: {
     marginBottom: 15,
   },
   profileTitle: {
     fontSize: 26,
-    fontWeight: 'bold',
-    color: '#D4AF37',
+    fontWeight: '700',
+    color: colors.primary,
     marginBottom: 5,
   },
   profileEmail: {
     fontSize: 15,
-    color: '#999',
+    color: colors.textSecondary,
   },
 
-  // Cards
   card: {
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     marginHorizontal: 16,
     marginBottom: 16,
     borderRadius: 16,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -981,23 +979,21 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingBottom: 15,
     borderBottomWidth: 2,
-    borderBottomColor: '#333',
+    borderBottomColor: colors.border,
   },
   cardTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#D4AF37',
+    fontWeight: '700',
+    color: colors.primary,
     marginLeft: 12,
   },
 
-  // Divisor dentro de cards
   divider: {
     height: 1,
-    backgroundColor: '#333',
+    backgroundColor: colors.border,
     marginVertical: 20,
   },
 
-  // Grid de estadísticas
   statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -1005,34 +1001,33 @@ const styles = StyleSheet.create({
   },
   statItem: {
     alignItems: 'center',
-    backgroundColor: '#1f1f1f',
+    backgroundColor: colors.surfaceMuted,
     padding: 16,
     borderRadius: 12,
     minWidth: '28%',
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
   },
   statValue: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#D4AF37',
+    fontWeight: '700',
+    color: colors.primary,
     marginTop: 8,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: '#999',
+    color: colors.textSecondary,
     textTransform: 'uppercase',
   },
 
-  // Filas de información
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
+    borderBottomColor: colors.borderStrong,
   },
   infoItem: {
     flexDirection: 'row',
@@ -1040,25 +1035,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   infoLabel: {
-    color: '#ccc',
+    color: colors.textPrimary,
+    opacity: 0.85,
     fontSize: 15,
     marginLeft: 10,
   },
   infoValue: {
-    color: '#fff',
+    color: colors.textPrimary,
     fontSize: 15,
     fontWeight: '600',
     textAlign: 'right',
   },
 
-  // Notificaciones
   switchRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
+    borderBottomColor: colors.borderStrong,
   },
   switchInfo: {
     flexDirection: 'row',
@@ -1071,48 +1066,46 @@ const styles = StyleSheet.create({
   },
   switchLabel: {
     fontSize: 15,
-    color: '#fff',
+    color: colors.textPrimary,
     fontWeight: '600',
     marginBottom: 4,
   },
   switchSubtext: {
     fontSize: 13,
-    color: '#999',
+    color: colors.textSecondary,
   },
 
-  // Estado vacío
   emptyCard: {
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     marginHorizontal: 16,
     marginBottom: 16,
     borderRadius: 16,
     padding: 40,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
   },
   noProfileText: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
     textAlign: 'center',
     marginBottom: 10,
   },
   noProfileSubtext: {
-    color: '#999',
+    color: colors.textSecondary,
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
   },
 
-  // Botones
   buttonContainer: {
     paddingHorizontal: 16,
     marginTop: 10,
     alignItems: 'center',
   },
   editButton: {
-    backgroundColor: '#D4AF37',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 20,
@@ -1122,25 +1115,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     elevation: 3,
-    shadowColor: '#D4AF37',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
   buttonText: {
-    color: '#1a1919',
+    color: colors.textOnPrimary,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginLeft: 8,
   },
   logoutButtonText: {
-    color: '#fff',
+    color: colors.textPrimary,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginLeft: 8,
   },
   exitButton: {
-    backgroundColor: '#e74c3c',
+    backgroundColor: colors.error,
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 20,
@@ -1149,16 +1142,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#c0392b',
+    borderColor: colors.error,
   },
   exitButtonText: {
-    color: '#fff',
+    color: colors.textPrimary,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginLeft: 8,
   },
   refreshButton: {
-    backgroundColor: '#D4AF37',
+    backgroundColor: colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 25,
@@ -1166,19 +1159,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   refreshButtonText: {
-    color: '#1a1919',
-    fontWeight: 'bold',
+    color: colors.textOnPrimary,
+    fontWeight: '700',
     fontSize: 15,
   },
 
-  // Formulario de edición
   editHeader: {
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 20,
     borderBottomWidth: 3,
-    borderBottomColor: '#D4AF37',
+    borderBottomColor: colors.primary,
   },
   backButtonEdit: {
     flexDirection: 'row',
@@ -1186,15 +1178,15 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   backButtonText: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
   },
   editHeaderTitle: {
-    color: '#fff',
+    color: colors.textPrimary,
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   formContainer: {
     padding: 16,
@@ -1205,17 +1197,17 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   formCard: {
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
   },
   formCardHeader: {
     flexDirection: 'row',
@@ -1223,43 +1215,44 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingBottom: 12,
     borderBottomWidth: 2,
-    borderBottomColor: '#333',
+    borderBottomColor: colors.border,
   },
   formCardTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#D4AF37',
+    fontWeight: '700',
+    color: colors.primary,
     marginLeft: 10,
   },
   label: {
     fontSize: 14,
     marginBottom: 8,
-    color: '#ccc',
+    color: colors.textPrimary,
+    opacity: 0.85,
     fontWeight: '500',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: colors.borderStrong,
     borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 16,
     marginBottom: 20,
-    color: '#fff',
-    backgroundColor: '#1f1f1f',
+    color: colors.textPrimary,
+    backgroundColor: colors.surfaceMuted,
     fontSize: 16,
   },
   picker: {
-    backgroundColor: '#1f1f1f',
-    color: '#fff',
+    backgroundColor: colors.surfaceMuted,
+    color: colors.textPrimary,
     borderRadius: 10,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: colors.borderStrong,
   },
   button: {
-    backgroundColor: '#D4AF37',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 20,
@@ -1270,19 +1263,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     elevation: 3,
-    shadowColor: '#D4AF37',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
   buttonDisabled: {
-    backgroundColor: '#666',
+    backgroundColor: colors.textMuted,
     elevation: 0,
     shadowOpacity: 0,
     opacity: 0.6,
   },
   logoutButton: {
-    backgroundColor: '#FF6B35',
+    backgroundColor: colors.warning,
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 20,
@@ -1291,7 +1284,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     elevation: 3,
-    shadowColor: '#FF6B35',
+    shadowColor: colors.warning,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,

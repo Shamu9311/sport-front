@@ -5,6 +5,7 @@ import {
   subscribeToNetworkError,
   clearNetworkError,
 } from '../services/errorService';
+import { colors } from '../theme';
 
 const NetworkErrorBanner: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -38,10 +39,10 @@ const NetworkErrorBanner: React.FC = () => {
 
   return (
     <Animated.View style={[styles.banner, { opacity: fadeAnim }]}>
-      <Ionicons name="cloud-offline" size={22} color="#fff" />
+      <Ionicons name="cloud-offline" size={22} color={colors.textPrimary} />
       <Text style={styles.text}>{errorMessage}</Text>
       <TouchableOpacity onPress={handleDismiss} style={styles.dismissButton}>
-        <Ionicons name="close" size={22} color="#fff" />
+        <Ionicons name="close" size={22} color={colors.textPrimary} />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -53,7 +54,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#c62828',
+    backgroundColor: colors.error,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
@@ -61,14 +62,14 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     zIndex: 9999,
     elevation: 10,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
   text: {
     flex: 1,
-    color: '#fff',
+    color: colors.textPrimary,
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 10,

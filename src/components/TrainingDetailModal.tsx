@@ -17,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import api, { saveProductFeedback } from '../services/api';
 import { getProductImageSource } from '../utils/imageUtils';
+import { colors } from '../theme';
 
 const { width } = Dimensions.get('window');
 
@@ -30,15 +31,15 @@ interface TrainingDetailModalProps {
 const getIntensityColor = (intensity: string) => {
   switch (intensity) {
     case 'bajo':
-      return '#4CAF50'; // Verde
+      return colors.success;
     case 'medio':
-      return '#FFC107'; // Amarillo
+      return colors.warning;
     case 'alto':
-      return '#FF9800'; // Naranja
+      return colors.warning;
     case 'muy alto':
-      return '#F44336'; // Rojo
+      return colors.error;
     default:
-      return '#9E9E9E'; // Gris
+      return colors.textMuted;
   }
 };
 
@@ -247,7 +248,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
     if (loading) {
       return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color='#D4AF37' />
+          <ActivityIndicator size='large' color={colors.primary} />
           <Text style={styles.loadingText}>Buscando recomendaciones...</Text>
         </View>
       );
@@ -259,7 +260,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
           <Ionicons
             name='information-circle-outline'
             size={50}
-            color='#666'
+            color={colors.textMuted}
             style={{ marginBottom: 12 }}
           />
           <Text style={styles.noRecommendationsText}>
@@ -275,7 +276,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
     return (
       <View style={styles.recommendationsContainer}>
         <View style={styles.recommendationsHeader}>
-          <Ionicons name='star' size={24} color='#D4AF37' />
+          <Ionicons name='star' size={24} color={colors.primary} />
           <Text style={styles.sectionTitle}>Productos Recomendados</Text>
         </View>
         {recommendations.map((rec, recIndex) => {
@@ -300,15 +301,15 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
           const getTimingColor = (timing: string) => {
             switch (timing) {
               case 'antes':
-                return '#4CAF50';
+                return colors.success;
               case 'durante':
-                return '#FFC107';
+                return colors.warning;
               case 'despues':
-                return '#2196F3';
+                return colors.info;
               case 'diario':
-                return '#9C27B0';
+                return colors.info;
               default:
-                return '#D4AF37';
+                return colors.primary;
             }
           };
 
@@ -336,7 +337,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                   />
                 ) : (
                   <View style={styles.placeholderContainer}>
-                    <MaterialCommunityIcons name='image-off' size={40} color='#666' />
+                    <MaterialCommunityIcons name='image-off' size={40} color={colors.textMuted} />
                     <Text style={styles.placeholderText}>Imagen no disponible</Text>
                   </View>
                 )}
@@ -344,7 +345,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
 
               {rec.feedback && (
                 <View style={styles.reasoningBox}>
-                  <Ionicons name='bulb' size={16} color='#D4AF37' />
+                  <Ionicons name='bulb' size={16} color={colors.primary} />
                   <Text style={styles.recommendationReason}>{rec.feedback}</Text>
                 </View>
               )}
@@ -355,7 +356,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                 rec.consumption_instructions) && (
                 <View style={styles.consumptionGuide}>
                   <View style={styles.consumptionHeader}>
-                    <Ionicons name='nutrition' size={20} color='#D4AF37' />
+                    <Ionicons name='nutrition' size={20} color={colors.primary} />
                     <Text style={styles.consumptionTitle}>Cómo Consumir</Text>
                   </View>
 
@@ -382,7 +383,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                   {/* Cantidad */}
                   {rec.recommended_quantity && (
                     <View style={styles.consumptionItem}>
-                      <Ionicons name='flask' size={18} color='#D4AF37' />
+                      <Ionicons name='flask' size={18} color={colors.primary} />
                       <View style={styles.consumptionTextContainer}>
                         <Text style={styles.consumptionLabel}>Cantidad</Text>
                         <Text style={styles.consumptionValue}>{rec.recommended_quantity}</Text>
@@ -393,7 +394,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                   {/* Instrucciones */}
                   {rec.consumption_instructions && (
                     <View style={styles.consumptionItem}>
-                      <Ionicons name='information-circle' size={18} color='#D4AF37' />
+                      <Ionicons name='information-circle' size={18} color={colors.primary} />
                       <View style={styles.consumptionTextContainer}>
                         <Text style={styles.consumptionLabel}>Instrucciones</Text>
                         <Text style={styles.consumptionValue}>{rec.consumption_instructions}</Text>
@@ -425,7 +426,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                           : 'thumbs-up-outline'
                       }
                       size={24}
-                      color={feedbackStates[rec.product_id] === 'positivo' ? '#fff' : '#4CAF50'}
+                      color={feedbackStates[rec.product_id] === 'positivo' ? colors.textPrimary : colors.success}
                     />
                     <Text
                       style={[
@@ -455,7 +456,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                           : 'thumbs-down-outline'
                       }
                       size={24}
-                      color={feedbackStates[rec.product_id] === 'negativo' ? '#fff' : '#FF6B6B'}
+                      color={feedbackStates[rec.product_id] === 'negativo' ? colors.textPrimary : colors.error}
                     />
                     <Text
                       style={[
@@ -500,11 +501,11 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
           {/* Header del modal */}
           <View style={styles.modalHeader}>
             <View style={styles.modalHeaderContent}>
-              <Ionicons name='barbell' size={28} color='#D4AF37' />
+              <Ionicons name='barbell' size={28} color={colors.primary} />
               <Text style={styles.modalTitle}>Detalles del Entrenamiento</Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name='close-circle' size={32} color='#D4AF37' />
+              <Ionicons name='close-circle' size={32} color={colors.primary} />
             </TouchableOpacity>
           </View>
 
@@ -516,7 +517,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                   <MaterialCommunityIcons
                     name={getTypeIcon(session.type)}
                     size={36}
-                    color='#D4AF37'
+                    color={colors.primary}
                   />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -536,7 +537,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
             {/* Stats Grid */}
             <View style={styles.statsCard}>
               <View style={styles.statItem}>
-                <MaterialCommunityIcons name='clock-outline' size={28} color='#D4AF37' />
+                <MaterialCommunityIcons name='clock-outline' size={28} color={colors.primary} />
                 <Text style={styles.statValue}>{session.duration_min}</Text>
                 <Text style={styles.statLabel}>minutos</Text>
               </View>
@@ -563,7 +564,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                     <MaterialCommunityIcons
                       name='weather-partly-cloudy'
                       size={28}
-                      color='#D4AF37'
+                      color={colors.primary}
                     />
                     <Text style={styles.statValue}>
                       {session.weather.charAt(0).toUpperCase() + session.weather.slice(1)}
@@ -578,7 +579,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
             {session.notes && (
               <View style={styles.notesContainer}>
                 <View style={styles.notesHeader}>
-                  <Ionicons name='document-text' size={20} color='#D4AF37' />
+                  <Ionicons name='document-text' size={20} color={colors.primary} />
                   <Text style={styles.notesLabel}>Notas del Entrenamiento</Text>
                 </View>
                 <Text style={styles.notesText}>{session.notes}</Text>
@@ -605,12 +606,12 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: colors.overlayStrong,
   },
   modalView: {
     width: '100%',
     maxHeight: '95%',
-    backgroundColor: '#1a1919',
+    backgroundColor: colors.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: 'hidden',
@@ -621,9 +622,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 20,
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     borderBottomWidth: 3,
-    borderBottomColor: '#D4AF37',
+    borderBottomColor: colors.primary,
   },
   modalHeaderContent: {
     flexDirection: 'row',
@@ -631,7 +632,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modalTitle: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 22,
     fontWeight: 'bold',
     marginLeft: 12,
@@ -645,14 +646,14 @@ const styles = StyleSheet.create({
 
   // Session Card
   sessionCard: {
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -665,25 +666,25 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 35,
-    backgroundColor: 'rgba(248, 217, 48, 0.15)',
+    backgroundColor: `${colors.primary}26`,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
     borderWidth: 2,
-    borderColor: 'rgba(248, 217, 48, 0.3)',
+    borderColor: `${colors.primary}4D`,
   },
   dateText: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 4,
   },
   typeText: {
-    color: '#ddd',
+    color: colors.textPrimary,
     fontSize: 16,
   },
   sportTypeText: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 14,
     marginTop: 4,
     fontWeight: '600',
@@ -691,16 +692,16 @@ const styles = StyleSheet.create({
 
   // Stats Card
   statsCard: {
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
     flexDirection: 'row',
     justifyContent: 'space-around',
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -711,18 +712,18 @@ const styles = StyleSheet.create({
   },
   statDivider: {
     width: 1,
-    backgroundColor: '#333',
+    backgroundColor: colors.borderStrong,
     marginHorizontal: 8,
   },
   statValue: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 20,
     fontWeight: 'bold',
     marginTop: 8,
     marginBottom: 4,
   },
   statLabel: {
-    color: '#999',
+    color: colors.textSecondary,
     fontSize: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -736,14 +737,14 @@ const styles = StyleSheet.create({
 
   // Notes Card
   notesContainer: {
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
     borderLeftWidth: 4,
-    borderLeftColor: '#D4AF37',
+    borderLeftColor: colors.primary,
   },
   notesHeader: {
     flexDirection: 'row',
@@ -751,13 +752,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   notesLabel: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 8,
   },
   notesText: {
-    color: '#ddd',
+    color: colors.textPrimary,
     fontSize: 15,
     lineHeight: 22,
   },
@@ -772,23 +773,23 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingBottom: 12,
     borderBottomWidth: 2,
-    borderBottomColor: '#333',
+    borderBottomColor: colors.border,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#D4AF37',
+    color: colors.primary,
     marginLeft: 12,
   },
   recommendationCard: {
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -796,7 +797,7 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#D4AF37',
+    color: colors.primary,
     marginBottom: 12,
   },
   imageContainer: {
@@ -805,7 +806,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
-    backgroundColor: '#1f1f1f',
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 12,
     overflow: 'hidden',
   },
@@ -818,11 +819,11 @@ const styles = StyleSheet.create({
     height: 180,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#1f1f1f',
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 12,
   },
   placeholderText: {
-    color: '#666',
+    color: colors.textMuted,
     marginTop: 8,
     textAlign: 'center',
     fontSize: 13,
@@ -830,15 +831,15 @@ const styles = StyleSheet.create({
   reasoningBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#1f1f1f',
+    backgroundColor: colors.surfaceMuted,
     padding: 12,
     borderRadius: 8,
     borderLeftWidth: 3,
-    borderLeftColor: '#D4AF37',
+    borderLeftColor: colors.primary,
   },
   recommendationReason: {
     fontSize: 14,
-    color: '#ddd',
+    color: colors.textPrimary,
     lineHeight: 20,
     marginLeft: 8,
     flex: 1,
@@ -852,26 +853,26 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 15,
-    color: '#999',
+    color: colors.textSecondary,
     fontSize: 15,
   },
   noRecommendations: {
     padding: 30,
     alignItems: 'center',
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     marginTop: 16,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
   },
   noRecommendationsText: {
-    color: '#ddd',
+    color: colors.textPrimary,
     textAlign: 'center',
     fontSize: 15,
     marginBottom: 8,
   },
   noRecommendationsSubtext: {
-    color: '#999',
+    color: colors.textSecondary,
     textAlign: 'center',
     fontSize: 13,
     lineHeight: 20,
@@ -880,11 +881,11 @@ const styles = StyleSheet.create({
   // Guía de Consumo
   consumptionGuide: {
     marginTop: 16,
-    backgroundColor: '#1f1f1f',
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 12,
     padding: 16,
     borderWidth: 2,
-    borderColor: '#D4AF37',
+    borderColor: colors.primary,
   },
   consumptionHeader: {
     flexDirection: 'row',
@@ -892,12 +893,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: colors.border,
   },
   consumptionTitle: {
     fontSize: 17,
     fontWeight: 'bold',
-    color: '#D4AF37',
+    color: colors.primary,
     marginLeft: 10,
   },
   consumptionItem: {
@@ -906,7 +907,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
+    borderBottomColor: colors.borderStrong,
   },
   consumptionTextContainer: {
     flex: 1,
@@ -914,7 +915,7 @@ const styles = StyleSheet.create({
   },
   consumptionLabel: {
     fontSize: 12,
-    color: '#999',
+    color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
@@ -922,7 +923,7 @@ const styles = StyleSheet.create({
   },
   consumptionValue: {
     fontSize: 15,
-    color: '#fff',
+    color: colors.textPrimary,
     lineHeight: 20,
   },
 
@@ -931,11 +932,11 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingTop: 20,
     borderTopWidth: 1,
-    borderTopColor: '#333',
+    borderTopColor: colors.border,
   },
   feedbackQuestion: {
     fontSize: 15,
-    color: '#ddd',
+    color: colors.textPrimary,
     textAlign: 'center',
     marginBottom: 16,
     fontWeight: '600',
@@ -953,26 +954,26 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 12,
-    backgroundColor: '#1f1f1f',
+    backgroundColor: colors.surfaceMuted,
     borderWidth: 2,
-    borderColor: '#333',
+    borderColor: colors.border,
   },
   feedbackButtonPositive: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
+    backgroundColor: colors.success,
+    borderColor: colors.success,
   },
   feedbackButtonNegative: {
-    backgroundColor: '#FF6B6B',
-    borderColor: '#FF6B6B',
+    backgroundColor: colors.error,
+    borderColor: colors.error,
   },
   feedbackButtonText: {
     fontSize: 14,
-    color: '#ccc',
+    color: colors.textSecondary,
     marginLeft: 8,
     fontWeight: '600',
   },
   feedbackButtonTextActive: {
-    color: '#fff',
+    color: colors.textPrimary,
   },
 });
 

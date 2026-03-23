@@ -27,6 +27,7 @@ import TrainingSessionItem from '../../src/components/TrainingSessionItem';
 import AddTrainingModal from '../../src/components/AddTrainingModal';
 import TrainingDetailModal from '../../src/components/TrainingDetailModal';
 import NotificationService from '../../src/services/notificationService';
+import { colors } from '../../src/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -232,7 +233,7 @@ export default function TrainingScreen() {
             <Text style={styles.headerSubtitle}>Registra y monitorea tu progreso</Text>
           </View>
           <TouchableOpacity style={styles.addButton} onPress={() => setShowAddModal(true)}>
-            <Ionicons name='add-circle' size={24} color='#1a1919' />
+            <Ionicons name='add-circle' size={24} color={colors.textOnPrimary} />
             <Text style={styles.addButtonText}>Nuevo</Text>
           </TouchableOpacity>
         </View>
@@ -244,14 +245,14 @@ export default function TrainingScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor='#D4AF37'
-              colors={['#D4AF37']}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
             />
           }
         >
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size='large' color='#D4AF37' />
+              <ActivityIndicator size='large' color={colors.primary} />
               <Text style={styles.loadingText}>Cargando entrenamientos...</Text>
             </View>
           ) : trainingSessions.length === 0 ? (
@@ -259,7 +260,7 @@ export default function TrainingScreen() {
               <Ionicons
                 name='barbell-outline'
                 size={80}
-                color='#D4AF37'
+                color={colors.primary}
                 style={{ marginBottom: 20 }}
               />
               <Text style={styles.emptyStateTitle}>No hay entrenamientos</Text>
@@ -271,7 +272,7 @@ export default function TrainingScreen() {
                 style={styles.emptyStateButton}
                 onPress={() => setShowAddModal(true)}
               >
-                <Ionicons name='add-circle' size={22} color='#1a1919' />
+                <Ionicons name='add-circle' size={22} color={colors.textOnPrimary} />
                 <Text style={styles.addButtonText}>Agregar Entrenamiento</Text>
               </TouchableOpacity>
             </View>
@@ -320,7 +321,7 @@ export default function TrainingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1919',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -329,36 +330,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 24,
-    backgroundColor: '#1a1919',
+    backgroundColor: colors.background,
     borderBottomWidth: 3,
-    borderBottomColor: '#D4AF37',
+    borderBottomColor: colors.primary,
   },
   headerTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#D4AF37',
+    fontSize: 26,
+    fontWeight: '700',
+    color: colors.primary,
     marginBottom: 5,
   },
   headerSubtitle: {
     fontSize: 15,
-    color: '#999',
+    color: colors.textSecondary,
   },
   addButton: {
-    backgroundColor: '#D4AF37',
+    backgroundColor: colors.primary,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 25,
     alignItems: 'center',
     flexDirection: 'row',
     elevation: 3,
-    shadowColor: '#D4AF37',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
   addButtonText: {
-    color: '#1a1919',
-    fontWeight: 'bold',
+    color: colors.textOnPrimary,
+    fontWeight: '700',
     fontSize: 15,
     marginLeft: 6,
   },
@@ -373,7 +374,7 @@ const styles = StyleSheet.create({
     marginTop: 100,
   },
   loadingText: {
-    color: '#999',
+    color: colors.textSecondary,
     fontSize: 16,
     marginTop: 15,
   },
@@ -385,27 +386,27 @@ const styles = StyleSheet.create({
     marginTop: 60,
   },
   emptyStateTitle: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginBottom: 12,
   },
   emptyStateText: {
-    color: '#999',
+    color: colors.textSecondary,
     fontSize: 15,
     textAlign: 'center',
     marginBottom: 30,
     lineHeight: 22,
   },
   emptyStateButton: {
-    backgroundColor: '#D4AF37',
+    backgroundColor: colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 25,
     alignItems: 'center',
     flexDirection: 'row',
     elevation: 3,
-    shadowColor: '#D4AF37',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -422,12 +423,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   sessionsCount: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   swipeHint: {
-    color: '#666',
+    color: colors.textMuted,
     fontSize: 12,
     fontStyle: 'italic',
   },

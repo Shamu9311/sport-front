@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AuthContext from '../../src/context/AuthContext';
 import { getSavedRecommendations, getUserFeedbackHistory } from '../../src/services/api';
 import { getProductImageSource } from '../../src/utils/imageUtils';
+import { colors } from '../../src/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -281,7 +282,7 @@ const RecommendationScreen = () => {
                 </View>
               )}
               <View style={styles.cardFooter}>
-                <Ionicons name='arrow-forward-circle' size={18} color='#D4AF37' />
+                <Ionicons name='arrow-forward-circle' size={18} color={colors.primary} />
                 <Text style={styles.viewDetailsText}>Ver detalles</Text>
               </View>
             </View>
@@ -303,14 +304,14 @@ const RecommendationScreen = () => {
             style={styles.actionButton}
             onPress={() => router.push('/(tabs)/profile')}
           >
-            <Ionicons name='person-add' size={20} color='#1a1919' />
+            <Ionicons name='person-add' size={20} color={colors.textOnPrimary} />
             <Text style={styles.actionButtonText}>Completar mi Perfil</Text>
           </TouchableOpacity>
         );
       }
       return (
         <View style={styles.centeredMessageContainer}>
-          <Ionicons name='alert-circle' size={60} color='#FF6B6B' style={styles.emptyIcon} />
+          <Ionicons name='alert-circle' size={60} color={colors.error} style={styles.emptyIcon} />
           <Text style={styles.errorText}>{error}</Text>
           {actionButton}
         </View>
@@ -319,7 +320,7 @@ const RecommendationScreen = () => {
     if (!loading && recommendations.length === 0 && negativeRecommendations.length === 0) {
       return (
         <View style={styles.centeredMessageContainer}>
-          <Ionicons name='barbell-outline' size={80} color='#D4AF37' style={styles.emptyIcon} />
+          <Ionicons name='barbell-outline' size={80} color={colors.primary} style={styles.emptyIcon} />
           <Text style={styles.emptyText}>
             Las recomendaciones se generan automáticamente cuando registras una sesión de entrenamiento.
             {'\n\n'}Ve a la pestaña Entrenamiento para comenzar.
@@ -328,7 +329,7 @@ const RecommendationScreen = () => {
             style={styles.actionButton}
             onPress={() => router.push('/(tabs)/training')}
           >
-            <Ionicons name='fitness' size={20} color='#1a1919' />
+            <Ionicons name='fitness' size={20} color={colors.textOnPrimary} />
             <Text style={styles.actionButtonText}>Ir a Entrenamiento</Text>
           </TouchableOpacity>
         </View>
@@ -358,7 +359,7 @@ const RecommendationScreen = () => {
           <Ionicons
             name='checkmark-circle'
             size={20}
-            color={activeTab === 'positivas' ? '#1a1919' : '#999'}
+            color={activeTab === 'positivas' ? colors.textOnPrimary : colors.textSecondary}
           />
           <Text style={[styles.tabText, activeTab === 'positivas' && styles.tabTextActive]}>
             Que me sirvieron ({recommendations.length})
@@ -372,7 +373,7 @@ const RecommendationScreen = () => {
           <Ionicons
             name='close-circle'
             size={20}
-            color={activeTab === 'negativas' ? '#1a1919' : '#999'}
+            color={activeTab === 'negativas' ? colors.textOnPrimary : colors.textSecondary}
           />
           <Text style={[styles.tabText, activeTab === 'negativas' && styles.tabTextActive]}>
             No me sirvieron ({negativeRecommendations.length})
@@ -382,7 +383,7 @@ const RecommendationScreen = () => {
 
       {loading && !refreshing && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color='#D4AF37' style={styles.loader} />
+          <ActivityIndicator size='large' color={colors.primary} style={styles.loader} />
         </View>
       )}
 
@@ -409,7 +410,7 @@ const RecommendationScreen = () => {
                   <Ionicons
                     name='checkmark-circle-outline'
                     size={80}
-                    color='#D4AF37'
+                    color={colors.primary}
                     style={styles.emptyIcon}
                   />
                   <Text style={styles.emptyText}>No tienes productos marcados como no útiles.</Text>
@@ -423,9 +424,9 @@ const RecommendationScreen = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#D4AF37']}
-              tintColor='#D4AF37'
-              progressBackgroundColor='#1a1919'
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+              progressBackgroundColor={colors.background}
             />
           }
         />
@@ -439,40 +440,39 @@ const RecommendationScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1919',
+    backgroundColor: colors.background,
   },
   headerContainer: {
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
-    backgroundColor: '#1a1919',
+    backgroundColor: colors.background,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#D4AF37',
+    fontSize: 26,
+    fontWeight: '700',
+    color: colors.primary,
     marginBottom: 5,
   },
   subtitle: {
     fontSize: 14,
-    color: '#999',
+    color: colors.textSecondary,
     marginBottom: 10,
   },
   pullHint: {
     fontSize: 12,
-    color: '#666',
+    color: colors.textMuted,
     fontStyle: 'italic',
-    // textAlign: 'center',
   },
   tabsContainer: {
     flexDirection: 'row',
     marginHorizontal: 16,
     marginBottom: 16,
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 4,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -488,20 +488,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   tabActive: {
-    backgroundColor: '#D4AF37',
+    backgroundColor: colors.primary,
   },
   tabText: {
-    color: '#999',
+    color: colors.textSecondary,
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 6,
   },
   tabTextActive: {
-    color: '#1a1919',
-    fontWeight: 'bold',
+    color: colors.textOnPrimary,
+    fontWeight: '700',
   },
   actionButton: {
-    backgroundColor: '#D4AF37',
+    backgroundColor: colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 25,
@@ -509,14 +509,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
     elevation: 3,
-    shadowColor: '#D4AF37',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
   actionButtonText: {
-    color: '#1a1919',
-    fontWeight: 'bold',
+    color: colors.textOnPrimary,
+    fontWeight: '700',
     fontSize: 15,
     marginLeft: 8,
   },
@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
     padding: 30,
   },
   errorText: {
-    color: '#FF6B6B',
+    color: colors.error,
     textAlign: 'center',
     fontSize: 16,
     marginBottom: 20,
@@ -545,25 +545,25 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: 'center',
     fontSize: 16,
-    color: '#999',
+    color: colors.textSecondary,
     lineHeight: 24,
   },
   emptyIcon: {
     marginBottom: 20,
   },
   itemContainer: {
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     marginHorizontal: 16,
     marginVertical: 8,
     borderRadius: 16,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
   },
   listContainer: {
     paddingBottom: 20,
@@ -578,7 +578,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 12,
-    backgroundColor: '#333',
+    backgroundColor: colors.borderStrong,
   },
   infoContainer: {
     flex: 1,
@@ -587,35 +587,37 @@ const styles = StyleSheet.create({
   },
   productName: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginBottom: 8,
-    color: '#D4AF37',
+    color: colors.primary,
   },
   productDescription: {
     fontSize: 14,
-    color: '#ccc',
+    color: colors.textPrimary,
+    opacity: 0.88,
     marginBottom: 12,
     lineHeight: 20,
   },
   reasoningContainer: {
     marginTop: 12,
     padding: 12,
-    backgroundColor: '#1f1f1f',
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 8,
     borderLeftWidth: 4,
-    borderLeftColor: '#D4AF37',
+    borderLeftColor: colors.primary,
   },
   reasoningTitle: {
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 6,
-    color: '#D4AF37',
+    color: colors.primary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   reasoningText: {
     fontSize: 14,
-    color: '#ddd',
+    color: colors.textPrimary,
+    opacity: 0.9,
     lineHeight: 20,
   },
   cardFooter: {
@@ -624,10 +626,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#333',
+    borderTopColor: colors.border,
   },
   viewDetailsText: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 4,

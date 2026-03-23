@@ -20,6 +20,7 @@ import { getProductImageSource } from '../../src/utils/imageUtils';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { colors } from '../../src/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -106,7 +107,7 @@ const ProductDetailScreen = () => {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size='large' color='#D4AF37' />
+        <ActivityIndicator size='large' color={colors.primary} />
         <Text style={styles.loadingText}>Cargando información del producto...</Text>
       </View>
     );
@@ -115,7 +116,7 @@ const ProductDetailScreen = () => {
   if (error) {
     return (
       <View style={styles.centerContainer}>
-        <Ionicons name='alert-circle' size={60} color='#FF6B6B' style={{ marginBottom: 20 }} />
+        <Ionicons name='alert-circle' size={60} color={colors.error} style={{ marginBottom: 20 }} />
         <Text style={styles.errorText}>{error}</Text>
       </View>
     );
@@ -124,7 +125,7 @@ const ProductDetailScreen = () => {
   if (!product) {
     return (
       <View style={styles.centerContainer}>
-        <Ionicons name='cube-outline' size={60} color='#999' style={{ marginBottom: 20 }} />
+        <Ionicons name='cube-outline' size={60} color={colors.textSecondary} style={{ marginBottom: 20 }} />
         <Text style={styles.errorText}>No se encontró información del producto.</Text>
       </View>
     );
@@ -136,16 +137,16 @@ const ProductDetailScreen = () => {
         options={{
           title: product?.name || 'Detalles',
           headerBackTitle: 'Volver',
-          headerTintColor: '#D4AF37',
+          headerTintColor: colors.primary,
           headerStyle: {
-            backgroundColor: '#1a1919',
+            backgroundColor: colors.background,
           },
           headerTitleStyle: {
-            color: '#D4AF37',
+            color: colors.primary,
           },
           headerShadowVisible: false,
           contentStyle: {
-            backgroundColor: '#1a1919',
+            backgroundColor: colors.background,
           },
         }}
       />
@@ -169,7 +170,7 @@ const ProductDetailScreen = () => {
         {/* Usage Recommendation Card */}
         <View style={styles.card}>
           <View style={styles.sectionHeader}>
-            <Ionicons name='bulb' size={24} color='#D4AF37' />
+            <Ionicons name='bulb' size={24} color={colors.primary} />
           <Text style={styles.sectionTitle}>Recomendaciones de Uso</Text>
           </View>
           <Text style={styles.sectionContent}>{product.usage_recommendation}</Text>
@@ -179,7 +180,7 @@ const ProductDetailScreen = () => {
         {flavors.length > 0 && (
           <View style={styles.card}>
             <View style={styles.sectionHeader}>
-              <Ionicons name='color-palette' size={24} color='#D4AF37' />
+              <Ionicons name='color-palette' size={24} color={colors.primary} />
             <Text style={styles.sectionTitle}>Sabores Disponibles</Text>
             </View>
             <View style={styles.flavorContainer}>
@@ -196,7 +197,7 @@ const ProductDetailScreen = () => {
         {nutrition && (
           <View style={styles.card}>
             <View style={styles.sectionHeader}>
-              <Ionicons name='nutrition' size={24} color='#D4AF37' />
+              <Ionicons name='nutrition' size={24} color={colors.primary} />
             <Text style={styles.sectionTitle}>Información Nutricional</Text>
             </View>
             <View style={styles.nutritionGrid}>
@@ -220,14 +221,14 @@ const ProductDetailScreen = () => {
         {attributes.length > 0 && (
           <View style={styles.card}>
             <View style={styles.sectionHeader}>
-              <Ionicons name='checkmark-circle' size={24} color='#D4AF37' />
+              <Ionicons name='checkmark-circle' size={24} color={colors.primary} />
             <Text style={styles.sectionTitle}>Beneficios y Características</Text>
             </View>
             {attributes.map((attr, index) =>
               attr.description ? (
                 <View key={`attr-${attr.attribute_id}-${index}`} style={styles.attributeItem}>
                   <View style={styles.attributeHeader}>
-                    <Ionicons name='star' size={16} color='#D4AF37' />
+                    <Ionicons name='star' size={16} color={colors.primary} />
                   <Text style={styles.attributeName}>{attr.name}</Text>
                   </View>
                   <Text style={styles.attributeDescription}>{attr.description}</Text>
@@ -235,7 +236,7 @@ const ProductDetailScreen = () => {
               ) : (
                 <View key={`attr-${attr.attribute_id}-${index}`} style={styles.attributeItem}>
                   <View style={styles.attributeHeader}>
-                    <Ionicons name='star' size={16} color='#D4AF37' />
+                    <Ionicons name='star' size={16} color={colors.primary} />
                     <Text style={styles.attributeName}>{attr.name}</Text>
                   </View>
                 </View>
@@ -254,65 +255,66 @@ const ProductDetailScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#1a1919',
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
-    backgroundColor: '#1a1919',
+    backgroundColor: colors.background,
   },
   centerContainer: {
     flex: 1,
-    backgroundColor: '#1a1919',
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 30,
   },
   loadingText: {
-    color: '#999',
+    color: colors.textSecondary,
     textAlign: 'center',
     marginTop: 20,
     fontSize: 16,
   },
   errorText: {
-    color: '#FF6B6B',
+    color: colors.error,
     textAlign: 'center',
     fontSize: 16,
     lineHeight: 24,
   },
   imageContainer: {
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     padding: 20,
     alignItems: 'center',
     borderBottomWidth: 3,
-    borderBottomColor: '#D4AF37',
+    borderBottomColor: colors.primary,
   },
   productImage: {
     width: width * 0.8,
     height: 280,
   },
   card: {
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     marginHorizontal: 16,
     marginTop: 16,
     borderRadius: 16,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
   },
   productName: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 26,
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginBottom: 12,
     textAlign: 'center',
   },
   productDescription: {
-    color: '#ddd',
+    color: colors.textPrimary,
+    opacity: 0.92,
     fontSize: 16,
     lineHeight: 24,
     textAlign: 'center',
@@ -323,16 +325,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingBottom: 12,
     borderBottomWidth: 2,
-    borderBottomColor: '#333',
+    borderBottomColor: colors.border,
   },
   sectionTitle: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginLeft: 12,
   },
   sectionContent: {
-    color: '#ddd',
+    color: colors.textPrimary,
+    opacity: 0.92,
     fontSize: 15,
     lineHeight: 24,
   },
@@ -342,17 +345,17 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   flavorChip: {
-    backgroundColor: '#1f1f1f',
+    backgroundColor: colors.surfaceMuted,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#D4AF37',
+    borderColor: colors.primary,
     marginRight: 8,
     marginBottom: 8,
   },
   flavorText: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -363,16 +366,16 @@ const styles = StyleSheet.create({
   },
   nutritionItem: {
     alignItems: 'center',
-    backgroundColor: '#1f1f1f',
+    backgroundColor: colors.surfaceMuted,
     padding: 16,
     borderRadius: 12,
     minWidth: '28%',
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: colors.border,
   },
   nutritionLabel: {
-    color: '#999',
+    color: colors.textSecondary,
     fontSize: 13,
     marginBottom: 8,
     textTransform: 'uppercase',
@@ -380,15 +383,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   nutritionValue: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   attributeItem: {
     marginBottom: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
+    borderBottomColor: colors.borderStrong,
   },
   attributeHeader: {
     flexDirection: 'row',
@@ -396,13 +399,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   attributeName: {
-    color: '#D4AF37',
+    color: colors.primary,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginLeft: 8,
   },
   attributeDescription: {
-    color: '#ccc',
+    color: colors.textPrimary,
+    opacity: 0.88,
     fontSize: 14,
     lineHeight: 22,
     marginLeft: 24,

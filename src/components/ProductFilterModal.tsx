@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getProductCategories } from '../services/api';
+import { colors } from '../theme';
 
 interface ProductFilterModalProps {
   visible: boolean;
@@ -78,7 +79,7 @@ const ProductFilterModal: React.FC<ProductFilterModalProps> = ({
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Filtros</Text>
             <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={28} color="#D4AF37" />
+              <Ionicons name="close" size={28} color={colors.primary} />
             </TouchableOpacity>
           </View>
 
@@ -161,11 +162,11 @@ const ProductFilterModal: React.FC<ProductFilterModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: colors.overlayStrong,
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: '#1a1919',
+    backgroundColor: colors.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '80%',
@@ -178,12 +179,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: colors.border,
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#D4AF37',
+    fontWeight: '700',
+    color: colors.primary,
   },
   content: {
     paddingHorizontal: 20,
@@ -194,8 +195,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: '700',
+    color: colors.textPrimary,
     marginBottom: 12,
   },
   categoryScrollContainer: {
@@ -207,24 +208,25 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginRight: 10,
     borderRadius: 25,
-    backgroundColor: '#1f1f1f',
+    backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: colors.borderStrong,
     minWidth: 110,
     alignItems: 'center',
   },
   categoryButtonActive: {
-    backgroundColor: '#D4AF37',
-    borderColor: '#D4AF37',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   categoryText: {
-    color: '#ccc',
+    color: colors.textPrimary,
+    opacity: 0.88,
     fontSize: 14,
     fontWeight: '600',
   },
   categoryTextActive: {
-    color: '#1a1919',
-    fontWeight: 'bold',
+    color: colors.textOnPrimary,
+    fontWeight: '700',
   },
   timingScrollContainer: {
     paddingHorizontal: 4,
@@ -235,57 +237,59 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginRight: 10,
     borderRadius: 25,
-    backgroundColor: '#1f1f1f',
+    backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: colors.borderStrong,
     alignItems: 'center',
   },
   timingButtonActive: {
-    backgroundColor: '#D4AF37',
-    borderColor: '#D4AF37',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   timingText: {
-    color: '#ccc',
+    color: colors.textPrimary,
+    opacity: 0.88,
     fontSize: 14,
     fontWeight: '600',
   },
   timingTextActive: {
-    color: '#1a1919',
-    fontWeight: 'bold',
+    color: colors.textOnPrimary,
+    fontWeight: '700',
   },
   footer: {
     flexDirection: 'row',
     paddingHorizontal: 20,
     paddingVertical: 20,
     borderTopWidth: 1,
-    borderTopColor: '#333',
+    borderTopColor: colors.border,
     gap: 12,
   },
   clearButton: {
     flex: 1,
-    backgroundColor: '#252525',
+    backgroundColor: colors.surface,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: colors.borderStrong,
   },
   clearButtonText: {
-    color: '#ccc',
+    color: colors.textPrimary,
+    opacity: 0.88,
     fontSize: 16,
     fontWeight: '600',
   },
   applyButton: {
     flex: 2,
-    backgroundColor: '#D4AF37',
+    backgroundColor: colors.primary,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
   },
   applyButtonText: {
-    color: '#1a1919',
+    color: colors.textOnPrimary,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
 });
 

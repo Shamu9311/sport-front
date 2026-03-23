@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
+import { colors } from '../src/theme';
 
 const LoadingProfileScreen = () => {
   const router = useRouter();
@@ -73,7 +74,7 @@ const LoadingProfileScreen = () => {
         <Animated.View style={[styles.progressBar, { width }]} />
       </View>
 
-      <ActivityIndicator size='large' color='#D4AF37' style={styles.spinner} />
+      <ActivityIndicator size='large' color={colors.primary} style={styles.spinner} />
 
       <Text style={styles.percentText}>{Math.round(progress * 100)}%</Text>
     </View>
@@ -85,41 +86,41 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#1a1919',
+    backgroundColor: colors.background,
     padding: 20,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#D4AF37',
+    fontWeight: '700',
+    color: colors.primary,
     marginBottom: 40,
     textAlign: 'center',
   },
   loadingText: {
     fontSize: 18,
-    color: '#ffffff',
+    color: colors.textPrimary,
     marginBottom: 20,
     textAlign: 'center',
   },
   progressContainer: {
     height: 20,
     width: '80%',
-    backgroundColor: '#333',
+    backgroundColor: colors.border,
     borderRadius: 10,
     overflow: 'hidden',
     marginBottom: 20,
   },
   progressBar: {
     height: '100%',
-    backgroundColor: '#D4AF37',
+    backgroundColor: colors.primary,
   },
   spinner: {
     marginVertical: 20,
   },
   percentText: {
     fontSize: 16,
-    color: '#D4AF37',
-    fontWeight: 'bold',
+    color: colors.primary,
+    fontWeight: '700',
   },
 });
 

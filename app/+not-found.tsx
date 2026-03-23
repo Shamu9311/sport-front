@@ -1,6 +1,7 @@
 // app/+not-found.tsx
 import { Link, Stack } from 'expo-router';
 import { StyleSheet, View, Text } from 'react-native';
+import { colors } from '../src/theme';
 
 export default function NotFoundScreen() {
   return (
@@ -17,8 +18,14 @@ export default function NotFoundScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
-  title: { fontSize: 20, fontWeight: 'bold' },
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: colors.background,
+  },
+  title: { fontSize: 20, fontWeight: '700', color: colors.textPrimary },
   link: { marginTop: 15, paddingVertical: 15 },
-  linkText: { fontSize: 14, color: '#2e78b7' },
+  linkText: { fontSize: 14, color: colors.info },
 });

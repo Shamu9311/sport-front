@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, TextInput, Text, StyleSheet } from 'react-native';
+import { colors, radius, spacing, typography } from '../theme';
 
 type Field = {
   label: string;
@@ -15,18 +16,27 @@ type AuthFormProps = {
 };
 
 const AuthForm: React.FC<AuthFormProps> = ({ fields }) => {
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+
   return (
     <View style={styles.container}>
       {fields.map((field, index) => (
         <View key={index} style={styles.inputContainer}>
           <Text style={styles.label}>{field.label}</Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              focusedIndex === index && styles.inputFocused,
+            ]}
             value={field.value}
-            returnKeyType='next'
+            returnKeyType="next"
             onChangeText={field.onChangeText}
             secureTextEntry={field.secure || false}
-            autoCapitalize='none'
+            autoCapitalize={field.autoCapitalize ?? 'none'}
+            keyboardType={field.keyboardType ?? 'default'}
+            placeholderTextColor={colors.textMuted}
+            onFocus={() => setFocusedIndex(index)}
+            onBlur={() => setFocusedIndex(null)}
           />
         </View>
       ))}
@@ -37,23 +47,30 @@ const AuthForm: React.FC<AuthFormProps> = ({ fields }) => {
 const styles = StyleSheet.create({
   container: {
     width: '80%',
-    marginVertical: 15,
+    marginVertical: spacing.lg,
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: spacing.lg,
   },
   label: {
-    fontSize: 16,
-    marginBottom: 5,
-    color: 'white',
+    ...typography.body1,
+    marginBottom: spacing.xs,
+    color: colors.textPrimary,
+    fontWeight: '500',
   },
   input: {
-    height: 40,
-    borderColor: '#ccc',
+    minHeight: 52,
+    borderColor: colors.borderStrong,
     borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    color: 'white', // Añadir color de texto blanco para los inputs
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    color: colors.textPrimary,
+    backgroundColor: colors.surfaceElevated,
+    fontSize: typography.body1.fontSize,
+  },
+  inputFocused: {
+    borderColor: colors.primary,
+    borderWidth: 1.5,
   },
 });
 
