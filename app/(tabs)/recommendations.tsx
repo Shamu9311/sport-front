@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ActivityIndicator,
   Button,
   FlatList,
   Image,
@@ -19,6 +18,7 @@ import AuthContext from '../../src/context/AuthContext';
 import { getSavedRecommendations, getUserFeedbackHistory } from '../../src/services/api';
 import { getProductImageSource } from '../../src/utils/imageUtils';
 import { colors } from '../../src/theme';
+import SkeletonLoader from '../../src/components/SkeletonLoader';
 
 const { width } = Dimensions.get('window');
 
@@ -383,7 +383,7 @@ const RecommendationScreen = () => {
 
       {loading && !refreshing && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color={colors.primary} style={styles.loader} />
+          <SkeletonLoader type='recommendationList' />
         </View>
       )}
 
@@ -520,14 +520,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginLeft: 8,
   },
-  loader: {
-    marginTop: 100,
-  },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 30,
+    alignSelf: 'stretch',
   },
   centeredMessageContainer: {
     flex: 1,

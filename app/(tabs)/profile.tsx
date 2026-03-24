@@ -28,6 +28,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import NotificationService from '../../src/services/notificationService';
 import { colors } from '../../src/theme';
+import SkeletonLoader from '../../src/components/SkeletonLoader';
 
 const { width } = Dimensions.get('window');
 
@@ -304,9 +305,8 @@ const ProfileScreen = () => {
   // Si está cargando, mostrar indicador
   if (loading) {
     return (
-      <View style={styles.centeredContainer}>
-        <ActivityIndicator size='large' color={colors.primary} />
-        <Text style={styles.loadingText}>Cargando información del perfil...</Text>
+      <View style={styles.profileLoadingRoot}>
+        <SkeletonLoader type='profileCard' />
       </View>
     );
   }
@@ -925,6 +925,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.background,
     padding: 30,
+  },
+  profileLoadingRoot: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
   loadingText: {
     color: colors.textSecondary,

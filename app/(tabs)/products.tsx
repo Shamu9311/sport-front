@@ -606,8 +606,7 @@ const styles = StyleSheet.create({
 
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    alignSelf: 'stretch',
   },
   loadingText: {
     color: colors.textSecondary,

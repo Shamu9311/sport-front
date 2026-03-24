@@ -5,7 +5,13 @@ import { colors } from '../theme';
 const { width } = Dimensions.get('window');
 
 interface SkeletonLoaderProps {
-  type?: 'stats' | 'productList' | 'productCard';
+  type?:
+    | 'stats'
+    | 'productList'
+    | 'productCard'
+    | 'recommendationList'
+    | 'trainingList'
+    | 'profileCard';
 }
 
 const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({ type = 'stats' }) => {
@@ -106,8 +112,87 @@ const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({ type = 'stats' }) => {
             <View style={styles.productInfoSkeleton}>
               <SkeletonBox style={{ width: '80%', height: 18, marginBottom: 10 }} />
               <SkeletonBox style={{ width: '100%', height: 14, marginBottom: 6 }} />
-              <SkeletonBox style={{ width: '60%', height: 14 }} />
+              <SkeletonBox style={{ width: '60%', height: 14, marginBottom: 10 }} />
+              <View style={styles.productFooterSkeleton}>
+                <SkeletonBox style={{ width: 18, height: 18, borderRadius: 9 }} />
+                <SkeletonBox style={{ width: 100, height: 14, marginLeft: 6 }} />
+              </View>
             </View>
+          </View>
+        ))}
+      </View>
+    );
+  }
+
+  if (type === 'recommendationList') {
+    return (
+      <View style={styles.recommendationListOuter}>
+        {[1, 2, 3].map((i) => (
+          <View key={i} style={styles.recommendationCard}>
+            <View style={styles.recommendationRow}>
+              <SkeletonBox style={styles.recommendationImage} />
+              <View style={styles.recommendationInfo}>
+                <SkeletonBox style={{ width: '85%', height: 18, marginBottom: 10 }} />
+                <SkeletonBox style={{ width: '100%', height: 14, marginBottom: 6 }} />
+                <SkeletonBox style={{ width: '70%', height: 14 }} />
+              </View>
+            </View>
+            <View style={styles.reasoningBlock}>
+              <SkeletonBox style={{ width: '55%', height: 12, marginBottom: 8 }} />
+              <SkeletonBox style={{ width: '100%', height: 12, marginBottom: 4 }} />
+              <SkeletonBox style={{ width: '90%', height: 12 }} />
+            </View>
+            <View style={styles.recommendationFooter}>
+              <SkeletonBox style={{ width: 18, height: 18, borderRadius: 9 }} />
+              <SkeletonBox style={{ width: 90, height: 14, marginLeft: 4 }} />
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  }
+
+  if (type === 'trainingList') {
+    return (
+      <View style={styles.trainingListOuter}>
+        {[1, 2, 3, 4].map((i) => (
+          <View key={i} style={styles.trainingItem}>
+            <SkeletonBox style={styles.trainingIconCircle} />
+            <View style={styles.trainingContent}>
+              <SkeletonBox style={{ width: '90%', height: 16, marginBottom: 10 }} />
+              <View style={styles.trainingChipsRow}>
+                <SkeletonBox style={{ width: 56, height: 14, borderRadius: 4, marginRight: 12 }} />
+                <SkeletonBox style={{ width: 72, height: 14, borderRadius: 4, marginRight: 12 }} />
+                <SkeletonBox style={{ width: 64, height: 14, borderRadius: 4 }} />
+              </View>
+            </View>
+            <SkeletonBox style={{ width: 24, height: 24, borderRadius: 4 }} />
+          </View>
+        ))}
+      </View>
+    );
+  }
+
+  if (type === 'profileCard') {
+    return (
+      <View style={styles.profileScroll}>
+        <View style={styles.profileHeaderSkeleton}>
+          <SkeletonBox style={styles.profileAvatar} />
+          <SkeletonBox style={{ width: 160, height: 22, marginBottom: 8 }} />
+          <SkeletonBox style={{ width: 220, height: 16 }} />
+        </View>
+        {[1, 2].map((card) => (
+          <View key={card} style={styles.profileCardSkeleton}>
+            <View style={styles.profileCardHeaderRow}>
+              <SkeletonBox style={{ width: 24, height: 24, borderRadius: 4 }} />
+              <SkeletonBox style={{ width: 140, height: 20, marginLeft: 12 }} />
+            </View>
+            {[1, 2, 3, 4].map((row) => (
+              <View key={row} style={styles.profileInfoRow}>
+                <SkeletonBox style={{ width: '45%', height: 14 }} />
+                <SkeletonBox style={{ width: '35%', height: 14 }} />
+              </View>
+            ))}
           </View>
         ))}
       </View>
@@ -188,6 +273,133 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     justifyContent: 'center',
+  },
+  productFooterSkeleton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  recommendationListOuter: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  recommendationCard: {
+    backgroundColor: colors.surface,
+    marginHorizontal: 0,
+    marginBottom: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+    paddingBottom: 12,
+  },
+  recommendationRow: {
+    flexDirection: 'row',
+  },
+  recommendationImage: {
+    width: 120,
+    height: 120,
+    margin: 12,
+    borderRadius: 12,
+    backgroundColor: colors.borderStrong,
+  },
+  recommendationInfo: {
+    flex: 1,
+    paddingVertical: 16,
+    paddingRight: 16,
+    justifyContent: 'center',
+  },
+  reasoningBlock: {
+    marginHorizontal: 12,
+    marginBottom: 8,
+    padding: 12,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.border,
+  },
+  recommendationFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  trainingListOuter: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 30,
+  },
+  trainingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  trainingIconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 16,
+    backgroundColor: colors.borderStrong,
+  },
+  trainingContent: {
+    flex: 1,
+  },
+  trainingChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+  },
+  profileScroll: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  profileHeaderSkeleton: {
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingBottom: 30,
+  },
+  profileAvatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 15,
+    backgroundColor: colors.borderStrong,
+  },
+  profileCardSkeleton: {
+    backgroundColor: colors.surface,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  profileCardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.border,
+  },
+  profileInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderStrong,
   },
 });
 

@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   Alert,
   Dimensions,
   RefreshControl,
@@ -28,6 +27,7 @@ import AddTrainingModal from '../../src/components/AddTrainingModal';
 import TrainingDetailModal from '../../src/components/TrainingDetailModal';
 import NotificationService from '../../src/services/notificationService';
 import { colors } from '../../src/theme';
+import SkeletonLoader from '../../src/components/SkeletonLoader';
 
 const { width } = Dimensions.get('window');
 
@@ -252,8 +252,7 @@ export default function TrainingScreen() {
         >
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size='large' color={colors.primary} />
-              <Text style={styles.loadingText}>Cargando entrenamientos...</Text>
+              <SkeletonLoader type='trainingList' />
             </View>
           ) : trainingSessions.length === 0 ? (
             <View style={styles.emptyState}>
@@ -369,9 +368,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 100,
+    alignSelf: 'stretch',
+    paddingTop: 8,
   },
   loadingText: {
     color: colors.textSecondary,
