@@ -3,6 +3,14 @@
  * Fuente única de verdad para colores, tipografía, espaciado y radios.
  */
 
+/** Nombres de fuente registrados con useFonts (@expo-google-fonts/inter) en app/_layout.tsx */
+export const fontFamily = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+} as const;
+
 export const colors = {
   background: '#181818',
   surface: '#242424',
@@ -43,15 +51,15 @@ export const colors = {
 } as const;
 
 export const typography = {
-  h1: { fontSize: 26, fontWeight: '700' as const, color: colors.primary },
-  h2: { fontSize: 22, fontWeight: '700' as const, color: colors.primary },
-  h3: { fontSize: 18, fontWeight: '600' as const, color: colors.primary },
-  body1: { fontSize: 16, fontWeight: '400' as const, color: colors.textPrimary },
-  body2: { fontSize: 14, fontWeight: '400' as const, color: colors.textSecondary },
-  caption: { fontSize: 12, fontWeight: '400' as const, color: colors.textSecondary },
+  h1: { fontSize: 26, fontFamily: fontFamily.bold, color: colors.primary },
+  h2: { fontSize: 22, fontFamily: fontFamily.bold, color: colors.primary },
+  h3: { fontSize: 18, fontFamily: fontFamily.semibold, color: colors.primary },
+  body1: { fontSize: 16, fontFamily: fontFamily.regular, color: colors.textPrimary },
+  body2: { fontSize: 14, fontFamily: fontFamily.regular, color: colors.textSecondary },
+  caption: { fontSize: 12, fontFamily: fontFamily.regular, color: colors.textSecondary },
   overline: {
     fontSize: 11,
-    fontWeight: '600' as const,
+    fontFamily: fontFamily.semibold,
     color: colors.textSecondary,
     letterSpacing: 0.5,
   },
@@ -94,6 +102,7 @@ export const shadows = {
 
 export const theme = {
   colors,
+  fontFamily,
   typography,
   spacing,
   radius,

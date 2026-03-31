@@ -133,15 +133,11 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
       for (let i = 0; i < retries; i++) {
         // Verificar si el modal sigue visible antes de continuar
         if (!isVisibleRef.current || !isMountedRef.current) {
-          console.log('Modal cerrado, cancelando fetch...');
           return;
         }
         
         try {
           setLoading(true);
-          console.log(
-            `Intento ${i + 1}/${retries} - Obteniendo recomendaciones para sesión ${sessionId}`
-          );
           const response = await api.get(`/training/${sessionId}/recommendations`, {
             params: { userId },
             headers: {
@@ -151,12 +147,10 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
 
           // Verificar nuevamente antes de actualizar estado
           if (!isVisibleRef.current || !isMountedRef.current) {
-            console.log('Modal cerrado durante fetch, ignorando resultado...');
             return;
           }
 
           if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-            console.log(`Se recibieron ${response.data.length} recomendaciones`);
             setRecommendations(response.data);
             setLoading(false);
             return;
@@ -164,11 +158,6 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
 
           // Si no hay recomendaciones y no es el último intento, esperar y reintentar
           if (i < retries - 1) {
-            console.log(
-              `No hay recomendaciones aún, reintentando en ${delay}ms... (intento ${
-                i + 1
-              }/${retries})`
-            );
             await new Promise((resolve) => setTimeout(resolve, delay));
           } else {
             console.warn('No se encontraron recomendaciones después de varios intentos');
@@ -179,9 +168,6 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
           }
         } catch (error: any) {
           if (i < retries - 1) {
-            console.log(
-              `Error al obtener recomendaciones, reintentando... (intento ${i + 1}/${retries})`
-            );
             await new Promise((resolve) => setTimeout(resolve, delay));
           } else {
             console.error('Error fetching recommendations después de varios intentos:', error);
@@ -197,14 +183,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
   );
 
   useEffect(() => {
-    console.log('TrainingDetailModal - useEffect triggered:', {
-      visible,
-      sessionId: session?.session_id,
-      userId,
-    });
-
     if (visible && session && session.session_id) {
-      console.log('Modal visible, fetching recommendations...');
       setRecommendations([]); // Limpiar recomendaciones anteriores
       setLoading(true);
       // Pequeño delay para asegurar que el modal esté completamente renderizado
@@ -243,8 +222,6 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
   };
 
   const renderRecommendations = () => {
-    console.log('Rendering recommendations:', recommendations);
-
     if (loading) {
       return (
         <View style={styles.loadingContainer}>
@@ -280,8 +257,6 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
           <Text style={styles.sectionTitle}>Productos Recomendados</Text>
         </View>
         {recommendations.map((rec, recIndex) => {
-          console.log('Rendering recommendation:', rec);
-
           // Función helper para obtener icono de timing
           const getTimingIcon = (timing: string) => {
             switch (timing) {
@@ -330,10 +305,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                     }
                     style={styles.productImage}
                     resizeMode='contain'
-                    onError={(e) => {
-                      console.log('Error loading image:', e.nativeEvent?.error);
-                      console.log('Image URL that failed:', rec.image_url);
-                    }}
+                    onError={() => {}}
                   />
                 ) : (
                   <View style={styles.placeholderContainer}>

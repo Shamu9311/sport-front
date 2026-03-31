@@ -14,7 +14,6 @@ import {
   Switch,
   Linking,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
 import CustomButton from '../../src/components/CustomButton';
 import {
@@ -29,13 +28,14 @@ import { useFocusEffect } from 'expo-router';
 import NotificationService from '../../src/services/notificationService';
 import { colors } from '../../src/theme';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
+import SelectField from '../../src/components/SelectField';
 
 const { width } = Dimensions.get('window');
 
 // Tipos (sin cambios)
 type Gender = 'hombre' | 'mujer' | 'otro' | 'prefiero no decir';
 type ActivityLevel = 'sedentario' | 'moderado' | 'activo' | 'muy activo';
-type TrainingFrequency = '1-2' | '3-4' | '5+' | 'ocacional';
+type TrainingFrequency = '1-2' | '3-4' | '5+' | 'ocasional';
 type PrimaryGoal =
   | 'mejor rendimiento'
   | 'perder peso'
@@ -128,9 +128,6 @@ const ProfileScreen = () => {
           created_at: user.created_at || new Date().toISOString(),
         });
 
-        if (profileResponse.message) {
-          console.log('Mensaje del servidor:', profileResponse.message);
-        }
       }
 
       // Cargar preferencias de notificaciones
@@ -144,17 +141,12 @@ const ProfileScreen = () => {
         setConsumptionReminders(consumptionValue);
         setTrainingAlerts(trainingValue);
         setPreferredTime(notifPrefs.data.preferred_time?.substring(0, 5) ?? '09:00');
-
-        console.log('Preferencias cargadas:', {
-          consumption: consumptionValue,
-          training: trainingValue,
-        });
-      } else {
-        console.log('No se encontraron preferencias, usando valores por defecto');
       }
+      isLoadedRef.current = true;
     } catch (err: any) {
       console.error('Error al cargar perfil:', err);
       setError(err.message || 'Error al cargar la información del perfil');
+      isLoadedRef.current = false;
     } finally {
       setLoading(false);
     }
@@ -164,15 +156,13 @@ const ProfileScreen = () => {
   useFocusEffect(
     useCallback(() => {
       if (user?.id) {
-        // Solo recargar si: no está cargado, cambió el usuario, o hay error
-        if (!isLoadedRef.current || lastUserIdRef.current !== user.id || error) {
-          loadUserProfile();
+        if (!isLoadedRef.current || lastUserIdRef.current !== user.id) {
           lastUserIdRef.current = user.id;
-          isLoadedRef.current = true;
+          loadUserProfile();
         }
       }
       return () => {};
-    }, [user?.id, error])
+    }, [user?.id])
   );
   
   // Resetear flag cuando se edita el perfil
@@ -273,7 +263,6 @@ const ProfileScreen = () => {
         training_alerts: training,
         preferred_time: time + ':00',
       });
-      console.log('Preferencias guardadas:', response);
     } catch (error) {
       console.error('Error actualizando preferencias:', error);
       Alert.alert('Error', 'No se pudieron guardar las preferencias de notificaciones');
@@ -596,7 +585,6 @@ const PersonalDataForm = ({
           };
           setUserData(loadedData);
           setOriginalData(loadedData); // Guardar datos originales para comparar
-          console.log('✅ Datos del perfil cargados en el formulario');
         } else if (user?.id) {
           // Si no se pasa como prop, cargar desde la API
           const response = await getProfile(user.id);
@@ -616,7 +604,6 @@ const PersonalDataForm = ({
             };
             setUserData(loadedData);
             setOriginalData(loadedData); // Guardar datos originales
-            console.log('✅ Datos del perfil cargados desde API');
           }
         }
       } catch (error) {
@@ -758,19 +745,17 @@ const PersonalDataForm = ({
             <Text style={styles.formCardTitle}>Características Personales</Text>
           </View>
 
-          <Text style={styles.label}>Género</Text>
-          <Picker
-            selectedValue={userData.gender}
+          <SelectField<Gender>
+            label='Género'
+            value={userData.gender}
+            options={[
+              { label: 'Hombre', value: 'hombre' },
+              { label: 'Mujer', value: 'mujer' },
+              { label: 'Otro', value: 'otro' },
+              { label: 'Prefiero no decir', value: 'prefiero no decir' },
+            ]}
             onValueChange={(value) => setUserData({ ...userData, gender: value })}
-            style={styles.picker}
-            dropdownIconColor={colors.primary}
-            mode='dialog'
-          >
-            <Picker.Item label='Hombre' value='hombre' />
-            <Picker.Item label='Mujer' value='mujer' />
-            <Picker.Item label='Otro' value='otro' />
-            <Picker.Item label='Prefiero no decir' value='prefiero no decir' />
-          </Picker>
+          />
         </View>
 
         {/* Actividad Deportiva Card */}
@@ -780,49 +765,43 @@ const PersonalDataForm = ({
             <Text style={styles.formCardTitle}>Actividad Deportiva</Text>
           </View>
 
-          <Text style={styles.label}>Nivel de actividad</Text>
-          <Picker
-            selectedValue={userData.activity_level}
+          <SelectField<ActivityLevel>
+            label='Nivel de actividad'
+            value={userData.activity_level}
+            options={[
+              { label: 'Sedentario', value: 'sedentario' },
+              { label: 'Moderado', value: 'moderado' },
+              { label: 'Activo', value: 'activo' },
+              { label: 'Muy activo', value: 'muy activo' },
+            ]}
             onValueChange={(value) => setUserData({ ...userData, activity_level: value })}
-            style={styles.picker}
-            dropdownIconColor={colors.primary}
-            mode='dialog'
-          >
-            <Picker.Item label='Sedentario' value='sedentario' />
-            <Picker.Item label='Moderado' value='moderado' />
-            <Picker.Item label='Activo' value='activo' />
-            <Picker.Item label='Muy activo' value='muy activo' />
-          </Picker>
+          />
 
-          <Text style={styles.label}>Frecuencia de entrenamiento</Text>
-          <Picker
-            selectedValue={userData.training_frequency}
+          <SelectField<TrainingFrequency>
+            label='Frecuencia de entrenamiento'
+            value={userData.training_frequency}
+            options={[
+              { label: '1-2 veces por semana', value: '1-2' },
+              { label: '3-4 veces por semana', value: '3-4' },
+              { label: '5+ veces por semana', value: '5+' },
+              { label: 'Ocasional', value: 'ocasional' },
+            ]}
             onValueChange={(value) => setUserData({ ...userData, training_frequency: value })}
-            style={styles.picker}
-            dropdownIconColor={colors.primary}
-            mode='dialog'
-          >
-            <Picker.Item label='1-2 veces por semana' value='1-2' />
-            <Picker.Item label='3-4 veces por semana' value='3-4' />
-            <Picker.Item label='5+ veces por semana' value='5+' />
-            <Picker.Item label='Ocasional' value='ocacional' />
-          </Picker>
+          />
 
-          <Text style={styles.label}>Objetivo principal</Text>
-          <Picker
-            selectedValue={userData.primary_goal}
+          <SelectField<PrimaryGoal>
+            label='Objetivo principal'
+            value={userData.primary_goal}
+            options={[
+              { label: 'Mejor rendimiento', value: 'mejor rendimiento' },
+              { label: 'Perder peso', value: 'perder peso' },
+              { label: 'Ganar músculo', value: 'ganar musculo' },
+              { label: 'Resistencia', value: 'resistencia' },
+              { label: 'Recuperación', value: 'recuperacion' },
+              { label: 'Por salud', value: 'por salud' },
+            ]}
             onValueChange={(value) => setUserData({ ...userData, primary_goal: value })}
-            style={styles.picker}
-            dropdownIconColor={colors.primary}
-            mode='dialog'
-          >
-            <Picker.Item label='Mejor rendimiento' value='mejor rendimiento' />
-            <Picker.Item label='Perder peso' value='perder peso' />
-            <Picker.Item label='Ganar músculo' value='ganar musculo' />
-            <Picker.Item label='Resistencia' value='resistencia' />
-            <Picker.Item label='Recuperación' value='recuperacion' />
-            <Picker.Item label='Por salud' value='por salud' />
-          </Picker>
+          />
         </View>
 
         {/* Preferencias Card */}
@@ -832,48 +811,42 @@ const PersonalDataForm = ({
             <Text style={styles.formCardTitle}>Preferencias</Text>
           </View>
 
-          <Text style={styles.label}>Nivel de sudoración</Text>
-          <Picker
-            selectedValue={userData.sweat_level}
+          <SelectField<SweatLevel>
+            label='Nivel de sudoración'
+            value={userData.sweat_level}
+            options={[
+              { label: 'Bajo', value: 'bajo' },
+              { label: 'Medio', value: 'medio' },
+              { label: 'Alto', value: 'alto' },
+            ]}
             onValueChange={(value) => setUserData({ ...userData, sweat_level: value })}
-            style={styles.picker}
-            dropdownIconColor={colors.primary}
-            mode='dialog'
-          >
-            <Picker.Item label='Bajo' value='bajo' />
-            <Picker.Item label='Medio' value='medio' />
-            <Picker.Item label='Alto' value='alto' />
-          </Picker>
+          />
 
-          <Text style={styles.label}>Tolerancia a la cafeína</Text>
-          <Picker
-            selectedValue={userData.caffeine_tolerance}
+          <SelectField<CaffeineTolerance>
+            label='Tolerancia a la cafeína'
+            value={userData.caffeine_tolerance}
+            options={[
+              { label: 'No consumo', value: 'no' },
+              { label: 'Baja', value: 'bajo' },
+              { label: 'Media', value: 'medio' },
+              { label: 'Alta', value: 'alto' },
+            ]}
             onValueChange={(value) => setUserData({ ...userData, caffeine_tolerance: value })}
-            style={styles.picker}
-            dropdownIconColor={colors.primary}
-            mode='dialog'
-          >
-            <Picker.Item label='No consumo' value='no' />
-            <Picker.Item label='Baja' value='bajo' />
-            <Picker.Item label='Media' value='medio' />
-            <Picker.Item label='Alta' value='alto' />
-          </Picker>
+          />
 
-          <Text style={styles.label}>Restricción dietética principal</Text>
-          <Picker
-            selectedValue={userData.dietary_restrictions}
+          <SelectField<DietaryRestriction>
+            label='Restricción dietética principal'
+            value={userData.dietary_restrictions}
+            options={[
+              { label: 'Ninguna', value: 'no' },
+              { label: 'Vegetariano', value: 'vegetariano' },
+              { label: 'Vegano', value: 'vegano' },
+              { label: 'Libre de gluten', value: 'libre de gluten' },
+              { label: 'Libre de lactosa', value: 'libre de lactosa' },
+              { label: 'Libre de frutos secos', value: 'libre de frutos secos' },
+            ]}
             onValueChange={(value) => setUserData({ ...userData, dietary_restrictions: value })}
-            style={styles.picker}
-            dropdownIconColor={colors.primary}
-            mode='dialog'
-          >
-            <Picker.Item label='Ninguna' value='no' />
-            <Picker.Item label='Vegetariano' value='vegetariano' />
-            <Picker.Item label='Vegano' value='vegano' />
-            <Picker.Item label='Libre de gluten' value='libre de gluten' />
-            <Picker.Item label='Libre de lactosa' value='libre de lactosa' />
-            <Picker.Item label='Libre de frutos secos' value='libre de frutos secos' />
-          </Picker>
+          />
         </View>
 
         {/* Botones centrados */}
@@ -1246,14 +1219,6 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     backgroundColor: colors.surfaceMuted,
     fontSize: 16,
-  },
-  picker: {
-    backgroundColor: colors.surfaceMuted,
-    color: colors.textPrimary,
-    borderRadius: 10,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
   },
   button: {
     backgroundColor: colors.primary,

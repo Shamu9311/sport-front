@@ -2,18 +2,63 @@
 import React, { useEffect } from 'react';
 import { Stack, useRouter, useSegments, Slot } from 'expo-router';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Text, TextInput, StyleSheet } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import NetworkErrorBanner from '../src/components/NetworkErrorBanner';
-import { colors } from '../src/theme';
+import { colors, fontFamily } from '../src/theme';
+import {
+  useFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
+import * as SplashScreen from 'expo-splash-screen';
+
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  return (
-    <AuthProvider>
-      <View style={{ flex: 1 }}>
-        <RootLayoutNav />
-        <NetworkErrorBanner />
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+  });
+
+  useEffect(() => {
+    if (!fontsLoaded) return;
+    const baseText = { fontFamily: fontFamily.regular };
+    Text.defaultProps = Text.defaultProps ?? {};
+    Text.defaultProps.style = StyleSheet.flatten([Text.defaultProps.style, baseText]);
+    TextInput.defaultProps = TextInput.defaultProps ?? {};
+    TextInput.defaultProps.style = StyleSheet.flatten([TextInput.defaultProps.style, baseText]);
+    SplashScreen.hideAsync();
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: colors.background,
+        }}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
-    </AuthProvider>
+    );
+  }
+
+  return (
+    <SafeAreaProvider>
+      <AuthProvider>
+        <View style={{ flex: 1 }}>
+          <RootLayoutNav />
+          <NetworkErrorBanner />
+        </View>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
 
@@ -45,6 +90,7 @@ function RootLayoutNav() {
         headerTintColor: colors.primary,
         headerTitleStyle: {
           color: colors.primary,
+          fontFamily: fontFamily.semibold,
         },
         contentStyle: {
           backgroundColor: colors.background,

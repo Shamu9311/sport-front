@@ -27,10 +27,13 @@ const { width } = Dimensions.get('window');
 // Define los tipos para tus datos (puedes moverlos a src/types)
 interface Product {
   image_url: string;
-  name: string;
-  description: string;
+  /** API normalizada */
+  product_name?: string;
+  product_description?: string;
+  /** Compat. respuestas antiguas */
+  name?: string;
+  description?: string;
   usage_recommendation: string;
-  // Agrega otros campos si getProductDetails los devuelve
 }
 interface NutritionInfo {
   serving_size: string;
@@ -131,11 +134,14 @@ const ProductDetailScreen = () => {
     );
   }
 
+  const displayName = product.product_name ?? product.name ?? 'Producto';
+  const displayDescription = product.product_description ?? product.description ?? '';
+
   return (
     <>
       <Stack.Screen
         options={{
-          title: product?.name || 'Detalles',
+          title: displayName,
           headerBackTitle: 'Volver',
           headerTintColor: colors.primary,
           headerStyle: {
@@ -163,8 +169,12 @@ const ProductDetailScreen = () => {
 
         {/* Product Name and Description Card */}
         <View style={styles.card}>
-          <Text style={styles.productName}>{product.name}</Text>
-          <Text style={styles.productDescription}>{product.description}</Text>
+          <Text style={styles.productName}>{displayName}</Text>
+          {displayDescription ? (
+            <Text style={styles.productDescription}>{displayDescription}</Text>
+          ) : (
+            <Text style={styles.productDescriptionMuted}>Sin descripción disponible.</Text>
+          )}
         </View>
 
         {/* Usage Recommendation Card */}
@@ -318,6 +328,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     textAlign: 'center',
+  },
+  productDescriptionMuted: {
+    color: colors.textSecondary,
+    fontSize: 15,
+    lineHeight: 24,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   sectionHeader: {
     flexDirection: 'row',

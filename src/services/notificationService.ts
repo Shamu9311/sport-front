@@ -1,16 +1,41 @@
-import * as Notifications from 'expo-notifications';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 
-// Configurar cómo se muestran las notificaciones
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+type NotificationsModule = typeof import('expo-notifications');
+
+let notificationsImport: Promise<NotificationsModule> | null = null;
+let handlerRegistered = false;
+
+/**
+ * En Expo Go (StoreClient) las notificaciones remotas/locales están muy limitadas (SDK 53+)
+ * y el paquete muestra warnings. No importamos el módulo ahí para evitar ruido en consola.
+ * Para probar notificaciones reales: development build (`npx expo run:android` / `run:ios` o EAS Build).
+ */
+function isNotificationsModuleAvailable(): boolean {
+  if (Platform.OS === 'web') return false;
+  return Constants.executionEnvironment !== ExecutionEnvironment.StoreClient;
+}
+
+async function getNotifications(): Promise<NotificationsModule | null> {
+  if (!isNotificationsModuleAvailable()) return null;
+  if (!notificationsImport) {
+    notificationsImport = import('expo-notifications');
+  }
+  const Notifications = await notificationsImport;
+  if (!handlerRegistered) {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+    handlerRegistered = true;
+  }
+  return Notifications;
+}
 
 class NotificationService {
   /**
@@ -18,12 +43,14 @@ class NotificationService {
    */
   static async requestPermissions(): Promise<boolean> {
     try {
+      const Notifications = await getNotifications();
+      if (!Notifications) return false;
+
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
       // Si ya fueron denegados, informar al usuario
       if (existingStatus === 'denied') {
-        console.log('⚠️ Permisos previamente denegados');
         return false;
       }
 
@@ -33,11 +60,8 @@ class NotificationService {
       }
 
       if (finalStatus !== 'granted') {
-        console.log('❌ Permisos de notificaciones denegados');
         return false;
       }
-
-      console.log('✅ Permisos de notificaciones concedidos');
 
       // Configurar canal de notificaciones para Android
       if (Platform.OS === 'android') {
@@ -68,6 +92,8 @@ class NotificationService {
     try {
       const hasPermission = await this.requestPermissions();
       if (!hasPermission) return null;
+      const Notifications = await getNotifications();
+      if (!Notifications) return null;
 
       const now = new Date();
       const trainingTime = trainingDate || now;
@@ -78,20 +104,14 @@ class NotificationService {
         case 'antes':
           // Notificar X minutos antes del entrenamiento
           const beforeTime = new Date(trainingTime.getTime() - (minutes || 30) * 60 * 1000);
-          console.log(`⏰ Timing: ANTES - ${minutes || 30} min`);
-          console.log(`⏰ Hora entrenamiento: ${trainingTime.toLocaleString()}`);
-          console.log(`⏰ Hora notificación: ${beforeTime.toLocaleString()}`);
-          console.log(`⏰ Hora actual: ${now.toLocaleString()}`);
 
           if (beforeTime > now) {
             trigger = beforeTime;
             body = `Consume ${productName} ahora, ${minutes || 30} minutos antes de tu entrenamiento`;
-            console.log(`✅ Notificación programada para: ${beforeTime.toLocaleString()}`);
           } else {
             // Si ya pasó el tiempo, notificar inmediatamente
             trigger = { seconds: 5 };
             body = `Recuerda consumir ${productName} antes de entrenar`;
-            console.log(`⚠️ Tiempo ya pasó, notificando inmediatamente`);
           }
           break;
 
@@ -135,7 +155,6 @@ class NotificationService {
         trigger,
       });
 
-      console.log(`✅ Notificación programada: ${productName} - ${timing}`);
       return notificationId;
     } catch (error) {
       console.error('Error programando notificación:', error);
@@ -150,6 +169,8 @@ class NotificationService {
     try {
       const hasPermission = await this.requestPermissions();
       if (!hasPermission) return null;
+      const Notifications = await getNotifications();
+      if (!Notifications) return null;
 
       const [hours, minutes] = time.split(':').map(Number);
 
@@ -179,6 +200,8 @@ class NotificationService {
    */
   static async cancelAllNotifications(): Promise<void> {
     try {
+      const Notifications = await getNotifications();
+      if (!Notifications) return;
       await Notifications.cancelAllScheduledNotificationsAsync();
     } catch (error) {
       console.error('Error cancelando notificaciones:', error);
@@ -190,6 +213,8 @@ class NotificationService {
    */
   static async cancelNotification(notificationId: string): Promise<void> {
     try {
+      const Notifications = await getNotifications();
+      if (!Notifications) return;
       await Notifications.cancelScheduledNotificationAsync(notificationId);
     } catch (error) {
       console.error('Error cancelando notificación:', error);
@@ -201,6 +226,8 @@ class NotificationService {
    */
   static async getAllScheduledNotifications() {
     try {
+      const Notifications = await getNotifications();
+      if (!Notifications) return [];
       return await Notifications.getAllScheduledNotificationsAsync();
     } catch (error) {
       console.error('Error obteniendo notificaciones:', error);
@@ -210,4 +237,3 @@ class NotificationService {
 }
 
 export default NotificationService;
-

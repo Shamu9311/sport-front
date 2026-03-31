@@ -63,7 +63,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const userData = JSON.parse(storedUser);
           setUser(userData);
           setUserToken(storedToken);
-          console.log('✅ Sesión recuperada:', userData.username);
         }
       } catch (error) {
         console.error('Error loading session:', error);
@@ -87,8 +86,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Verificar si el perfil existe en la respuesta
       const profileExists = response?.success && response.data?.profile !== null;
 
-      console.log('Verificación de perfil:', profileExists ? 'Perfil encontrado' : 'Sin perfil');
-
       // Actualizar el estado del perfil
       setHasProfile(profileExists);
 
@@ -111,7 +108,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleRouteChanges = () => {
     // CRÍTICO: No intentar ninguna navegación hasta que el componente esté montado
     if (!mountedRef.current || !isMounted) {
-      console.log('Evitando navegación temprana: componente aún no montado');
       return;
     }
 
@@ -126,7 +122,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Si no hay usuario, redirigir a login en rutas protegidas
     if (!user && !isPublicRoute) {
-      console.log('Redirigiendo a login: usuario no autenticado');
       router.replace('/login');
       return;
     }
@@ -138,17 +133,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (hasProfile) {
           // Si está en login/register, redirigir a home
           if (isPublicRoute) {
-            console.log('Redirigiendo a home: usuario autenticado con perfil (desde ruta pública)');
             router.replace('/');
           } else if (isProfileCreationRoute) {
             // Si está en creación de perfil pero ya tiene perfil, redirigir a home
-            console.log('Redirigiendo a home: usuario ya tiene perfil');
             router.replace('/');
           }
         } else {
           // Si no tiene perfil y no está en la página de creación, redirigir a creación
           if (!isProfileCreationRoute) {
-            console.log('Redirigiendo a creación de perfil: usuario sin perfil');
             setRedirectingFromAuth(true);
             router.replace('/create-profile');
           }
@@ -156,7 +148,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       // Si aún no hemos verificado el perfil, esperamos
-      console.log('Esperando verificación de perfil...');
       return;
     }
   };
@@ -203,8 +194,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Guardar en AsyncStorage
       await AsyncStorage.setItem('user', JSON.stringify(userData));
       await AsyncStorage.setItem('token', authToken);
-
-      console.log('✅ Sesión guardada para:', userData.username);
     } catch (error) {
       console.error('Error saving session:', error);
     } finally {
@@ -223,8 +212,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUserToken(null);
       setHasProfile(null);
       setProfileVerified(false);
-
-      console.log('✅ Sesión cerrada y limpiada');
     } catch (error) {
       console.error('Error during logout:', error);
     }

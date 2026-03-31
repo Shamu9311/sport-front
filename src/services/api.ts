@@ -45,7 +45,6 @@ api.interceptors.response.use(
       try {
         await AsyncStorage.removeItem('user');
         await AsyncStorage.removeItem('token');
-        console.log('⚠️ Token inválido, sesión limpiada');
       } catch (storageError) {
         console.error('Error cleaning storage:', storageError);
       }
@@ -94,11 +93,9 @@ export const registerUser = async (userData: {
   }
 };
 
-export const getRecommendations = async (userId: number) => {
+export const getRecommendations = async () => {
   try {
-    console.log(`Obteniendo recomendaciones para usuario ${userId}`);
-    const response = await api.get(`/recommendations/${userId}`);
-    console.log('Respuesta completa del backend:', response.data);
+    const response = await api.get(`/recommendations/`);
 
     // El backend devuelve un objeto con propiedades 'message' y 'recommendations'
     let recommendations = [];
@@ -109,12 +106,8 @@ export const getRecommendations = async (userId: number) => {
       Array.isArray(response.data.recommendations)
     ) {
       recommendations = response.data.recommendations;
-      console.log(`Recomendaciones encontradas en la respuesta: ${recommendations.length}`);
     } else if (Array.isArray(response.data)) {
       recommendations = response.data;
-      console.log('Respuesta directamente es un array');
-    } else {
-      console.log('Formato de respuesta inesperado:', response.data);
     }
 
     // Definimos una interfaz para los productos recomendados
@@ -141,7 +134,6 @@ export const getRecommendations = async (userId: number) => {
         image_url: product.image_url || '/assets/default-product.png',
       }));
 
-      console.log(`Recomendaciones recibidas correctamente: ${processedRecommendations.length}`);
       return processedRecommendations;
     }
 
@@ -164,7 +156,6 @@ export const addConsumption = async (userId: number, productId: number, quantity
 export const getProfile = async (userId: number) => {
   try {
     const response = await api.get(`/profile/${userId}/profile`);
-    console.log('Respuesta de getProfile:', response.data);
 
     // Si la respuesta es exitosa y tiene datos de perfil
     if (response.data && response.data.success && response.data.data?.profile) {
@@ -184,7 +175,6 @@ export const getProfile = async (userId: number) => {
 
     // Si la respuesta es exitosa pero no hay perfil
     if (response.data && response.data.success && !response.data.data?.profile) {
-      console.log('Perfil no encontrado en la respuesta');
       return {
         success: false,
         data: null,
@@ -204,7 +194,6 @@ export const getProfile = async (userId: number) => {
     if (error.response) {
       // El servidor respondió con un estado fuera del rango 2xx
       if (error.response.status === 404) {
-        console.log('Perfil no encontrado (404)');
         return {
           success: false,
           data: null,
@@ -265,7 +254,6 @@ export const getProductCategories = async () => {
 
 export const getProductsByCategory = async (categoryId: string) => {
   try {
-    console.log(`Solicitando productos para la categoría ${categoryId}`);
     const response = await api.get(`/products/category/${categoryId}`);
 
     let products = [];
@@ -282,8 +270,6 @@ export const getProductsByCategory = async (categoryId: string) => {
       products = response.data.data;
     }
 
-    console.log(`Productos recibidos para categoría ${categoryId}:`, products.length);
-
     // Asegurarse de que cada producto tenga los campos necesarios
     const processedProducts = products.map((product: any) => ({
       ...product,
@@ -296,7 +282,6 @@ export const getProductsByCategory = async (categoryId: string) => {
       category_id: product.category_id || parseInt(categoryId, 10),
     }));
 
-    console.log(`Productos procesados para categoría ${categoryId}:`, processedProducts.length);
     return processedProducts;
   } catch (error) {
     console.error('Error en getProductsByCategory:', error);
@@ -378,10 +363,10 @@ export const getProductFlavors = async (productId: string) => {
   }
 };
 
-// Obtener recomendaciones guardadas para un usuario
-export const getSavedRecommendations = async (userId: number) => {
+// Obtener recomendaciones guardadas (usuario = token JWT)
+export const getSavedRecommendations = async () => {
   try {
-    const response = await api.get(`/recommendations/saved/${userId}`);
+    const response = await api.get(`/recommendations/saved`);
     let recommendations = [];
     if (
       response.data &&
@@ -505,6 +490,12 @@ export const deleteTrainingSession = async (sessionId: number) => {
   }
 };
 
+/** Recomendaciones asociadas a una sesión (requiere JWT; el backend valida propiedad de la sesión) */
+export const getTrainingSessionRecommendationsBySession = async (sessionId: number) => {
+  const response = await api.get(`/training/${sessionId}/recommendations`);
+  return response.data;
+};
+
 // Obtener recomendaciones basadas en una sesión de entrenamiento
 export const getTrainingRecommendations = async (trainingId: number, userId: number) => {
   try {
@@ -545,10 +536,10 @@ export const saveProductFeedback = async (userId: number, productId: number, fee
   }
 };
 
-// Obtener historial de feedback del usuario
-export const getUserFeedbackHistory = async (userId: number) => {
+// Obtener historial de feedback del usuario (token JWT)
+export const getUserFeedbackHistory = async () => {
   try {
-    const response = await api.get(`/recommendations/user-feedback/${userId}`);
+    const response = await api.get(`/recommendations/user-feedback`);
     return response.data;
   } catch (error) {
     console.error('Error getting user feedback:', error);

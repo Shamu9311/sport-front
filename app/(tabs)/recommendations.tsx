@@ -4,27 +4,26 @@ import {
   View,
   Text,
   StyleSheet,
-  Button,
   FlatList,
   Image,
   TouchableOpacity,
   RefreshControl,
   Dimensions,
-  Animated,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AuthContext from '../../src/context/AuthContext';
 import { getSavedRecommendations, getUserFeedbackHistory } from '../../src/services/api';
 import { getProductImageSource } from '../../src/utils/imageUtils';
 import { colors } from '../../src/theme';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
+import { MIN_SKELETON_MS, withMinimumDuration } from '../../src/utils/withMinimumDuration';
 
 const { width } = Dimensions.get('window');
 
-const API_BASE_URL_IMAGES = 'http://192.168.100.35:5000'; // Reemplaza con la URL de tu backend
-
 const RecommendationScreen = () => {
+  const insets = useSafeAreaInsets();
   // No necesita { navigation } como prop con useRouter
   const router = useRouter(); // Hook de Expo Router para navegación
   const context = useContext(AuthContext);
@@ -36,30 +35,34 @@ const RecommendationScreen = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  
-  // Refs para evitar operaciones duplicadas
+
   const isFetchingRef = useRef(false);
+  const listLengthsRef = useRef({ pos: 0, neg: 0 });
+  listLengthsRef.current = {
+    pos: recommendations.length,
+    neg: negativeRecommendations.length,
+  };
 
   const fetchRecommendations = async (isRefresh = false) => {
-    // Evitar fetches duplicados
     if (isFetchingRef.current && !isRefresh) {
-      console.log('⏳ Fetch en progreso, ignorando...');
       return;
     }
-    
+
     if (!userToken) {
       setError('Debes iniciar sesión para obtener recomendaciones.');
       if (!isRefresh) setLoading(false);
       else setRefreshing(false);
       return;
     }
-    
+
+    const hasData = listLengthsRef.current.pos + listLengthsRef.current.neg > 0;
+    const showSkeleton = !isRefresh && !hasData;
+
     isFetchingRef.current = true;
-    if (!isRefresh) setLoading(true);
+    if (showSkeleton) setLoading(true);
     setError(null);
 
     try {
-      // Obtener el ID del usuario desde el token usando useAuth
       const { user } = context;
       const userId = user?.id;
 
@@ -67,13 +70,14 @@ const RecommendationScreen = () => {
         throw new Error('No se pudo obtener el ID del usuario');
       }
 
-      console.log('Obteniendo recomendaciones para el usuario:', userId);
-
-      // Obtener recomendaciones guardadas
-      const savedRecommendations = await getSavedRecommendations(userId);
-
-      // Obtener feedback del usuario
-      const feedbackResponse = await getUserFeedbackHistory(userId);
+      const fetchPair = Promise.all([
+        getSavedRecommendations(),
+        getUserFeedbackHistory(),
+      ]);
+      const [savedRecommendations, feedbackResponse] =
+        isRefresh || !showSkeleton
+          ? await fetchPair
+          : await withMinimumDuration(fetchPair, MIN_SKELETON_MS);
       const feedbackMap: { [key: number]: string } = {};
 
       if (feedbackResponse.success && feedbackResponse.feedback) {
@@ -81,11 +85,6 @@ const RecommendationScreen = () => {
           feedbackMap[f.product_id] = f.feedback;
         });
       }
-
-      // Siempre inicializar arrays vacíos
-      setRecommendations([]);
-      setNegativeRecommendations([]);
-      setError(null);
 
       // Filtrar solo recomendaciones con session_id (vinculadas a sesión deportiva)
       const sessionBasedRecs = (savedRecommendations && Array.isArray(savedRecommendations))
@@ -147,8 +146,10 @@ const RecommendationScreen = () => {
 
         setRecommendations(uniquePositiveRecs);
         setNegativeRecommendations(uniqueNegativeRecs);
+      } else {
+        setRecommendations([]);
+        setNegativeRecommendations([]);
       }
-      // Si no hay recomendaciones, simplemente dejar los arrays vacíos sin mostrar error
     } catch (err: any) {
       let errorMessage = 'Error al obtener recomendaciones. Intenta más tarde.';
       if (err.response && err.response.data && err.response.data.message) {
@@ -168,7 +169,6 @@ const RecommendationScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      // Cargar recomendaciones guardadas cuando se enfoca la pantalla
       fetchRecommendations();
       return () => {};
     }, [userToken])
@@ -210,8 +210,6 @@ const RecommendationScreen = () => {
       console.error('Item de recomendación es null o undefined');
       return null;
     }
-
-    console.log('Estructura del item de recomendación:', JSON.stringify(item));
 
     // Inicializar variables con valores por defecto
     let product: ProductDetails = {} as ProductDetails;
@@ -257,7 +255,6 @@ const RecommendationScreen = () => {
         <TouchableOpacity
           style={styles.itemContainer}
           onPress={() => {
-            console.log('Navegar a detalles de producto ID:', productId);
             router.push(`/products/${productId}`);
           }}
           activeOpacity={0.7}
@@ -343,7 +340,7 @@ const RecommendationScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { paddingTop: Math.max(insets.top + 12, 52) }]}>
         <Text style={styles.title}>Tus Recomendaciones</Text>
         <Text style={styles.subtitle}>Productos personalizados según tu perfil</Text>
         <Text style={styles.pullHint}>Desliza hacia abajo para actualizar</Text>
@@ -444,7 +441,6 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     paddingHorizontal: 20,
-    paddingTop: 60,
     paddingBottom: 20,
     backgroundColor: colors.background,
   },

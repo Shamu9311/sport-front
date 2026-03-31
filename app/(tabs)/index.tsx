@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import {
   StyleSheet,
   View,
   Text,
   Image,
-  SafeAreaView,
   Dimensions,
   ScrollView,
   TouchableOpacity,
   Animated,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
@@ -22,6 +22,64 @@ const { width, height } = Dimensions.get('window');
 
 const logoPath = require('../../assets/images/login.png');
 
+const HOME_FEATURES = [
+  {
+    icon: 'sparkles' as const,
+    title: 'IA Personalizada',
+    description: 'Recomendaciones inteligentes basadas en tu perfil y entrenamientos',
+    color: colors.accent1,
+  },
+  {
+    icon: 'time' as const,
+    title: 'Timing de Consumo',
+    description: 'Sabe exactamente cuándo y cómo consumir cada producto',
+    color: colors.accent2,
+  },
+  {
+    icon: 'analytics' as const,
+    title: 'Tracking Completo',
+    description: 'Registra tus entrenamientos y monitorea tu progreso',
+    color: colors.accent3,
+  },
+  {
+    icon: 'shield-checkmark' as const,
+    title: 'Restricciones Dietéticas',
+    description: 'Respetamos tus preferencias y restricciones alimenticias',
+    color: colors.warning,
+  },
+];
+
+function QuickAccessCard({ onPress, children }: { onPress: () => void; children: ReactNode }) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const pressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.94,
+      friction: 5,
+      useNativeDriver: true,
+    }).start();
+  };
+  const pressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 5,
+      useNativeDriver: true,
+    }).start();
+  };
+  return (
+    <Animated.View style={[styles.quickAccessCard, { transform: [{ scale }] }]}>
+      <TouchableOpacity
+        activeOpacity={1}
+        onPressIn={pressIn}
+        onPressOut={pressOut}
+        onPress={onPress}
+        style={{ alignItems: 'center', width: '100%' }}
+      >
+        {children}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
 const HomeScreen = () => {
   const router = useRouter();
   const { user } = useAuth();
@@ -33,6 +91,8 @@ const HomeScreen = () => {
   const [statsLoading, setStatsLoading] = useState(true);
   const [currentFeature, setCurrentFeature] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const featureContentOpacity = useRef(new Animated.Value(1)).current;
+  const featureFadeSkipFirst = useRef(true);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -41,6 +101,19 @@ const HomeScreen = () => {
       useNativeDriver: true,
     }).start();
   }, []);
+
+  useEffect(() => {
+    if (featureFadeSkipFirst.current) {
+      featureFadeSkipFirst.current = false;
+      return;
+    }
+    featureContentOpacity.setValue(0);
+    Animated.timing(featureContentOpacity, {
+      toValue: 1,
+      duration: 380,
+      useNativeDriver: true,
+    }).start();
+  }, [currentFeature, featureContentOpacity]);
 
   const loadStats = useCallback(async () => {
     if (!user?.id) {
@@ -87,36 +160,9 @@ const HomeScreen = () => {
     }, [loadStats])
   );
 
-  const features = [
-    {
-      icon: 'sparkles',
-      title: 'IA Personalizada',
-      description: 'Recomendaciones inteligentes basadas en tu perfil y entrenamientos',
-      color: colors.accent1,
-    },
-    {
-      icon: 'time',
-      title: 'Timing de Consumo',
-      description: 'Sabe exactamente cuándo y cómo consumir cada producto',
-      color: colors.accent2,
-    },
-    {
-      icon: 'analytics',
-      title: 'Tracking Completo',
-      description: 'Registra tus entrenamientos y monitorea tu progreso',
-      color: colors.accent3,
-    },
-    {
-      icon: 'shield-checkmark',
-      title: 'Restricciones Dietéticas',
-      description: 'Respetamos tus preferencias y restricciones alimenticias',
-      color: colors.warning,
-    },
-  ];
-
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentFeature((prev) => (prev + 1) % 4);
+      setCurrentFeature((prev) => (prev + 1) % HOME_FEATURES.length);
     }, 4000);
 
     return () => clearInterval(interval);
@@ -192,22 +238,31 @@ const HomeScreen = () => {
                 <Text style={styles.featuresTitle}>¿Por qué SIS?</Text>
               </View>
 
-              <View
+              <Animated.View
                 style={[
-                  styles.featureIconContainer,
-                  { backgroundColor: features[currentFeature].color + '33' },
+                  styles.featureContentAnimated,
+                  { opacity: featureContentOpacity },
                 ]}
               >
-                <Ionicons
-                  name={features[currentFeature].icon as any}
-                  size={48}
-                  color={features[currentFeature].color}
-                />
-              </View>
-              <Text style={styles.featureTitle}>{features[currentFeature].title}</Text>
-              <Text style={styles.featureDescription}>{features[currentFeature].description}</Text>
+                <View
+                  style={[
+                    styles.featureIconContainer,
+                    { backgroundColor: HOME_FEATURES[currentFeature].color + '33' },
+                  ]}
+                >
+                  <Ionicons
+                    name={HOME_FEATURES[currentFeature].icon as any}
+                    size={48}
+                    color={HOME_FEATURES[currentFeature].color}
+                  />
+                </View>
+                <Text style={styles.featureTitle}>{HOME_FEATURES[currentFeature].title}</Text>
+                <Text style={styles.featureDescription}>
+                  {HOME_FEATURES[currentFeature].description}
+                </Text>
+              </Animated.View>
               <View style={styles.indicators}>
-                {features.map((_, index) => (
+                {HOME_FEATURES.map((_, index) => (
                   <TouchableOpacity
                     key={`indicator-${index}`}
                     onPress={() => setCurrentFeature(index)}
@@ -258,37 +313,25 @@ const HomeScreen = () => {
           <Text style={styles.quickAccessTitle}>Acceso Rápido</Text>
 
           <View style={styles.quickAccessGrid}>
-            <TouchableOpacity
-              style={styles.quickAccessCard}
-              onPress={() => router.push('/(tabs)/products')}
-            >
+            <QuickAccessCard onPress={() => router.push('/(tabs)/products')}>
               <Ionicons name="cube" size={36} color={colors.accent1} />
               <Text style={styles.quickAccessText}>Productos</Text>
-            </TouchableOpacity>
+            </QuickAccessCard>
 
-            <TouchableOpacity
-              style={styles.quickAccessCard}
-              onPress={() => router.push('/(tabs)/training')}
-            >
+            <QuickAccessCard onPress={() => router.push('/(tabs)/training')}>
               <Ionicons name="barbell" size={36} color={colors.accent2} />
               <Text style={styles.quickAccessText}>Entrenar</Text>
-            </TouchableOpacity>
+            </QuickAccessCard>
 
-            <TouchableOpacity
-              style={styles.quickAccessCard}
-              onPress={() => router.push('/(tabs)/recommendations')}
-            >
+            <QuickAccessCard onPress={() => router.push('/(tabs)/recommendations')}>
               <Ionicons name="star" size={36} color={colors.warning} />
               <Text style={styles.quickAccessText}>Para Ti</Text>
-            </TouchableOpacity>
+            </QuickAccessCard>
 
-            <TouchableOpacity
-              style={styles.quickAccessCard}
-              onPress={() => router.push('/(tabs)/profile')}
-            >
+            <QuickAccessCard onPress={() => router.push('/(tabs)/profile')}>
               <Ionicons name="person" size={36} color={colors.accent3} />
               <Text style={styles.quickAccessText}>Perfil</Text>
-            </TouchableOpacity>
+            </QuickAccessCard>
           </View>
         </View>
 
@@ -414,15 +457,21 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     ...shadows.card,
   },
+  featureContentAnimated: {
+    width: '100%',
+    alignItems: 'center',
+  },
   featureIconContainer: {
     width: 80,
     height: 80,
     borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    alignSelf: 'center',
     marginBottom: spacing.lg,
   },
   featureTitle: {
+    width: '100%',
     fontSize: 22,
     fontWeight: '700',
     color: colors.primary,
@@ -430,6 +479,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   featureDescription: {
+    width: '100%',
     fontSize: 15,
     color: colors.textPrimary,
     opacity: 0.92,

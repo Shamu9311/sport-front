@@ -5,11 +5,11 @@ import {
   Alert,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   Modal,
   Pressable,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { colors } from '../src/theme';
 import { useAuth } from '../src/context/AuthContext';

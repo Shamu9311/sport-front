@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,15 +14,13 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  getProductCategories,
-  getProductsByCategory,
-  searchProducts,
-} from '../../src/services/api';
+import { getProductCategories, searchProducts } from '../../src/services/api';
 import { getProductImageSource } from '../../src/utils/imageUtils';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
 import { colors } from '../../src/theme';
+import { MIN_SKELETON_MS, withMinimumDuration } from '../../src/utils/withMinimumDuration';
 
 const { width } = Dimensions.get('window');
 
@@ -52,7 +50,14 @@ interface Category {
   // otros campos necesarios...
 }
 
+type SearchOverrides = Partial<{
+  q: string;
+  category: number | null;
+  timing: string;
+}>;
+
 const ProductListScreen = () => {
+  const insets = useSafeAreaInsets();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const router = useRouter();
@@ -67,7 +72,17 @@ const ProductListScreen = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const pageSize = 20;
-  
+  const filterEffectArmedRef = useRef(false);
+  const searchDebounceArmedRef = useRef(false);
+  const currentPageRef = useRef(0);
+  const handleSearchRef = useRef<
+    (resetPage?: boolean, overrides?: SearchOverrides) => Promise<void>
+  >(async () => {});
+
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
+
   // Animaciones para chips
   const chipAnimations = useRef<{ [key: number]: Animated.Value }>({}).current;
 
@@ -80,14 +95,17 @@ const ProductListScreen = () => {
         setCategories(categoriesResponse);
 
         // Cargar productos por defecto (con paginación)
-        const result = await searchProducts({
-          q: '',
-          category: '',
-          timing: '',
-          type: '',
-          limit: pageSize,
-          offset: 0,
-        });
+        const result = await withMinimumDuration(
+          searchProducts({
+            q: '',
+            category: '',
+            timing: '',
+            type: '',
+            limit: pageSize,
+            offset: 0,
+          }),
+          MIN_SKELETON_MS
+        );
         setProducts(result.products);
         setProductCount(result.total);
         setHasMore(result.hasMore);
@@ -106,13 +124,16 @@ const ProductListScreen = () => {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      const result = await searchProducts({
-        q: searchQuery,
-        category: selectedCategory !== null ? selectedCategory.toString() : '',
-        timing: selectedTiming,
-        limit: pageSize,
-        offset: 0,
-      });
+      const result = await withMinimumDuration(
+        searchProducts({
+          q: searchQuery,
+          category: selectedCategory !== null ? selectedCategory.toString() : '',
+          timing: selectedTiming,
+          limit: pageSize,
+          offset: 0,
+        }),
+        MIN_SKELETON_MS
+      );
       setProducts(result.products);
       setProductCount(result.total);
       setHasMore(result.hasMore);
@@ -124,8 +145,7 @@ const ProductListScreen = () => {
     }
   };
 
-  const handleCategoryChange = async (categoryId: number) => {
-    // Animación del chip
+  const handleCategoryChange = (categoryId: number) => {
     if (!chipAnimations[categoryId]) {
       chipAnimations[categoryId] = new Animated.Value(1);
     }
@@ -142,78 +162,69 @@ const ProductListScreen = () => {
       }),
     ]).start();
 
-    try {
-      console.log('Categoría seleccionada:', categoryId);
-      setSelectedCategory(categoryId);
-      setLoading(true);
-      setIsSearching(true);
-      setSelectedTiming('');
-
-      const result = await searchProducts({
-        q: searchQuery,
-        category: categoryId.toString(),
-        timing: selectedTiming,
-        limit: pageSize,
-        offset: 0,
-      });
-
-      setProducts(result.products);
-      setProductCount(result.total);
-      setHasMore(result.hasMore);
-      setCurrentPage(0);
-    } catch (error) {
-      console.error('Error al cargar productos:', error);
-      setProducts([]);
-      setProductCount(0);
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-    }
+    setSelectedCategory(categoryId);
+    setSelectedTiming('');
+    setIsSearching(true);
   };
 
-  const handleSearch = async (resetPage = true) => {
-    try {
-      if (resetPage) {
-        setLoading(true);
-        setCurrentPage(0);
-      } else {
-        setLoadingMore(true);
+  const handleSearch = useCallback(
+    async (resetPage = true, overrides?: SearchOverrides) => {
+      const q = overrides?.q !== undefined ? overrides.q : searchQuery;
+      const cat = overrides?.category !== undefined ? overrides.category : selectedCategory;
+      const timing = overrides?.timing !== undefined ? overrides.timing : selectedTiming;
+
+      try {
+        if (resetPage) {
+          setCurrentPage(0);
+          setLoading(true);
+        } else {
+          setLoadingMore(true);
+        }
+        setIsSearching(true);
+
+        const categoryFilter = cat !== null ? String(cat) : '';
+        const offset = resetPage ? 0 : currentPageRef.current * pageSize;
+
+        const searchPromise = searchProducts({
+          q,
+          category: categoryFilter,
+          timing,
+          type: '',
+          limit: pageSize,
+          offset,
+        });
+        const result = resetPage
+          ? await withMinimumDuration(searchPromise, MIN_SKELETON_MS)
+          : await searchPromise;
+
+        if (resetPage) {
+          setProducts(result.products);
+          setCurrentPage(1);
+        } else {
+          setProducts((prev) => [...prev, ...result.products]);
+          setCurrentPage((prev) => prev + 1);
+        }
+
+        setProductCount(result.total);
+        setHasMore(result.hasMore);
+      } catch (error) {
+        console.error('Error en búsqueda:', error);
+        if (resetPage) {
+          setProducts([]);
+          setProductCount(0);
+          setHasMore(false);
+        }
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
       }
-      setIsSearching(true);
+    },
+    [searchQuery, selectedCategory, selectedTiming, pageSize]
+  );
 
-      const categoryFilter = selectedCategory !== null ? selectedCategory.toString() : '';
-      const offset = resetPage ? 0 : currentPage * pageSize;
-
-      const result = await searchProducts({
-        q: searchQuery,
-        category: categoryFilter,
-        timing: selectedTiming,
-        limit: pageSize,
-        offset,
-      });
-
-      if (resetPage) {
-        setProducts(result.products);
-        setCurrentPage(1);
-      } else {
-        setProducts([...products, ...result.products]);
-        setCurrentPage(currentPage + 1);
-      }
-
-      setProductCount(result.total);
-      setHasMore(result.hasMore);
-    } catch (error) {
-      console.error('Error en búsqueda:', error);
-      if (resetPage) {
-        setProducts([]);
-        setProductCount(0);
-        setHasMore(false);
-      }
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  };
+  useEffect(() => {
+    handleSearchRef.current = handleSearch;
+  });
 
   const loadMoreProducts = () => {
     if (!loadingMore && hasMore && !loading) {
@@ -231,19 +242,25 @@ const ProductListScreen = () => {
     setIsSearching(true);
   };
 
-  // Ejecutar búsqueda cuando cambien los filtros
+  // Ejecutar búsqueda cuando cambien los filtros (evita doble fetch en el montaje inicial)
   useEffect(() => {
-    if (isSearching || selectedTiming || selectedCategory !== null) {
-      handleSearch(true);
+    if (!filterEffectArmedRef.current) {
+      filterEffectArmedRef.current = true;
+      return;
+    }
+    if (selectedTiming || selectedCategory !== null) {
+      handleSearchRef.current(true);
     }
   }, [selectedTiming, selectedCategory]);
 
-  // Debounce para búsqueda por texto
+  // Debounce para búsqueda por texto (no dispara en el primer montaje)
   useEffect(() => {
-    if (!searchQuery.trim() && !isSearching) return;
-
+    if (!searchDebounceArmedRef.current) {
+      searchDebounceArmedRef.current = true;
+      return;
+    }
     const timer = setTimeout(() => {
-      handleSearch();
+      handleSearchRef.current(true);
     }, 500);
 
     return () => clearTimeout(timer);
@@ -255,13 +272,7 @@ const ProductListScreen = () => {
     setSelectedCategory(null);
     setIsSearching(false);
     setCurrentPage(0);
-    searchProducts({ q: '', category: '', timing: '', type: '', limit: pageSize, offset: 0 }).then(
-      (result) => {
-        setProducts(result.products);
-        setProductCount(result.total);
-        setHasMore(result.hasMore);
-      }
-    );
+    handleSearchRef.current(true, { q: '', category: null, timing: '' });
   };
 
   const renderProductItem = ({ item }: { item: Product }) => {
@@ -297,7 +308,7 @@ const ProductListScreen = () => {
   return (
     <View style={styles.container}>
       {/* Header de la página */}
-      <View style={styles.pageHeader}>
+      <View style={[styles.pageHeader, { paddingTop: Math.max(insets.top + 12, 52) }]}>
         <Text style={styles.pageTitle}>Productos</Text>
         <Text style={styles.pageSubtitle}>Encuentra los mejores suplementos</Text>
 
@@ -338,19 +349,7 @@ const ProductListScreen = () => {
                 setSelectedTiming('');
                 setSearchQuery('');
                 setIsSearching(true);
-                searchProducts({
-                  q: '',
-                  category: '',
-                  timing: '',
-                  type: '',
-                  limit: pageSize,
-                  offset: 0,
-                }).then((result) => {
-                  setProducts(result.products);
-                  setProductCount(result.total);
-                  setHasMore(result.hasMore);
-                  setCurrentPage(0);
-                });
+                handleSearchRef.current(true, { q: '', category: null, timing: '' });
               }}
             >
               <Text
@@ -456,7 +455,7 @@ const ProductListScreen = () => {
         <FlatList
           data={products}
           renderItem={renderProductItem}
-          keyExtractor={(item, index) => `product-${item.product_id}-${index}`}
+          keyExtractor={(item) => `product-${item.product_id}`}
           contentContainerStyle={styles.listContainer}
           onEndReached={loadMoreProducts}
           onEndReachedThreshold={0.5}
@@ -495,7 +494,6 @@ const styles = StyleSheet.create({
   },
 
   pageHeader: {
-    paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,
     backgroundColor: colors.background,
@@ -613,7 +611,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 15,
   },
-
   categoryContainer: {
     backgroundColor: colors.surface,
     marginBottom: 16,

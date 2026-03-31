@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuth } from '../../src/context/AuthContext';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import {
   getUserTrainingSessions,
@@ -20,7 +20,7 @@ import {
   deleteTrainingSession,
   getTrainingSession,
   getNotificationPreferences,
-  API_URL,
+  getTrainingSessionRecommendationsBySession,
 } from '../../src/services/api';
 import TrainingSessionItem from '../../src/components/TrainingSessionItem';
 import AddTrainingModal from '../../src/components/AddTrainingModal';
@@ -32,6 +32,7 @@ import SkeletonLoader from '../../src/components/SkeletonLoader';
 const { width } = Dimensions.get('window');
 
 export default function TrainingScreen() {
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [trainingSessions, setTrainingSessions] = useState<any[]>([]);
@@ -108,37 +109,24 @@ export default function TrainingScreen() {
       // Verificar si el usuario tiene habilitadas las notificaciones de consumo
       const prefs = await getNotificationPreferences(user.id);
       if (!prefs?.data?.consumption_reminders) {
-        console.log('❌ Notificaciones de consumo desactivadas');
         return;
       }
-
-      console.log('✅ Notificaciones de consumo activadas, programando...');
 
       // Función para intentar obtener recomendaciones con reintentos
       const fetchRecommendationsWithRetry = async (maxAttempts = 3, delayMs = 4000) => {
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-          console.log(`🔄 Intento ${attempt}/${maxAttempts} de obtener recomendaciones...`);
-
           await new Promise((resolve) => setTimeout(resolve, delayMs));
 
-          // Obtener recomendaciones directamente del endpoint correcto
-          const response = await fetch(
-            `${API_URL}/api/training/${session.session_id}/recommendations?userId=${user.id}`
+          const recommendations = await getTrainingSessionRecommendationsBySession(
+            session.session_id
           );
-          const recommendations = await response.json();
-
-          console.log(`📦 Respuesta del servidor:`, recommendations);
 
           if (recommendations && recommendations.length > 0) {
-            console.log(`✅ ${recommendations.length} recomendaciones encontradas!`);
             const updatedSession = await getTrainingSession(session.session_id);
             return { session: updatedSession, recommendations };
           }
-
-          console.log(`⏳ Aún no hay recomendaciones (intento ${attempt}/${maxAttempts})`);
         }
 
-        console.log('❌ No se generaron recomendaciones después de varios intentos');
         return null;
       };
 
@@ -164,11 +152,6 @@ export default function TrainingScreen() {
 
       const sessionDate = new Date(year, month - 1, day, hours, minutes, 0);
 
-      console.log(`🕐 Fecha del entrenamiento: ${dateStr}`);
-      console.log(`🕐 Hora del entrenamiento: ${timeStr}`);
-      console.log(`🕐 Fecha completa: ${sessionDate.toLocaleString()}`);
-      console.log(`🕐 Hora actual: ${new Date().toLocaleString()}`);
-
       let programadas = 0;
       for (const rec of recommendations) {
         if (rec.consumption_timing && rec.product_name) {
@@ -181,8 +164,6 @@ export default function TrainingScreen() {
           if (notifId) programadas++;
         }
       }
-
-      console.log(`📅 ${programadas} notificaciones programadas exitosamente`);
 
       if (programadas > 0) {
         Alert.alert(
@@ -227,7 +208,7 @@ export default function TrainingScreen() {
         <StatusBar style='light' />
 
         {/* Header renovado */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: Math.max(insets.top + 8, 20) }]}>
           <View>
             <Text style={styles.headerTitle}>Entrenamientos</Text>
             <Text style={styles.headerSubtitle}>Registra y monitorea tu progreso</Text>
@@ -327,7 +308,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 20,
     paddingBottom: 24,
     backgroundColor: colors.background,
     borderBottomWidth: 3,
