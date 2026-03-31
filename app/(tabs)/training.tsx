@@ -42,10 +42,10 @@ export default function TrainingScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    if (user && user.id) {
+    if (user?.id) {
       fetchTrainingSessions();
     }
-  }, [user]);
+  }, [user?.id]);
 
   const fetchTrainingSessions = async (isRefresh = false) => {
     if (!user || !user.id) return;

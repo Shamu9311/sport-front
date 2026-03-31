@@ -248,9 +248,7 @@ const ProductListScreen = () => {
       filterEffectArmedRef.current = true;
       return;
     }
-    if (selectedTiming || selectedCategory !== null) {
-      handleSearchRef.current(true);
-    }
+    handleSearchRef.current(true);
   }, [selectedTiming, selectedCategory]);
 
   // Debounce para búsqueda por texto (no dispara en el primer montaje)

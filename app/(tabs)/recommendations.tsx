@@ -160,6 +160,7 @@ const RecommendationScreen = () => {
       console.error('Error obteniendo recomendaciones:', err);
       setError(errorMessage);
       setRecommendations([]);
+      setNegativeRecommendations([]);
     } finally {
       isFetchingRef.current = false;
       if (!isRefresh) setLoading(false);

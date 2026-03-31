@@ -167,17 +167,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   // Efecto para manejar navegación automática basada en el estado actual
   useEffect(() => {
-    if (!isLoadingAuth && !isCheckingProfile && profileVerified) {
-      // Crear una key única para el estado actual
-      const stateKey = `${user?.id}-${hasProfile}-${segments[0]}`;
-      
-      // Solo ejecutar si el estado cambió significativamente
+    if (isLoadingAuth || !mountedRef.current || !isMounted) return;
+
+    // Sin usuario: redirigir a login de inmediato (no esperar profileVerified)
+    if (!user) {
+      const isPublicRoute = ['login', 'register'].includes(segments[0] || '');
+      if (!isPublicRoute) {
+        router.replace('/login');
+      }
+      return;
+    }
+
+    // Con usuario: esperar a que se verifique el perfil antes de navegar
+    if (!isCheckingProfile && profileVerified) {
+      const stateKey = `${user.id}-${hasProfile}-${segments[0]}`;
       if (lastNavigationRef.current !== stateKey) {
         lastNavigationRef.current = stateKey;
         handleRouteChanges();
       }
     }
-  }, [user?.id, hasProfile, profileVerified, segments[0], isLoadingAuth, isCheckingProfile]);
+  }, [user?.id, hasProfile, profileVerified, segments[0], isLoadingAuth, isCheckingProfile, isMounted]);
 
   // Resetear el flag de redirección cuando cambia la ruta
   useEffect(() => {
@@ -187,13 +196,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (userData: User, token?: string) => {
     setIsLoadingAuth(true);
     try {
-      setUser(userData);
       const authToken = token || 'default-token';
-      setUserToken(authToken);
 
-      // Guardar en AsyncStorage
+      // Persistir en AsyncStorage ANTES de actualizar el estado para que el interceptor
+      // de Axios encuentre el token cuando checkUserProfile dispare getProfile.
       await AsyncStorage.setItem('user', JSON.stringify(userData));
       await AsyncStorage.setItem('token', authToken);
+
+      setUserToken(authToken);
+      setUser(userData); // dispara el useEffect → checkUserProfile → getProfile (ya hay token)
     } catch (error) {
       console.error('Error saving session:', error);
     } finally {

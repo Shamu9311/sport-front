@@ -150,10 +150,6 @@ const HomeScreen = () => {
     }
   }, [user?.id]);
 
-  useEffect(() => {
-    loadStats();
-  }, [loadStats]);
-
   useFocusEffect(
     useCallback(() => {
       loadStats();
