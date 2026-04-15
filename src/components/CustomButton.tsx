@@ -101,6 +101,7 @@ const styles = StyleSheet.create({
   },
   buttonFullWidth: {
     width: '80%',
+    maxWidth: 400,
     alignSelf: 'center',
   },
   buttonPrimary: {

@@ -18,50 +18,57 @@ import CustomButton from '../src/components/CustomButton';
 import { Picker } from '@react-native-picker/picker';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-// Tipos alineados con el backend
-type Gender = 'M' | 'F' | 'O' | 'prefiero no decir';
-type TrainingFrequency = '1-2' | '3-4' | '5+';
-type PrimaryGoal = 'muscle_gain' | 'weight_loss' | 'performance' | 'general_health' | 'resistencia' | 'recuperacion';
-type ActivityLevel = 'sedentary' | 'moderate' | 'active' | 'very_active';
-type SweatLevel = 'low' | 'medium' | 'high';
-type CaffeineTolerance = 'none' | 'low' | 'medium' | 'high';
+// Valores alineados con ENUMs MySQL y con la edición de perfil (profile.tsx)
+type Gender = 'hombre' | 'mujer' | 'otro' | 'prefiero no decir';
+type TrainingFrequency = '1-2' | '3-4' | '5+' | 'ocasional';
+type PrimaryGoal =
+  | 'mejor rendimiento'
+  | 'perder peso'
+  | 'ganar musculo'
+  | 'resistencia'
+  | 'recuperacion'
+  | 'por salud';
+type ActivityLevel = 'sedentario' | 'moderado' | 'activo' | 'muy activo';
+type SweatLevel = 'bajo' | 'medio' | 'alto';
+type CaffeineTolerance = 'no' | 'bajo' | 'medio' | 'alto';
 
 const OPTION_SETS: Record<string, { value: string; label: string }[]> = {
   gender: [
-    { value: 'M', label: 'Masculino' },
-    { value: 'F', label: 'Femenino' },
-    { value: 'O', label: 'Otro' },
+    { value: 'hombre', label: 'Masculino' },
+    { value: 'mujer', label: 'Femenino' },
+    { value: 'otro', label: 'Otro' },
     { value: 'prefiero no decir', label: 'Prefiero no decir' },
   ],
   activity_level: [
-    { value: 'sedentary', label: 'Sedentario' },
-    { value: 'moderate', label: 'Moderado (1-3 días/sem)' },
-    { value: 'active', label: 'Activo (3-5 días/sem)' },
-    { value: 'very_active', label: 'Muy activo (6-7 días/sem)' },
+    { value: 'sedentario', label: 'Sedentario' },
+    { value: 'moderado', label: 'Moderado (1-3 días/sem)' },
+    { value: 'activo', label: 'Activo (3-5 días/sem)' },
+    { value: 'muy activo', label: 'Muy activo (6-7 días/sem)' },
   ],
   training_frequency: [
     { value: '1-2', label: '1-2 veces/sem' },
     { value: '3-4', label: '3-4 veces/sem' },
     { value: '5+', label: '5+ veces/sem' },
+    { value: 'ocasional', label: 'Ocasional' },
   ],
   primary_goal: [
-    { value: 'muscle_gain', label: 'Ganar músculo' },
-    { value: 'weight_loss', label: 'Perder peso' },
-    { value: 'performance', label: 'Rendimiento' },
+    { value: 'ganar musculo', label: 'Ganar músculo' },
+    { value: 'perder peso', label: 'Perder peso' },
+    { value: 'mejor rendimiento', label: 'Rendimiento' },
     { value: 'resistencia', label: 'Resistencia' },
     { value: 'recuperacion', label: 'Recuperación' },
-    { value: 'general_health', label: 'Salud general' },
+    { value: 'por salud', label: 'Salud general' },
   ],
   sweat_level: [
-    { value: 'low', label: 'Bajo' },
-    { value: 'medium', label: 'Medio' },
-    { value: 'high', label: 'Alto' },
+    { value: 'bajo', label: 'Bajo' },
+    { value: 'medio', label: 'Medio' },
+    { value: 'alto', label: 'Alto' },
   ],
   caffeine_tolerance: [
-    { value: 'none', label: 'No consumo' },
-    { value: 'low', label: 'Baja' },
-    { value: 'medium', label: 'Media' },
-    { value: 'high', label: 'Alta' },
+    { value: 'no', label: 'No consumo' },
+    { value: 'bajo', label: 'Baja' },
+    { value: 'medio', label: 'Media' },
+    { value: 'alto', label: 'Alta' },
   ],
   dietary_restrictions: [
     { value: 'no', label: 'Ninguna' },
@@ -119,12 +126,12 @@ const CreateProfileScreen = () => {
     age: '25',
     weight: '70',
     height: '170',
-    gender: 'M',
+    gender: 'hombre',
     training_frequency: '3-4',
-    primary_goal: 'muscle_gain',
-    activity_level: 'moderate',
-    sweat_level: 'medium',
-    caffeine_tolerance: 'medium',
+    primary_goal: 'ganar musculo',
+    activity_level: 'moderado',
+    sweat_level: 'medio',
+    caffeine_tolerance: 'medio',
     dietary_restrictions: 'no',
     allergies: [],
     preferred_supplements: [],

@@ -16,6 +16,7 @@ import { registerUser, loginUser } from '../src/services/api';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
 import { colors, spacing } from '../src/theme';
+import { isValidEmail } from '../src/utils/validation';
 
 const RegisterScreen = () => {
   const router = useRouter();
@@ -27,6 +28,10 @@ const RegisterScreen = () => {
   const handleRegister = async () => {
     if (!username || !email || !password) {
       Alert.alert('Error', 'Por favor completa todos los campos');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      Alert.alert('Error', 'Introduce un correo electrónico válido.');
       return;
     }
 

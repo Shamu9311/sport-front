@@ -1,12 +1,16 @@
-// types/UserTypes.ts
-// Tipos en inglés para mantener coherencia con el frontend y backend
-// Usando valores cortos para gender para evitar truncamiento en la base de datos
-export type Gender = 'M' | 'F' | 'O';
-export type ActivityLevel = 'sedentary' | 'moderate' | 'active' | 'very_active';
-export type TrainingFrequency = '1-2' | '3-4' | '5+';
-export type PrimaryGoal = 'muscle_gain' | 'weight_loss' | 'performance' | 'general_health';
-export type SweatLevel = 'low' | 'medium' | 'high';
-export type CaffeineTolerance = 'none' | 'low' | 'medium' | 'high';
+// Valores alineados con ENUMs MySQL / edición de perfil en la app
+export type Gender = 'hombre' | 'mujer' | 'otro' | 'prefiero no decir';
+export type ActivityLevel = 'sedentario' | 'moderado' | 'activo' | 'muy activo';
+export type TrainingFrequency = '1-2' | '3-4' | '5+' | 'ocasional';
+export type PrimaryGoal =
+  | 'mejor rendimiento'
+  | 'perder peso'
+  | 'ganar musculo'
+  | 'resistencia'
+  | 'recuperacion'
+  | 'por salud';
+export type SweatLevel = 'bajo' | 'medio' | 'alto';
+export type CaffeineTolerance = 'no' | 'bajo' | 'medio' | 'alto';
 export type DietaryRestriction = string;
 
 export interface UserProfileData {
@@ -19,7 +23,8 @@ export interface UserProfileData {
   primary_goal: PrimaryGoal;
   sweat_level: SweatLevel;
   caffeine_tolerance: CaffeineTolerance;
-  dietary_restrictions: string[];
+  /** Una sola restricción principal o lista para compatibilidad */
+  dietary_restrictions: string | string[];
   allergies?: string[];
   preferred_supplements?: string[];
 }
@@ -38,7 +43,6 @@ export interface User {
   profile: UserProfileData;
 }
 
-// Tipos para productos (añadidos para soportar la nueva funcionalidad)
 export interface ProductCategory {
   category_id: number;
   name: string;
@@ -99,7 +103,6 @@ export interface ProductDetail {
   attributes: ProductAttribute[];
 }
 
-// Tipo para el contexto de autenticación
 export interface AuthContextType {
   user: UserData | null;
   login: (userData: UserData) => void;

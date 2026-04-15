@@ -7,6 +7,7 @@ import {
   Image,
   ActivityIndicator,
   Dimensions,
+  TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -62,6 +63,7 @@ const ProductDetailScreen = () => {
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [loading, setLoading] = useState(true); // Estado de carga
   const [error, setError] = useState<string | null>(null); // Estado de error
+  const [retryToken, setRetryToken] = useState(0);
 
   useEffect(() => {
     // 6. Asegúrate de que productId existe antes de usarlo
@@ -94,7 +96,11 @@ const ProductDetailScreen = () => {
           setAttributes(attributesData);
         } catch (err: any) {
           console.error('Error loading product details:', err);
-          setError(err.message || 'Error al cargar la información del producto.');
+          const msg =
+            err?.response?.data?.message ||
+            err?.message ||
+            'Error al cargar la información del producto.';
+          setError(typeof msg === 'string' ? msg : 'Error al cargar la información del producto.');
         } finally {
           setLoading(false); // Termina la carga (éxito o fallo)
         }
@@ -105,7 +111,7 @@ const ProductDetailScreen = () => {
       setError('No se proporcionó ID de producto.');
       setLoading(false);
     }
-  }, [productId]);
+  }, [productId, retryToken]);
 
   if (loading) {
     return (
@@ -121,6 +127,19 @@ const ProductDetailScreen = () => {
       <View style={styles.centerContainer}>
         <Ionicons name='alert-circle' size={60} color={colors.error} style={{ marginBottom: 20 }} />
         <Text style={styles.errorText}>{error}</Text>
+        {productId ? (
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => {
+              setError(null);
+              setRetryToken((t) => t + 1);
+            }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name='refresh' size={20} color={colors.textOnPrimary} />
+            <Text style={styles.retryButtonText}>Reintentar</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
     );
   }
@@ -289,6 +308,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
     lineHeight: 24,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 24,
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+  },
+  retryButtonText: {
+    color: colors.textOnPrimary,
+    fontSize: 16,
+    fontWeight: '600',
   },
   imageContainer: {
     backgroundColor: colors.surface,

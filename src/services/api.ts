@@ -4,6 +4,7 @@ import { UserData, UserProfileData } from '../types/UserTypes';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setNetworkError, clearNetworkError } from './errorService';
+import { notifySessionInvalidated } from './sessionInvalidation';
 
 export const API_URL =
   Constants.expoConfig?.extra?.apiUrl || 'http://192.168.0.6:5000';
@@ -40,20 +41,33 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
-    // Manejar token expirado o inválido
-    if (error.response?.status === 401) {
+    const reqUrl = String(error.config?.url || '');
+    const isAuthPath =
+      reqUrl.includes('/auth/login') || reqUrl.includes('/auth/register');
+    const hadAuthorization = !!error.config?.headers?.Authorization;
+
+    if (
+      error.response?.status === 401 &&
+      hadAuthorization &&
+      !isAuthPath
+    ) {
       try {
         await AsyncStorage.removeItem('user');
         await AsyncStorage.removeItem('token');
       } catch (storageError) {
         console.error('Error cleaning storage:', storageError);
       }
+      notifySessionInvalidated();
     }
 
     if (error.response) {
       clearNetworkError();
+      const data = error.response.data;
+      const msg =
+        (data && typeof data === 'object' && 'message' in data && (data as any).message) ||
+        'Error en la solicitud';
       return Promise.reject({
-        message: error.response.data.message || 'Error en la solicitud',
+        message: msg,
         status: error.response.status,
         response: error.response,
       });
@@ -93,9 +107,11 @@ export const registerUser = async (userData: {
   }
 };
 
-export const getRecommendations = async () => {
+export const getRecommendations = async (trainingData?: Record<string, unknown>) => {
   try {
-    const response = await api.get(`/recommendations/`);
+    const response = await api.post(`/recommendations/`, {
+      trainingData: trainingData || {},
+    });
 
     // El backend devuelve un objeto con propiedades 'message' y 'recommendations'
     let recommendations = [];
@@ -189,6 +205,14 @@ export const getProfile = async (userId: number) => {
       message: response.data?.message || 'No se pudo obtener el perfil',
     };
   } catch (error: any) {
+    const status = error?.status ?? error?.response?.status;
+    if (status === 401) {
+      return {
+        success: false,
+        data: null,
+        message: 'Sesión expirada. Vuelve a iniciar sesión.',
+      };
+    }
     console.error('Error en getProfile:', error);
     // Manejar diferentes tipos de errores
     if (error.response) {
@@ -365,27 +389,16 @@ export const getProductFlavors = async (productId: string) => {
 
 // Obtener recomendaciones guardadas (usuario = token JWT)
 export const getSavedRecommendations = async () => {
-  try {
-    const response = await api.get(`/recommendations/saved`);
-    let recommendations = [];
-    if (
-      response.data &&
-      response.data.recommendations &&
-      Array.isArray(response.data.recommendations)
-    ) {
-      recommendations = response.data.recommendations;
-    }
-    // Si no hay recomendaciones, retornar array vacío sin error
-    return recommendations;
-  } catch (error: any) {
-    // Si el error es porque no hay recomendaciones, retornar array vacío
-    if (error.response?.status === 200 && error.response?.data?.recommendations?.length === 0) {
-      return [];
-    }
-    console.error('Error al obtener recomendaciones guardadas:', error);
-    // Retornar array vacío en lugar de lanzar error
-    return [];
+  const response = await api.get(`/recommendations/saved`);
+  let recommendations: any[] = [];
+  if (
+    response.data &&
+    response.data.recommendations &&
+    Array.isArray(response.data.recommendations)
+  ) {
+    recommendations = response.data.recommendations;
   }
+  return recommendations;
 };
 
 export const getProductAttributes = async (productId: string) => {

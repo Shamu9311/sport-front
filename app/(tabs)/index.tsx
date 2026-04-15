@@ -143,8 +143,10 @@ const HomeScreen = () => {
         totalMinutes: totalMinutes,
         thisWeek: thisWeekSessions.length,
       });
-    } catch (error) {
-      console.error('Error loading stats:', error);
+    } catch (error: any) {
+      if (error?.status !== 401) {
+        console.error('Error loading stats:', error);
+      }
     } finally {
       setStatsLoading(false);
     }

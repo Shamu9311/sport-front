@@ -1,6 +1,6 @@
 // app/_layout.tsx
 import React, { useEffect } from 'react';
-import { Stack, useRouter, useSegments, Slot } from 'expo-router';
+import { Stack } from 'expo-router';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ActivityIndicator, View, Text, TextInput, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -14,6 +14,26 @@ import {
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
+import Toast, { BaseToast, ErrorToast } from 'react-native-toast-message';
+
+const toastConfig = {
+  success: (props: any) => (
+    <BaseToast
+      {...props}
+      style={{ borderLeftColor: colors.primary, backgroundColor: colors.surface }}
+      text1Style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}
+      text2Style={{ fontSize: 13, color: colors.textMuted }}
+    />
+  ),
+  error: (props: any) => (
+    <ErrorToast
+      {...props}
+      style={{ borderLeftColor: colors.error, backgroundColor: colors.surface }}
+      text1Style={{ fontSize: 15, color: colors.textPrimary }}
+      text2Style={{ fontSize: 13, color: colors.textMuted }}
+    />
+  ),
+};
 
 SplashScreen.preventAutoHideAsync();
 
@@ -56,6 +76,7 @@ export default function RootLayout() {
         <View style={{ flex: 1 }}>
           <RootLayoutNav />
           <NetworkErrorBanner />
+          <Toast config={toastConfig} />
         </View>
       </AuthProvider>
     </SafeAreaProvider>
@@ -120,26 +141,4 @@ function RootLayoutNav() {
       />
     </Stack>
   );
-}
-
-function useProtectedRoute() {
-  // Toda la lógica de autenticación y protección de rutas se ha movido al AuthContext
-  // Esta función ahora solo sirve como un "hook" para que las rutas se renderizen correctamente
-  // La verdadera protección ocurre en el AuthContext
-
-  const { handleRouteChanges } = useAuth();
-  const segments = useSegments();
-
-  // Usamos un efecto para verificar el estado de autenticación y perfil solo
-  // cuando los segmentos de ruta cambian, no en la primera renderización
-  useEffect(() => {
-    // Solo llamamos a handleRouteChanges después de la primera renderización
-    const timeout = setTimeout(() => {
-      handleRouteChanges();
-    }, 100);
-
-    return () => clearTimeout(timeout);
-  }, [segments.join('/')]);
-
-  return <Slot />;
 }

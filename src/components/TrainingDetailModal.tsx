@@ -16,6 +16,7 @@ import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import api, { saveProductFeedback } from '../services/api';
+import Toast from 'react-native-toast-message';
 import { getProductImageSource } from '../utils/imageUtils';
 import { colors } from '../theme';
 
@@ -208,7 +209,11 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
 
     try {
       await saveProductFeedback(userId, productId, feedback);
-      // Feedback exitoso - no mostrar alert, el estado visual es suficiente
+      Toast.show({
+        type: 'success',
+        text1: 'Gracias por tu opinión',
+        text2: feedback === 'positivo' ? 'Registramos tu valoración positiva.' : 'Registramos tu valoración.',
+      });
     } catch (error) {
       console.error('Error saving feedback:', error);
       // Revertir estado en caso de error

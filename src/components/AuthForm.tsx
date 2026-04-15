@@ -47,10 +47,13 @@ const AuthForm: React.FC<AuthFormProps> = ({ fields }) => {
 const styles = StyleSheet.create({
   container: {
     width: '80%',
+    maxWidth: 400,
+    alignSelf: 'center',
     marginVertical: spacing.lg,
   },
   inputContainer: {
     marginBottom: spacing.lg,
+    width: '100%',
   },
   label: {
     ...typography.body1,
@@ -59,6 +62,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   input: {
+    width: '100%',
     minHeight: 52,
     borderColor: colors.borderStrong,
     borderWidth: 1,

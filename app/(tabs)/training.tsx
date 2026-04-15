@@ -28,6 +28,7 @@ import TrainingDetailModal from '../../src/components/TrainingDetailModal';
 import NotificationService from '../../src/services/notificationService';
 import { colors } from '../../src/theme';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
+import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
 
@@ -191,8 +192,12 @@ export default function TrainingScreen() {
         onPress: async () => {
           try {
             await deleteTrainingSession(session.session_id);
-            fetchTrainingSessions(); // Refrescar la lista
-            Alert.alert('Éxito', 'Entrenamiento eliminado correctamente');
+            fetchTrainingSessions();
+            Toast.show({
+              type: 'success',
+              text1: 'Entrenamiento eliminado',
+              text2: 'La sesión se eliminó correctamente.',
+            });
           } catch (error) {
             console.error('Error deleting session:', error);
             Alert.alert('Error', 'No se pudo eliminar el entrenamiento');

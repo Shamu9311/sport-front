@@ -2,6 +2,7 @@ import * as React from 'react';
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getProfile } from '../services/api';
+import { setSessionInvalidatedHandler } from '../services/sessionInvalidation';
 import { useRouter, useSegments } from 'expo-router';
 
 interface User {
@@ -106,40 +107,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Control directo de navegación basado en el estado de autenticación y perfil
   const handleRouteChanges = () => {
-    // CRÍTICO: No intentar ninguna navegación hasta que el componente esté montado
     if (!mountedRef.current || !isMounted) {
       return;
     }
 
-    const isPublicRoute = ['login', 'register'].includes(segments[0] || '');
-    const isProfileCreationRoute = segments[0] === 'create-profile';
-    // const isHomeRoute = segments[0] === '' || segments[0] === undefined;
+    const seg = segments[0] || '';
+    const isPublicRoute = ['login', 'register'].includes(seg);
+    const isProfileCreationRoute = seg === 'create-profile';
+    const isLoadingProfileRoute = seg === 'loading-profile';
 
-    // No hacer ninguna redirección mientras verificamos el perfil
-    if (isCheckingProfile) {
-      return;
-    }
-
-    // Si no hay usuario, redirigir a login en rutas protegidas
-    if (!user && !isPublicRoute) {
+    if (!user && isLoadingProfileRoute) {
       router.replace('/login');
       return;
     }
 
-    // Si hay usuario autenticado
+    if (isCheckingProfile && user) {
+      const allowedDuringCheck = ['loading-profile', 'create-profile', 'login', 'register'];
+      if (!allowedDuringCheck.includes(seg)) {
+        router.replace('/loading-profile');
+      }
+      return;
+    }
+
+    if (!user && !isPublicRoute && !isLoadingProfileRoute) {
+      router.replace('/login');
+      return;
+    }
+
     if (user) {
-      // Si ya verificamos el perfil
       if (profileVerified) {
+        if (isLoadingProfileRoute) {
+          if (hasProfile) {
+            router.replace('/');
+          } else {
+            router.replace('/create-profile');
+          }
+          return;
+        }
         if (hasProfile) {
-          // Si está en login/register, redirigir a home
           if (isPublicRoute) {
             router.replace('/');
           } else if (isProfileCreationRoute) {
-            // Si está en creación de perfil pero ya tiene perfil, redirigir a home
             router.replace('/');
           }
         } else {
-          // Si no tiene perfil y no está en la página de creación, redirigir a creación
           if (!isProfileCreationRoute) {
             setRedirectingFromAuth(true);
             router.replace('/create-profile');
@@ -147,7 +158,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         return;
       }
-      // Si aún no hemos verificado el perfil, esperamos
       return;
     }
   };
@@ -164,12 +174,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Refs para evitar re-renders innecesarios en navegación
   const lastNavigationRef = React.useRef<string>('');
-  
+
+  // 401 en peticiones autenticadas: limpiar estado React y volver al login (storage ya lo limpia api.ts)
+  useEffect(() => {
+    const onSessionInvalidated = async () => {
+      try {
+        await AsyncStorage.removeItem('user');
+        await AsyncStorage.removeItem('token');
+      } catch (e) {
+        console.error('Error clearing session:', e);
+      }
+      setUser(null);
+      setUserToken(null);
+      setHasProfile(null);
+      setProfileVerified(false);
+      setIsCheckingProfile(false);
+      lastNavigationRef.current = '';
+      if (mountedRef.current) {
+        router.replace('/login');
+      }
+    };
+    setSessionInvalidatedHandler(onSessionInvalidated);
+    return () => setSessionInvalidatedHandler(null);
+  }, [router]);
+
   // Efecto para manejar navegación automática basada en el estado actual
   useEffect(() => {
     if (isLoadingAuth || !mountedRef.current || !isMounted) return;
 
-    // Sin usuario: redirigir a login de inmediato (no esperar profileVerified)
     if (!user) {
       const isPublicRoute = ['login', 'register'].includes(segments[0] || '');
       if (!isPublicRoute) {
@@ -178,7 +210,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Con usuario: esperar a que se verifique el perfil antes de navegar
+    if (user && isCheckingProfile) {
+      handleRouteChanges();
+      return;
+    }
+
     if (!isCheckingProfile && profileVerified) {
       const stateKey = `${user.id}-${hasProfile}-${segments[0]}`;
       if (lastNavigationRef.current !== stateKey) {

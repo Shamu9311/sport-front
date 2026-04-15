@@ -29,6 +29,7 @@ import NotificationService from '../../src/services/notificationService';
 import { colors } from '../../src/theme';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
 import SelectField from '../../src/components/SelectField';
+import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
 
@@ -653,10 +654,13 @@ const PersonalDataForm = ({
       // Llamar a la API para guardar el perfil
       await saveUserProfile(user.id, profileData as any);
 
-      // Cerrar el formulario automáticamente
       if (onCancel) onCancel();
 
-      Alert.alert('Éxito', 'Perfil actualizado correctamente');
+      Toast.show({
+        type: 'success',
+        text1: 'Perfil actualizado',
+        text2: 'Los cambios se guardaron correctamente.',
+      });
     } catch (error: any) {
       console.error('Error saving profile:', error);
       const errorMsg =

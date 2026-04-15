@@ -1,82 +1,39 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, ActivityIndicator } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useAuth } from '../src/context/AuthContext';
 import { colors } from '../src/theme';
 
-const LoadingProfileScreen = () => {
-  const router = useRouter();
-  const params = useLocalSearchParams();
-  const { user } = useAuth();
-  const [progress, setProgress] = useState(0);
-  const [loadingText, setLoadingText] = useState('Analizando tu perfil...');
-  const progressAnim = useRef(new Animated.Value(0)).current;
-  const navigationComplete = useRef(false);
-  const fromProfileCreation = params?.fromProfileCreation === 'true';
+const LOADING_HINTS = [
+  'Verificando tu perfil...',
+  'Un momento por favor...',
+  'Preparando la app...',
+];
 
-  // Textos de carga que se mostrarán secuencialmente
-  const loadingTexts = [
-    'Analizando tu perfil...',
-    'Buscando productos compatibles...',
-    'Aplicando algoritmo de recomendación...',
-    'Optimizando resultados para ti...',
-    'Finalizando personalización...',
-  ];
+/**
+ * Pantalla mostrada mientras AuthContext verifica si el usuario tiene perfil.
+ * La navegación posterior la controla AuthContext (tabs o create-profile).
+ */
+const LoadingProfileScreen = () => {
+  const { user } = useAuth();
+  const [hintIndex, setHintIndex] = useState(0);
 
   useEffect(() => {
-    const totalDuration = 3000; // 3 segundos de pantalla de carga
-    const interval = 100;
-    const steps = totalDuration / interval;
-    const incrementPerStep = 1 / steps;
-
-    const timer = setInterval(() => {
-      setProgress((prev) => {
-        const newProgress = Math.min(prev + incrementPerStep, 1);
-
-        if (newProgress >= 1 && !navigationComplete.current) {
-          navigationComplete.current = true;
-          clearInterval(timer);
-          // Navegar a productos cuando esté completo
-          router.replace('/(tabs)/products');
-        }
-
-        progressAnim.setValue(newProgress);
-        return newProgress;
-      });
-    }, interval);
-
-    // Change loading text periodically
-    let textIndex = 0;
-    const textTimer = setInterval(() => {
-      textIndex = (textIndex + 1) % loadingTexts.length;
-      setLoadingText(loadingTexts[textIndex]);
-    }, 1000);
-
-    return () => {
-      clearInterval(timer);
-      clearInterval(textTimer);
-    };
-  }, [fromProfileCreation]);
-
-  // Mapear el valor de progreso a un ancho de la barra
-  const width = progressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0%', '100%'],
-  });
+    const t = setInterval(() => {
+      setHintIndex((i) => (i + 1) % LOADING_HINTS.length);
+    }, 1800);
+    return () => clearInterval(t);
+  }, []);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Preparando tu experiencia personalizada</Text>
-
-      <Text style={styles.loadingText}>{loadingText}</Text>
-
-      <View style={styles.progressContainer}>
-        <Animated.View style={[styles.progressBar, { width }]} />
-      </View>
-
-      <ActivityIndicator size='large' color={colors.primary} style={styles.spinner} />
-
-      <Text style={styles.percentText}>{Math.round(progress * 100)}%</Text>
+      <ActivityIndicator size="large" color={colors.primary} />
+      <Text style={styles.title}>Sport Funcional</Text>
+      <Text style={styles.subtitle}>{LOADING_HINTS[hintIndex]}</Text>
+      {user?.email ? (
+        <Text style={styles.email} numberOfLines={1}>
+          {user.email}
+        </Text>
+      ) : null}
     </View>
   );
 };
@@ -87,40 +44,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,
-    padding: 20,
+    padding: 24,
   },
   title: {
-    fontSize: 24,
+    marginTop: 24,
+    fontSize: 22,
     fontWeight: '700',
     color: colors.primary,
-    marginBottom: 40,
-    textAlign: 'center',
   },
-  loadingText: {
-    fontSize: 18,
-    color: colors.textPrimary,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  progressContainer: {
-    height: 20,
-    width: '80%',
-    backgroundColor: colors.border,
-    borderRadius: 10,
-    overflow: 'hidden',
-    marginBottom: 20,
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: colors.primary,
-  },
-  spinner: {
-    marginVertical: 20,
-  },
-  percentText: {
+  subtitle: {
+    marginTop: 12,
     fontSize: 16,
-    color: colors.primary,
-    fontWeight: '700',
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  email: {
+    marginTop: 8,
+    fontSize: 14,
+    color: colors.textMuted,
   },
 });
 
