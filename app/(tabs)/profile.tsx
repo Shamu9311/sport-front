@@ -21,12 +21,13 @@ import {
   getProfile,
   getNotificationPreferences,
   updateNotificationPreferences,
+  formatDietaryRestrictions,
 } from '../../src/services/api';
 import { useAuth } from '../../src/context/AuthContext';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import NotificationService from '../../src/services/notificationService';
-import { colors } from '../../src/theme';
+import { colors, fontFamily } from '../../src/theme';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
 import SelectField from '../../src/components/SelectField';
 import Toast from 'react-native-toast-message';
@@ -118,7 +119,14 @@ const ProfileScreen = () => {
           username: profileResponse.data.user?.username || user.username || 'Usuario',
           email: profileResponse.data.user?.email || user.email || 'No disponible',
           created_at: profileResponse.data.user?.created_at || new Date().toISOString(),
-          profile: profileResponse.data.profile || undefined,
+          profile: profileResponse.data.profile
+            ? {
+                ...profileResponse.data.profile,
+                dietary_restrictions: formatDietaryRestrictions(
+                  profileResponse.data.profile.dietary_restrictions
+                ) as DietaryRestriction,
+              }
+            : undefined,
         });
       } else {
         // Si no hay perfil o hubo un error, al menos mostrar la info básica del usuario
@@ -582,7 +590,9 @@ const PersonalDataForm = ({
             primary_goal: currentProfile.primary_goal || 'mejor rendimiento',
             sweat_level: currentProfile.sweat_level || 'medio',
             caffeine_tolerance: currentProfile.caffeine_tolerance || 'medio',
-            dietary_restrictions: currentProfile.dietary_restrictions || 'no',
+            dietary_restrictions: formatDietaryRestrictions(
+              currentProfile.dietary_restrictions
+            ) as DietaryRestriction,
           };
           setUserData(loadedData);
           setOriginalData(loadedData); // Guardar datos originales para comparar
@@ -601,7 +611,9 @@ const PersonalDataForm = ({
               primary_goal: profile.primary_goal || 'mejor rendimiento',
               sweat_level: profile.sweat_level || 'medio',
               caffeine_tolerance: profile.caffeine_tolerance || 'medio',
-              dietary_restrictions: profile.dietary_restrictions || 'no',
+              dietary_restrictions: formatDietaryRestrictions(
+                profile.dietary_restrictions
+              ) as DietaryRestriction,
             };
             setUserData(loadedData);
             setOriginalData(loadedData); // Guardar datos originales
@@ -931,7 +943,7 @@ const styles = StyleSheet.create({
   },
   profileTitle: {
     fontSize: 26,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: colors.primary,
     marginBottom: 5,
   },
@@ -964,7 +976,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: colors.primary,
     marginLeft: 12,
   },
@@ -991,7 +1003,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 24,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: colors.primary,
     marginTop: 8,
     marginBottom: 4,
@@ -1024,7 +1036,7 @@ const styles = StyleSheet.create({
   infoValue: {
     color: colors.textPrimary,
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: fontFamily.semibold,
     textAlign: 'right',
   },
 
@@ -1048,7 +1060,7 @@ const styles = StyleSheet.create({
   switchLabel: {
     fontSize: 15,
     color: colors.textPrimary,
-    fontWeight: '600',
+    fontFamily: fontFamily.semibold,
     marginBottom: 4,
   },
   switchSubtext: {
@@ -1069,7 +1081,7 @@ const styles = StyleSheet.create({
   noProfileText: {
     color: colors.primary,
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     textAlign: 'center',
     marginBottom: 10,
   },
@@ -1104,13 +1116,13 @@ const styles = StyleSheet.create({
   buttonText: {
     color: colors.textOnPrimary,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     marginLeft: 8,
   },
   logoutButtonText: {
     color: colors.textPrimary,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     marginLeft: 8,
   },
   exitButton: {
@@ -1128,7 +1140,7 @@ const styles = StyleSheet.create({
   exitButtonText: {
     color: colors.textPrimary,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     marginLeft: 8,
   },
   refreshButton: {
@@ -1141,7 +1153,7 @@ const styles = StyleSheet.create({
   },
   refreshButtonText: {
     color: colors.textOnPrimary,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     fontSize: 15,
   },
 
@@ -1161,13 +1173,13 @@ const styles = StyleSheet.create({
   backButtonText: {
     color: colors.primary,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fontFamily.semibold,
     marginLeft: 8,
   },
   editHeaderTitle: {
     color: colors.textPrimary,
     fontSize: 24,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
   },
   formContainer: {
     padding: 16,
@@ -1200,7 +1212,7 @@ const styles = StyleSheet.create({
   },
   formCardTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: colors.primary,
     marginLeft: 10,
   },
@@ -1209,7 +1221,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: colors.textPrimary,
     opacity: 0.85,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },

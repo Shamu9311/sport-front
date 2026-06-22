@@ -13,11 +13,11 @@ type LoginPayload = {
 };
 
 /**
- * Flujo de login + verificación de perfil (sin ir a tabs si el check falla de forma ambigua).
+ * Flujo de login; la verificación de perfil la gestiona AuthContext vía /loading-profile.
  */
 export function useLoginWithProfileRedirect() {
   const router = useRouter();
-  const { login, checkUserProfile } = useAuth();
+  const { login } = useAuth();
 
   const submitLogin = async ({
     email,
@@ -38,7 +38,7 @@ export function useLoginWithProfileRedirect() {
 
     try {
       const response = await loginUser(email, password);
-      if (response && response.user) {
+      if (response?.user && response?.token) {
         const userData = {
           id: response.user.id || 1,
           username: response.user.username || '',
@@ -46,29 +46,17 @@ export function useLoginWithProfileRedirect() {
           created_at: response.user.created_at || new Date().toISOString(),
         };
         await login(userData, response.token);
-        const hasProfile = await checkUserProfile();
-        if (hasProfile) {
-          router.replace('/(tabs)');
-        } else {
-          router.replace('/create-profile');
-        }
+        router.replace('/loading-profile');
       } else {
         onIncompleteUser();
       }
     } catch (error: any) {
       console.error('Login failed:', error);
       let errorMessage = 'Ocurrió un error inesperado durante el inicio de sesión.';
-      const errorResponse = error.response;
-      if (errorResponse) {
-        if (errorResponse.status === 401) {
-          errorMessage = 'Usuario o contraseña incorrectos.';
-        } else if (errorResponse.data?.message) {
-          errorMessage = errorResponse.data.message;
-        }
-      } else if (error.request) {
-        errorMessage = 'No se pudo conectar con el servidor. Verifica tu conexión.';
-      } else {
-        errorMessage = error.message || errorMessage;
+      if (error.status === 401) {
+        errorMessage = 'Usuario o contraseña incorrectos.';
+      } else if (error.message) {
+        errorMessage = error.message;
       }
       onError(errorMessage);
     }

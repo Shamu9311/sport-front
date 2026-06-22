@@ -1,13 +1,37 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
-import { UserData, UserProfileData } from '../types/UserTypes';
-import { Platform } from 'react-native';
+import { UserProfileData } from '../types/UserTypes';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setNetworkError, clearNetworkError } from './errorService';
 import { notifySessionInvalidated } from './sessionInvalidation';
 
 export const API_URL =
   Constants.expoConfig?.extra?.apiUrl || 'http://192.168.0.6:5000';
+
+/** Normaliza respuestas `{ success, data }` del backend */
+export function unwrapApiPayload<T = unknown>(payload: unknown): T {
+  if (
+    payload &&
+    typeof payload === 'object' &&
+    'success' in payload &&
+    (payload as { success?: boolean }).success === true &&
+    'data' in payload
+  ) {
+    return (payload as { data: T }).data;
+  }
+  return payload as T;
+}
+
+export function formatDietaryRestrictions(
+  value: string | string[] | undefined | null
+): string {
+  if (!value) return 'no';
+  if (Array.isArray(value)) {
+    const filtered = value.filter(Boolean);
+    return filtered.length > 0 ? filtered.join(', ') : 'no';
+  }
+  return value;
+}
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,
@@ -16,7 +40,6 @@ const api = axios.create({
   },
 });
 
-// Interceptor para agregar token de autorización a todas las requests
 api.interceptors.request.use(
   async (config) => {
     try {
@@ -29,12 +52,9 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Configura interceptores para manejar errores y tokens expirados
 api.interceptors.response.use(
   (response) => {
     clearNetworkError();
@@ -63,9 +83,16 @@ api.interceptors.response.use(
     if (error.response) {
       clearNetworkError();
       const data = error.response.data;
+      const defaultMessage =
+        error.response.status === 403
+          ? 'No tienes permiso para esta acción'
+          : 'Error en la solicitud';
       const msg =
-        (data && typeof data === 'object' && 'message' in data && (data as any).message) ||
-        'Error en la solicitud';
+        (data &&
+          typeof data === 'object' &&
+          'message' in data &&
+          (data as { message?: string }).message) ||
+        defaultMessage;
       return Promise.reject({
         message: msg,
         status: error.response.status,
@@ -86,12 +113,8 @@ api.interceptors.response.use(
 );
 
 export const loginUser = async (email: string, password: string) => {
-  try {
-    const response = await api.post('/auth/login', { email, password });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await api.post('/auth/login', { email, password });
+  return response.data;
 };
 
 export const registerUser = async (userData: {
@@ -99,12 +122,8 @@ export const registerUser = async (userData: {
   email: string;
   password: string;
 }) => {
-  try {
-    const response = await api.post('/auth/register', userData);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await api.post('/auth/register', userData);
+  return response.data;
 };
 
 export const getRecommendations = async (trainingData?: Record<string, unknown>) => {
@@ -113,44 +132,41 @@ export const getRecommendations = async (trainingData?: Record<string, unknown>)
       trainingData: trainingData || {},
     });
 
-    // El backend devuelve un objeto con propiedades 'message' y 'recommendations'
-    let recommendations = [];
+    const payload = response.data;
+    const data = unwrapApiPayload<{ recommendations?: unknown[] }>(payload);
+    let recommendations: unknown[] = [];
 
-    if (
-      response.data &&
-      response.data.recommendations &&
-      Array.isArray(response.data.recommendations)
+    if (data?.recommendations && Array.isArray(data.recommendations)) {
+      recommendations = data.recommendations;
+    } else if (
+      payload?.recommendations &&
+      Array.isArray(payload.recommendations)
     ) {
-      recommendations = response.data.recommendations;
-    } else if (Array.isArray(response.data)) {
-      recommendations = response.data;
+      recommendations = payload.recommendations;
+    } else if (Array.isArray(data)) {
+      recommendations = data;
+    } else if (Array.isArray(payload)) {
+      recommendations = payload;
     }
 
-    // Definimos una interfaz para los productos recomendados
     interface ProductRecommendation {
       product_id: number;
       name?: string;
       description?: string;
       reasoning?: string;
-      [key: string]: any; // Para cualquier otra propiedad que pueda tener el producto
+      [key: string]: unknown;
     }
 
-    // Proceso adicional para asegurar que cada recomendación tenga todos los campos necesarios
     if (recommendations.length > 0) {
-      // Completar los datos faltantes con valores predeterminados
-      const processedRecommendations = recommendations.map((product: ProductRecommendation) => ({
+      return (recommendations as ProductRecommendation[]).map((product) => ({
         ...product,
-        // Usar los campos correctos del backend
         name: product.product_name || product.name || `Producto ${product.product_id}`,
         description:
           product.product_description ||
           product.description ||
           'Información no disponible en este momento',
-        // Asegurar que tenemos una imagen
         image_url: product.image_url || '/assets/default-product.png',
       }));
-
-      return processedRecommendations;
     }
 
     return recommendations;
@@ -160,37 +176,25 @@ export const getRecommendations = async (trainingData?: Record<string, unknown>)
   }
 };
 
-export const addConsumption = async (userId: number, productId: number, quantity: number) => {
-  try {
-    const response = await api.post(`/users/${userId}/consumption`, { productId, quantity });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
-};
-
 export const getProfile = async (userId: number) => {
   try {
     const response = await api.get(`/profile/${userId}/profile`);
 
-    // Si la respuesta es exitosa y tiene datos de perfil
-    if (response.data && response.data.success && response.data.data?.profile) {
+    if (response.data?.success && response.data.data?.profile) {
+      const profile = response.data.data.profile;
       return {
         success: true,
         data: {
           user: response.data.data.user,
           profile: {
-            ...response.data.data.profile,
-            dietary_restrictions: response.data.data.profile?.dietary_restrictions
-              ? response.data.data.profile.dietary_restrictions.split(',')
-              : [],
+            ...profile,
+            dietary_restrictions: formatDietaryRestrictions(profile.dietary_restrictions),
           },
         },
       };
     }
 
-    // Si la respuesta es exitosa pero no hay perfil
-    if (response.data && response.data.success && !response.data.data?.profile) {
+    if (response.data?.success && !response.data.data?.profile) {
       return {
         success: false,
         data: null,
@@ -198,7 +202,6 @@ export const getProfile = async (userId: number) => {
       };
     }
 
-    // Para cualquier otro caso de respuesta no exitosa
     return {
       success: false,
       data: null,
@@ -214,9 +217,7 @@ export const getProfile = async (userId: number) => {
       };
     }
     console.error('Error en getProfile:', error);
-    // Manejar diferentes tipos de errores
     if (error.response) {
-      // El servidor respondió con un estado fuera del rango 2xx
       if (error.response.status === 404) {
         return {
           success: false,
@@ -227,18 +228,18 @@ export const getProfile = async (userId: number) => {
       return {
         success: false,
         data: null,
-        message: `Error del servidor: ${error.response.status} - ${error.response.data?.message || 'Error desconocido'
-          }`,
+        message: `Error del servidor: ${error.response.status} - ${
+          error.response.data?.message || 'Error desconocido'
+        }`,
       };
-    } else if (error.request) {
-      // La solicitud fue hecha pero no hubo respuesta
+    }
+    if (error.request) {
       return {
         success: false,
         data: null,
         message: 'No se pudo conectar con el servidor',
       };
     }
-    // Error al configurar la solicitud
     return {
       success: false,
       data: null,
@@ -249,16 +250,13 @@ export const getProfile = async (userId: number) => {
 
 export const saveUserProfile = async (userId: number, profileData: UserProfileData) => {
   try {
-    // Preparar los datos para el backend
     const preparedData = {
       ...profileData,
-      // Convertir arrays a strings para el backend
       dietary_restrictions: Array.isArray(profileData.dietary_restrictions)
         ? profileData.dietary_restrictions.join(',')
-        : profileData.dietary_restrictions || '',
+        : profileData.dietary_restrictions || 'no',
     };
 
-    // Asegurar que la ruta es correcta y coincide con el backend
     const response = await api.post(`/profile/${userId}/profile`, preparedData);
     return response.data;
   } catch (error: any) {
@@ -268,45 +266,37 @@ export const saveUserProfile = async (userId: number, profileData: UserProfileDa
 };
 
 export const getProductCategories = async () => {
-  try {
-    const response = await api.get('/products/categories');
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await api.get('/products/categories');
+  const data = unwrapApiPayload(response.data);
+  return Array.isArray(data) ? data : [];
 };
 
 export const getProductsByCategory = async (categoryId: string) => {
   try {
     const response = await api.get(`/products/category/${categoryId}`);
+    const payload = response.data;
+    const data = unwrapApiPayload<{ products?: unknown[] }>(payload);
 
-    let products = [];
-
-    // Manejar diferentes formatos de respuesta
-    if (response.data && Array.isArray(response.data)) {
-      // Si la respuesta es directamente un array de productos
-      products = response.data;
-    } else if (response.data && response.data.products && Array.isArray(response.data.products)) {
-      // Si la respuesta tiene una propiedad 'products' que es un array
-      products = response.data.products;
-    } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
-      // Si la respuesta tiene una propiedad 'data' que es un array
-      products = response.data.data;
+    let products: unknown[] = [];
+    if (data?.products && Array.isArray(data.products)) {
+      products = data.products;
+    } else if (Array.isArray(data)) {
+      products = data;
+    } else if (payload?.products && Array.isArray(payload.products)) {
+      products = payload.products;
+    } else if (Array.isArray(payload)) {
+      products = payload;
     }
 
-    // Asegurarse de que cada producto tenga los campos necesarios
-    const processedProducts = products.map((product: any) => ({
+    return (products as Record<string, unknown>[]).map((product) => ({
       ...product,
       product_name: product.product_name || product.name || `Producto ${product.product_id}`,
       product_description:
         product.product_description || product.description || 'Descripción no disponible',
       image_url: product.image_url || '/assets/default-product.png',
-      // Asegurar que los campos opcionales tengan valores por defecto
       price: product.price || 0,
       category_id: product.category_id || parseInt(categoryId, 10),
     }));
-
-    return processedProducts;
   } catch (error) {
     console.error('Error en getProductsByCategory:', error);
     throw error;
@@ -332,16 +322,25 @@ export const searchProducts = async (filters: {
     if (filters.offset) params.append('offset', filters.offset.toString());
 
     const response = await api.get(`/products/search?${params.toString()}`);
+    const payload = response.data;
+    const data = unwrapApiPayload<{
+      products?: unknown[];
+      total?: number;
+      hasMore?: boolean;
+    }>(payload);
 
-    let products = [];
-    if (response.data && response.data.products && Array.isArray(response.data.products)) {
-      products = response.data.products;
-    } else if (Array.isArray(response.data)) {
-      products = response.data;
+    let products: unknown[] = [];
+    if (data?.products && Array.isArray(data.products)) {
+      products = data.products;
+    } else if (payload?.products && Array.isArray(payload.products)) {
+      products = payload.products;
+    } else if (Array.isArray(data)) {
+      products = data;
+    } else if (Array.isArray(payload)) {
+      products = payload;
     }
 
-    // Procesar productos para asegurar campos necesarios
-    const processedProducts = products.map((product: any) => ({
+    const processedProducts = (products as Record<string, unknown>[]).map((product) => ({
       ...product,
       product_name: product.product_name || product.name || `Producto ${product.product_id}`,
       product_description:
@@ -351,8 +350,8 @@ export const searchProducts = async (filters: {
 
     return {
       products: processedProducts,
-      total: response.data?.total || processedProducts.length,
-      hasMore: response.data?.hasMore || false,
+      total: data?.total ?? payload?.total ?? processedProducts.length,
+      hasMore: data?.hasMore ?? payload?.hasMore ?? false,
     };
   } catch (error) {
     console.error('Error en searchProducts:', error);
@@ -361,96 +360,60 @@ export const searchProducts = async (filters: {
 };
 
 export const getProductDetails = async (productId: string) => {
-  try {
-    const response = await api.get(`/products/${productId}`);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await api.get(`/products/${productId}`);
+  return unwrapApiPayload(response.data);
 };
 
 export const getProductNutrition = async (productId: string) => {
-  try {
-    const response = await api.get(`/products/${productId}/nutrition`);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await api.get(`/products/${productId}/nutrition`);
+  return unwrapApiPayload(response.data);
 };
 
 export const getProductFlavors = async (productId: string) => {
-  try {
-    const response = await api.get(`/products/${productId}/flavors`);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await api.get(`/products/${productId}/flavors`);
+  return unwrapApiPayload(response.data);
 };
 
-// Obtener recomendaciones guardadas (usuario = token JWT)
 export const getSavedRecommendations = async () => {
   const response = await api.get(`/recommendations/saved`);
-  let recommendations: any[] = [];
-  if (
-    response.data &&
-    response.data.recommendations &&
-    Array.isArray(response.data.recommendations)
-  ) {
-    recommendations = response.data.recommendations;
+  const payload = response.data;
+  const data = unwrapApiPayload<{ recommendations?: unknown[] }>(payload);
+
+  if (data?.recommendations && Array.isArray(data.recommendations)) {
+    return data.recommendations;
   }
-  return recommendations;
+  if (payload?.recommendations && Array.isArray(payload.recommendations)) {
+    return payload.recommendations;
+  }
+  return [];
 };
 
 export const getProductAttributes = async (productId: string) => {
-  try {
-    const response = await api.get(`/products/${productId}/attributes`);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await api.get(`/products/${productId}/attributes`);
+  return unwrapApiPayload(response.data);
 };
 
-// Helper function to safely get token from storage
-const getToken = async () => {
-  try {
-    // Use AsyncStorage for React Native
-    if (Platform.OS === 'android' || Platform.OS === 'ios') {
-      return await AsyncStorage.getItem('token');
-    }
-    // Use localStorage for web if available
-    else if (typeof localStorage !== 'undefined') {
-      return localStorage.getItem('token');
-    }
-    return null;
-  } catch (error) {
-    console.warn('Error accessing storage:', error);
-    return null;
-  }
-};
-
-// Obtener todas las sesiones de entrenamiento del usuario
 export const getUserTrainingSessions = async (userId: number) => {
   try {
     const response = await api.get(`/training/user/${userId}`);
-    return response.data;
+    const data = unwrapApiPayload(response.data);
+    return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error('Error fetching training sessions:', error);
     throw error;
   }
 };
 
-// Obtener una sesión de entrenamiento específica
 export const getTrainingSession = async (sessionId: number) => {
   try {
     const response = await api.get(`/training/${sessionId}`);
-    return response.data;
+    return unwrapApiPayload(response.data);
   } catch (error) {
     console.error('Error fetching training session:', error);
     throw error;
   }
 };
 
-// Crear una nueva sesión de entrenamiento
 export const createTrainingSession = async (trainingData: {
   userId: number;
   sessionDate: string;
@@ -463,21 +426,20 @@ export const createTrainingSession = async (trainingData: {
 }) => {
   try {
     const response = await api.post('/training', trainingData);
-    return response.data;
+    return unwrapApiPayload(response.data);
   } catch (error) {
     console.error('Error creating training session:', error);
     throw error;
   }
 };
 
-// Actualizar una sesión de entrenamiento existente
 export const updateTrainingSession = async (
   sessionId: number,
   trainingData: {
-    sessionDate: string;
-    durationMin: number;
-    intensity: string;
-    type: string;
+    session_date?: string;
+    duration_min?: number;
+    intensity?: string;
+    type?: string;
     weather?: string;
     sport_type?: string;
     notes?: string;
@@ -485,14 +447,13 @@ export const updateTrainingSession = async (
 ) => {
   try {
     const response = await api.put(`/training/${sessionId}`, trainingData);
-    return response.data;
+    return unwrapApiPayload(response.data);
   } catch (error) {
     console.error('Error updating training session:', error);
     throw error;
   }
 };
 
-// Eliminar una sesión de entrenamiento
 export const deleteTrainingSession = async (sessionId: number) => {
   try {
     const response = await api.delete(`/training/${sessionId}`);
@@ -503,44 +464,24 @@ export const deleteTrainingSession = async (sessionId: number) => {
   }
 };
 
-/** Recomendaciones asociadas a una sesión (requiere JWT; el backend valida propiedad de la sesión) */
 export const getTrainingSessionRecommendationsBySession = async (sessionId: number) => {
   const response = await api.get(`/training/${sessionId}/recommendations`);
-  return response.data;
+  const data = unwrapApiPayload(response.data);
+  return Array.isArray(data) ? data : [];
 };
 
-// Obtener recomendaciones basadas en una sesión de entrenamiento
-export const getTrainingRecommendations = async (trainingId: number, userId: number) => {
-  try {
-    const response = await api.post('/recommendations/training', { trainingId, userId });
-
-    let recommendations = [];
-
-    if (response.data && Array.isArray(response.data)) {
-      recommendations = response.data;
-    } else if (
-      response.data &&
-      response.data.recommendations &&
-      Array.isArray(response.data.recommendations)
-    ) {
-      recommendations = response.data.recommendations;
-    }
-
-    return recommendations;
-  } catch (error) {
-    console.error('Error fetching training recommendations:', error);
-    throw error;
-  }
-};
-
-// Guardar feedback del usuario sobre un producto
-export const saveProductFeedback = async (userId: number, productId: number, feedback: 'positivo' | 'negativo', notes?: string) => {
+export const saveProductFeedback = async (
+  userId: number,
+  productId: number,
+  feedback: 'positivo' | 'negativo',
+  notes?: string
+) => {
   try {
     const response = await api.post('/recommendations/product-feedback', {
       userId,
       productId,
       feedback,
-      notes
+      notes,
     });
     return response.data;
   } catch (error) {
@@ -549,18 +490,23 @@ export const saveProductFeedback = async (userId: number, productId: number, fee
   }
 };
 
-// Obtener historial de feedback del usuario (token JWT)
 export const getUserFeedbackHistory = async () => {
   try {
     const response = await api.get(`/recommendations/user-feedback`);
-    return response.data;
+    const data = unwrapApiPayload<{ feedback?: unknown[] }>(response.data);
+    if (data?.feedback && Array.isArray(data.feedback)) {
+      return { success: true, feedback: data.feedback };
+    }
+    if (response.data?.feedback && Array.isArray(response.data.feedback)) {
+      return response.data;
+    }
+    return { success: true, feedback: [] };
   } catch (error) {
     console.error('Error getting user feedback:', error);
     throw error;
   }
 };
 
-// Obtener preferencias de notificaciones
 export const getNotificationPreferences = async (userId: number) => {
   try {
     const response = await api.get(`/notifications/preferences/${userId}`);
@@ -571,7 +517,6 @@ export const getNotificationPreferences = async (userId: number) => {
   }
 };
 
-// Actualizar preferencias de notificaciones
 export const updateNotificationPreferences = async (
   userId: number,
   preferences: {

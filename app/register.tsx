@@ -24,6 +24,7 @@ const RegisterScreen = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleRegister = async () => {
     if (!username || !email || !password) {
@@ -35,6 +36,7 @@ const RegisterScreen = () => {
       return;
     }
 
+    setIsLoading(true);
     try {
       const response = await registerUser({ username, email, password });
 
@@ -58,6 +60,9 @@ const RegisterScreen = () => {
 
                     await login(userData, loginResponse.token);
                     router.replace('/create-profile');
+                  } else {
+                    Alert.alert('Error', 'No se recibió token de autenticación');
+                    router.replace('/login');
                   }
                 } catch (loginError) {
                   console.error('Error al iniciar sesión automáticamente:', loginError);
@@ -89,6 +94,8 @@ const RegisterScreen = () => {
         errorMessage = error.message || errorMessage;
       }
       Alert.alert('Error de Registro', errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -136,6 +143,8 @@ const RegisterScreen = () => {
               iconSize={24}
               variant="primary"
               onPress={handleRegister}
+              loading={isLoading}
+              disabled={isLoading}
               style={styles.buttonPrimary}
             />
             <CustomButton
@@ -170,9 +179,9 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   logo: {
-    width: '70%',
+    width: '75%',
     maxWidth: 280,
-    height: 100,
+    height: 120,
     marginBottom: spacing.xl,
   },
   buttonPrimary: {

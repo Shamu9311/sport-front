@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { colors } from '../src/theme';
+import { colors, fontFamily } from '../src/theme';
 import { useAuth } from '../src/context/AuthContext';
 import { saveUserProfile } from '../src/services/api';
 import CustomButton from '../src/components/CustomButton';
@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 26,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: colors.primary,
     marginBottom: 10,
     textAlign: 'center',
@@ -680,11 +680,14 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   label: {
-    fontSize: 16,
-    color: colors.primary,
+    fontSize: 14,
+    color: colors.textPrimary,
+    opacity: 0.85,
     marginBottom: 4,
     textAlign: 'center',
-    fontWeight: '700',
+    fontFamily: fontFamily.medium,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   fieldLabel: {
     fontSize: 13,
@@ -706,15 +709,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface,
-    borderRadius: 12,
+    borderRadius: 16,
     paddingVertical: 18,
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: colors.border,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   tappableValue: {
     fontSize: 24,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: colors.primary,
   },
   tappableLabel: {
@@ -729,16 +737,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.surface,
-    borderRadius: 12,
+    borderRadius: 16,
     paddingVertical: 18,
     paddingHorizontal: 16,
     borderWidth: 1,
     borderColor: colors.border,
     marginBottom: 8,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   tappableValueFull: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fontFamily.semibold,
     color: colors.primary,
   },
   modalOverlay: {
@@ -759,7 +772,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: colors.primary,
     textAlign: 'center',
     marginBottom: 16,
@@ -782,7 +795,7 @@ const styles = StyleSheet.create({
   },
   modalButtonText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: colors.textOnPrimary,
   },
   button: {

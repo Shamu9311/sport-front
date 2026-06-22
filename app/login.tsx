@@ -21,18 +21,24 @@ const LoginScreen = () => {
   const { submitLogin } = useLoginWithProfileRedirect();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
-    submitLogin({
-      email,
-      password,
-      onMissingFields: () =>
-        Alert.alert('Error', 'Por favor completa todos los campos'),
-      onInvalidEmail: () =>
-        Alert.alert('Error', 'Introduce un correo electrónico válido.'),
-      onIncompleteUser: () => Alert.alert('Error', 'Datos de usuario incompletos'),
-      onError: (message) => Alert.alert('Error de Inicio de Sesión', message),
-    });
+  const handleLogin = async () => {
+    setIsLoading(true);
+    try {
+      await submitLogin({
+        email,
+        password,
+        onMissingFields: () =>
+          Alert.alert('Error', 'Por favor completa todos los campos'),
+        onInvalidEmail: () =>
+          Alert.alert('Error', 'Introduce un correo electrónico válido.'),
+        onIncompleteUser: () => Alert.alert('Error', 'Datos de usuario incompletos'),
+        onError: (message) => Alert.alert('Error de Inicio de Sesión', message),
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -72,6 +78,8 @@ const LoginScreen = () => {
               iconSize={24}
               variant="primary"
               onPress={handleLogin}
+              loading={isLoading}
+              disabled={isLoading}
               style={styles.buttonPrimary}
             />
             <CustomButton
@@ -104,8 +112,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: '80%',
-    height: 160,
+    width: '75%',
+    maxWidth: 280,
+    height: 120,
     alignSelf: 'center',
     marginBottom: spacing.xl,
   },

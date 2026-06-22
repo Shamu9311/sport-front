@@ -105,6 +105,14 @@ export interface ProductDetail {
 
 export interface AuthContextType {
   user: UserData | null;
-  login: (userData: UserData) => void;
-  logout: () => void;
+  userToken: string | null;
+  isLoadingAuth: boolean;
+  hasProfile: boolean | null;
+  isCheckingProfile: boolean;
+  profileVerified: boolean;
+  login: (userData: UserData, token?: string) => Promise<void>;
+  logout: () => Promise<void>;
+  checkUserProfile: () => Promise<boolean>;
+  setHasProfile: (value: boolean) => void;
+  handleRouteChanges: () => void;
 }

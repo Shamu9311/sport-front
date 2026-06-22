@@ -26,7 +26,7 @@ import TrainingSessionItem from '../../src/components/TrainingSessionItem';
 import AddTrainingModal from '../../src/components/AddTrainingModal';
 import TrainingDetailModal from '../../src/components/TrainingDetailModal';
 import NotificationService from '../../src/services/notificationService';
-import { colors } from '../../src/theme';
+import { colors, fontFamily } from '../../src/theme';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
 import Toast from 'react-native-toast-message';
 
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 26,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: colors.primary,
     marginBottom: 5,
   },
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     color: colors.textOnPrimary,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     fontSize: 15,
     marginLeft: 6,
   },
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   emptyStateTitle: {
     color: colors.primary,
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     marginBottom: 12,
   },
   emptyStateText: {
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
   sessionsCount: {
     color: colors.primary,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
   },
   swipeHint: {
     color: colors.textMuted,

@@ -16,7 +16,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { getUserTrainingSessions } from '../../src/services/api';
 import AnimatedNumber from '../../src/components/AnimatedNumber';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
-import { colors, shadows, spacing, radius } from '../../src/theme';
+import { colors, shadows, spacing, radius, fontFamily } from '../../src/theme';
 
 const { width, height } = Dimensions.get('window');
 
@@ -185,9 +185,12 @@ const HomeScreen = () => {
           resizeMode="contain"
         />
 
-        <Text style={styles.greeting}>
-          ¡Hola{user?.username ? `, ${user.username}` : ''}! 👋
-        </Text>
+        <View style={styles.greetingRow}>
+          <Text style={styles.greeting}>
+            ¡Hola{user?.username ? `, ${user.username}` : ''}!
+          </Text>
+          <Ionicons name="hand-left-outline" size={22} color={colors.primary} />
+        </View>
         <Text style={styles.subGreeting}>Listo para optimizar tu rendimiento</Text>
 
         {user && (
@@ -357,12 +360,18 @@ const styles = StyleSheet.create({
     height: height * 0.12,
     marginBottom: spacing.xl,
   },
+  greetingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
   greeting: {
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: colors.primary,
     textAlign: 'center',
-    marginBottom: spacing.sm,
   },
   subGreeting: {
     fontSize: 16,
@@ -390,7 +399,7 @@ const styles = StyleSheet.create({
   },
   statsTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: colors.primary,
     marginLeft: spacing.md,
   },
@@ -410,14 +419,14 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: colors.primary,
     marginTop: spacing.sm,
     marginBottom: spacing.xs,
   },
   statLabel: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: fontFamily.semibold,
     color: colors.textSecondary,
     textAlign: 'center',
     textTransform: 'uppercase',
@@ -435,7 +444,7 @@ const styles = StyleSheet.create({
   },
   featuresTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: colors.primary,
     textAlign: 'center',
     textTransform: 'uppercase',
@@ -471,7 +480,7 @@ const styles = StyleSheet.create({
   featureTitle: {
     width: '100%',
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: colors.primary,
     marginBottom: spacing.md,
     textAlign: 'center',
@@ -520,7 +529,7 @@ const styles = StyleSheet.create({
   },
   howItWorksTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: colors.primary,
     marginLeft: spacing.md,
   },
@@ -534,7 +543,7 @@ const styles = StyleSheet.create({
   },
   highlight: {
     color: colors.primary,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
   },
   benefitsList: {
     marginBottom: spacing.lg,
@@ -549,7 +558,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.textPrimary,
     marginLeft: spacing.md,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
   },
   tipContainer: {
     flexDirection: 'row',
@@ -574,7 +583,7 @@ const styles = StyleSheet.create({
   },
   quickAccessTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: colors.primary,
     marginBottom: spacing.lg,
     textAlign: 'center',
@@ -597,7 +606,7 @@ const styles = StyleSheet.create({
   },
   quickAccessText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fontFamily.semibold,
     color: colors.textPrimary,
     opacity: 0.9,
     marginTop: spacing.md,

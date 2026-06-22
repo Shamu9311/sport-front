@@ -14,7 +14,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getProductImageSource } from '../../src/utils/imageUtils';
-import { colors } from '../../src/theme';
+import { colors, fontFamily } from '../../src/theme';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
 import { useSavedRecommendationsData } from '../../src/hooks/useSavedRecommendationsData';
 
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 26,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: colors.primary,
     marginBottom: 5,
   },
@@ -351,12 +351,12 @@ const styles = StyleSheet.create({
   tabText: {
     color: colors.textSecondary,
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fontFamily.semibold,
     marginLeft: 6,
   },
   tabTextActive: {
     color: colors.textOnPrimary,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
   },
   actionButton: {
     backgroundColor: colors.primary,
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     color: colors.textOnPrimary,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     fontSize: 15,
     marginLeft: 8,
   },
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
   },
   productName: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     marginBottom: 8,
     color: colors.primary,
   },
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
   },
   reasoningTitle: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: fontFamily.semibold,
     marginBottom: 6,
     color: colors.primary,
     textTransform: 'uppercase',
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
   viewDetailsText: {
     color: colors.primary,
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fontFamily.semibold,
     marginLeft: 4,
   },
 });

@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { colors } from '../../src/theme';
+import { colors, fontFamily } from '../../src/theme';
 
 // Función helper para el icono de FontAwesome
 function TabBarIconFA(props: {
@@ -50,7 +50,7 @@ export default function TabLayout() {
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: '600',
+          fontFamily: fontFamily.semibold,
           marginTop: 4,
           marginBottom: 0,
         },

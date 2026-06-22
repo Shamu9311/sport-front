@@ -230,19 +230,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [segments[0]]);
 
   const login = async (userData: User, token?: string) => {
+    if (!token) {
+      throw new Error('No se recibió token de autenticación');
+    }
+
     setIsLoadingAuth(true);
     try {
-      const authToken = token || 'default-token';
-
-      // Persistir en AsyncStorage ANTES de actualizar el estado para que el interceptor
-      // de Axios encuentre el token cuando checkUserProfile dispare getProfile.
       await AsyncStorage.setItem('user', JSON.stringify(userData));
-      await AsyncStorage.setItem('token', authToken);
+      await AsyncStorage.setItem('token', token);
 
-      setUserToken(authToken);
-      setUser(userData); // dispara el useEffect → checkUserProfile → getProfile (ya hay token)
+      setUserToken(token);
+      setUser(userData);
     } catch (error) {
       console.error('Error saving session:', error);
+      throw error;
     } finally {
       setIsLoadingAuth(false);
     }

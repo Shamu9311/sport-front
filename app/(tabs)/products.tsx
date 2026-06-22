@@ -19,7 +19,7 @@ import { getProductImageSource } from '../../src/utils/imageUtils';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
-import { colors } from '../../src/theme';
+import { colors, fontFamily } from '../../src/theme';
 import { MIN_SKELETON_MS, withMinimumDuration } from '../../src/utils/withMinimumDuration';
 
 const { width } = Dimensions.get('window');
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
   },
   pageTitle: {
     fontSize: 26,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: colors.primary,
     marginBottom: 5,
   },
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
   filtersLabel: {
     color: colors.primary,
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fontFamily.semibold,
     marginRight: 12,
     minWidth: 70,
   },
@@ -565,11 +565,11 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     opacity: 0.85,
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: fontFamily.semibold,
   },
   timingFilterTextActive: {
     color: colors.textOnPrimary,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
   },
   activeFiltersContainer: {
     flexDirection: 'row',
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
   resultsCount: {
     color: colors.textSecondary,
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: fontFamily.semibold,
     marginRight: 8,
   },
   filterChip: {
@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
   filterChipText: {
     color: colors.textOnPrimary,
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: fontFamily.semibold,
   },
 
   loadingContainer: {
@@ -631,7 +631,7 @@ const styles = StyleSheet.create({
   categoryTitle: {
     color: colors.primary,
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     marginLeft: 10,
   },
   categoryScrollContainer: {
@@ -657,11 +657,11 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     opacity: 0.88,
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fontFamily.semibold,
   },
   selectedCategoryText: {
     color: colors.textOnPrimary,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
   },
 
   listContainer: {
@@ -713,7 +713,7 @@ const styles = StyleSheet.create({
   productName: {
     color: colors.primary,
     fontSize: 17,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
     marginBottom: 8,
     lineHeight: 22,
   },
@@ -735,7 +735,7 @@ const styles = StyleSheet.create({
   viewDetailsText: {
     color: colors.primary,
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fontFamily.semibold,
     marginLeft: 6,
   },
 

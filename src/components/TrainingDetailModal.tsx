@@ -15,7 +15,7 @@ import {
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import api, { saveProductFeedback } from '../services/api';
+import api, { saveProductFeedback, unwrapApiPayload } from '../services/api';
 import Toast from 'react-native-toast-message';
 import { getProductImageSource } from '../utils/imageUtils';
 import { colors } from '../theme';
@@ -30,13 +30,17 @@ interface TrainingDetailModalProps {
 }
 
 const getIntensityColor = (intensity: string) => {
-  switch (intensity) {
+  switch (intensity?.toLowerCase()) {
+    case 'baja':
     case 'bajo':
       return colors.success;
+    case 'media':
     case 'medio':
       return colors.warning;
+    case 'alta':
     case 'alto':
       return colors.warning;
+    case 'muy alta':
     case 'muy alto':
       return colors.error;
     default:
@@ -151,8 +155,11 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
             return;
           }
 
-          if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-            setRecommendations(response.data);
+          const payload = unwrapApiPayload<unknown[]>(response.data);
+          const recommendationList = Array.isArray(payload) ? payload : [];
+
+          if (recommendationList.length > 0) {
+            setRecommendations(recommendationList);
             setLoading(false);
             return;
           }
