@@ -37,6 +37,21 @@ async function getNotifications(): Promise<NotificationsModule | null> {
   return Notifications;
 }
 
+/** Extrae interval_minutes persistido en consumption_instructions del backend */
+export function parseIntervalMinutesFromInstructions(
+  instructions?: string | null
+): number | undefined {
+  if (!instructions) return undefined;
+  const match = instructions.match(/\[interval_minutes=(\d+)\]/);
+  return match ? parseInt(match[1], 10) : undefined;
+}
+
+/** Limpia el prefijo técnico para mostrar instrucciones al usuario */
+export function stripIntervalPrefixFromInstructions(instructions?: string | null): string {
+  if (!instructions) return '';
+  return instructions.replace(/\[interval_minutes=\d+\]\s*/, '').trim();
+}
+
 class NotificationService {
   /**
    * Solicitar permisos de notificaciones
@@ -49,7 +64,6 @@ class NotificationService {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
-      // Si ya fueron denegados, informar al usuario
       if (existingStatus === 'denied') {
         return false;
       }
@@ -63,7 +77,6 @@ class NotificationService {
         return false;
       }
 
-      // Configurar canal de notificaciones para Android
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('default', {
           name: 'default',
@@ -81,84 +94,115 @@ class NotificationService {
   }
 
   /**
-   * Programar recordatorio de consumo basado en la hora del entrenamiento
+   * Programar recordatorio(s) de consumo según timing del producto.
+   * Para timing "durante" puede programar múltiples notificaciones según duración e intervalo.
    */
   static async scheduleConsumptionReminder(
     productName: string,
     timing: string,
     minutes?: number,
-    trainingDate?: Date
-  ): Promise<string | null> {
+    trainingDate?: Date,
+    sessionDurationMin?: number,
+    intervalMin?: number,
+    preferredDailyTime?: string
+  ): Promise<string[]> {
+    const scheduledIds: string[] = [];
+
     try {
       const hasPermission = await this.requestPermissions();
-      if (!hasPermission) return null;
+      if (!hasPermission) return scheduledIds;
       const Notifications = await getNotifications();
-      if (!Notifications) return null;
+      if (!Notifications) return scheduledIds;
 
       const now = new Date();
       const trainingTime = trainingDate || now;
-      let trigger: any;
-      let body = '';
 
       switch (timing) {
-        case 'antes':
-          // Notificar X minutos antes del entrenamiento
+        case 'antes': {
           const beforeTime = new Date(trainingTime.getTime() - (minutes || 30) * 60 * 1000);
+          const trigger = beforeTime > now ? beforeTime : { seconds: 5 };
+          const body =
+            beforeTime > now
+              ? `Consume ${productName} ahora, ${minutes || 30} minutos antes de tu entrenamiento`
+              : `Recuerda consumir ${productName} antes de entrenar`;
 
-          if (beforeTime > now) {
-            trigger = beforeTime;
-            body = `Consume ${productName} ahora, ${minutes || 30} minutos antes de tu entrenamiento`;
-          } else {
-            // Si ya pasó el tiempo, notificar inmediatamente
-            trigger = { seconds: 5 };
-            body = `Recuerda consumir ${productName} antes de entrenar`;
+          const id = await Notifications.scheduleNotificationAsync({
+            content: {
+              title: '🏋️ Recordatorio de Consumo',
+              body,
+              sound: true,
+            },
+            trigger,
+          });
+          scheduledIds.push(id);
+          break;
+        }
+
+        case 'durante': {
+          const interval = intervalMin && intervalMin > 0 ? intervalMin : 30;
+          const duration = sessionDurationMin && sessionDurationMin > 0 ? sessionDurationMin : 60;
+          const count = Math.max(1, Math.floor(duration / interval));
+
+          for (let i = 0; i < count; i++) {
+            const fireAt = new Date(trainingTime.getTime() + i * interval * 60 * 1000);
+            const trigger = fireAt > now ? fireAt : { seconds: 5 + i * 2 };
+            const id = await Notifications.scheduleNotificationAsync({
+              content: {
+                title: '🏃 Consumo durante entrenamiento',
+                body: `Consume ${productName} ahora (vez ${i + 1}/${count})`,
+                sound: true,
+              },
+              trigger,
+            });
+            scheduledIds.push(id);
           }
           break;
+        }
 
-        case 'durante':
-          // Notificar al inicio del entrenamiento
-          if (trainingTime > now) {
-            trigger = trainingTime;
-          } else {
-            trigger = { seconds: 5 };
-          }
-          body = `Durante el entrenamiento, consume ${productName} para mantener tu energía`;
-          break;
-
-        case 'despues':
-          // Notificar X minutos después del entrenamiento
+        case 'despues': {
           const afterTime = new Date(trainingTime.getTime() + (minutes || 30) * 60 * 1000);
-          trigger = afterTime;
-          body = `Es momento de consumir ${productName} para recuperarte`;
+          const id = await Notifications.scheduleNotificationAsync({
+            content: {
+              title: '🏋️ Recordatorio de Consumo',
+              body: `Es momento de consumir ${productName} para recuperarte`,
+              sound: true,
+            },
+            trigger: afterTime,
+          });
+          scheduledIds.push(id);
           break;
+        }
 
-        case 'diario':
-          trigger = {
-            type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
-            hour: 9,
-            minute: 0,
-            repeats: true,
-          };
-          body = `Recuerda tomar tu dosis diaria de ${productName}`;
+        case 'diario': {
+          const timeParts = (preferredDailyTime || '09:00').split(':');
+          const hour = parseInt(timeParts[0], 10) || 9;
+          const minute = parseInt(timeParts[1], 10) || 0;
+
+          const id = await Notifications.scheduleNotificationAsync({
+            content: {
+              title: '🏋️ Recordatorio de Consumo',
+              body: `Recuerda tomar tu dosis diaria de ${productName}`,
+              sound: true,
+            },
+            trigger: {
+              type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+              hour,
+              minute,
+              repeats: true,
+            },
+          });
+          scheduledIds.push(id);
           break;
+        }
 
         default:
-          return null;
+          break;
       }
 
-      const notificationId = await Notifications.scheduleNotificationAsync({
-        content: {
-          title: '🏋️ Recordatorio de Consumo',
-          body,
-          sound: true,
-        },
-        trigger,
-      });
-
-      return notificationId;
+      return scheduledIds;
     } catch (error) {
       console.error('Error programando notificación:', error);
-      return null;
+      return scheduledIds;
     }
   }
 

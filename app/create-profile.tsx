@@ -121,6 +121,7 @@ const CreateProfileScreen = () => {
   const router = useRouter();
 
   const [currentStep, setCurrentStep] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [profileData, setProfileData] = useState<ProfileData>({
     age: '25',
@@ -172,6 +173,7 @@ const CreateProfileScreen = () => {
     }
 
     try {
+      setIsSaving(true);
       const profileToSave = {
         ...profileData,
         age: parseInt(profileData.age),
@@ -206,8 +208,10 @@ const CreateProfileScreen = () => {
       console.error('Error al guardar el perfil:', error);
       Alert.alert(
         'Error',
-        error.response?.data?.message || 'Ocurrió un error al guardar tu perfil'
+        error.response?.data?.message || error.message || 'Ocurrió un error al guardar tu perfil'
       );
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -460,6 +464,8 @@ const CreateProfileScreen = () => {
                   iconSize={24}
                   iconColor={colors.textOnPrimary}
                   onPress={handleSaveProfile}
+                  loading={isSaving}
+                  disabled={isSaving}
                   style={styles.button}
                 />
               </View>

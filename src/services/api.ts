@@ -393,6 +393,11 @@ export const getProductAttributes = async (productId: string) => {
   return unwrapApiPayload(response.data);
 };
 
+export const getFullProductDetails = async (productId: string) => {
+  const response = await api.get(`/products/${productId}/full`);
+  return unwrapApiPayload(response.data);
+};
+
 export const getUserTrainingSessions = async (userId: number) => {
   try {
     const response = await api.get(`/training/user/${userId}`);

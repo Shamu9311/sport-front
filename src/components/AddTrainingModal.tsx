@@ -31,7 +31,7 @@ interface AddTrainingModalProps {
 }
 
 const intensityOptions = ['baja', 'media', 'alta', 'muy alta'];
-const typeOptions = ['cardio', 'fuerza', 'hiit', 'resistencia', 'crossfit', 'otro'];
+const typeOptions = ['cardio', 'fuerza', 'hiit', 'resistencia', 'mixed', 'otro'];
 const sportTypeOptions = [
   '10K',
   '15K',

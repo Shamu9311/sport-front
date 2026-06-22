@@ -77,21 +77,24 @@ const RegisterScreen = () => {
       }
     } catch (error: any) {
       console.error('Registration failed:', error);
-      const errorResponse = error.response;
       let errorMessage = 'Ocurrió un error inesperado durante el registro.';
 
-      if (errorResponse) {
-        if (errorResponse.status === 409) {
+      if (error.response) {
+        if (error.response.status === 409) {
           errorMessage =
-            errorResponse.data?.message ||
+            error.response.data?.message ||
             'El correo electrónico o nombre de usuario ya están en uso.';
-        } else if (errorResponse.data?.message) {
-          errorMessage = errorResponse.data.message;
+        } else if (error.response.data?.message) {
+          errorMessage = error.response.data.message;
         }
+      } else if (error.status === 409) {
+        errorMessage = error.message || 'El correo electrónico o nombre de usuario ya están en uso.';
+      } else if (error.status) {
+        errorMessage = error.message || errorMessage;
       } else if (error.request) {
         errorMessage = 'No se pudo conectar con el servidor.';
-      } else {
-        errorMessage = error.message || errorMessage;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
       Alert.alert('Error de Registro', errorMessage);
     } finally {

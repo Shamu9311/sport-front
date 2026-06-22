@@ -25,10 +25,13 @@ import {
 import TrainingSessionItem from '../../src/components/TrainingSessionItem';
 import AddTrainingModal from '../../src/components/AddTrainingModal';
 import TrainingDetailModal from '../../src/components/TrainingDetailModal';
-import NotificationService from '../../src/services/notificationService';
+import NotificationService, {
+  parseIntervalMinutesFromInstructions,
+} from '../../src/services/notificationService';
 import { colors, fontFamily } from '../../src/theme';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
 import Toast from 'react-native-toast-message';
+import { TrainingSession } from '../../src/types/UserTypes';
 
 const { width } = Dimensions.get('window');
 
@@ -36,10 +39,10 @@ export default function TrainingScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [trainingSessions, setTrainingSessions] = useState<any[]>([]);
+  const [trainingSessions, setTrainingSessions] = useState<TrainingSession[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedSession, setSelectedSession] = useState<any>(null);
+  const [selectedSession, setSelectedSession] = useState<TrainingSession | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -152,17 +155,24 @@ export default function TrainingScreen() {
       const [hours, minutes] = timeStr.split(':').map(Number);
 
       const sessionDate = new Date(year, month - 1, day, hours, minutes, 0);
+      const preferredTime = prefs?.data?.preferred_time?.substring(0, 5) ?? '09:00';
 
       let programadas = 0;
       for (const rec of recommendations) {
         if (rec.consumption_timing && rec.product_name) {
-          const notifId = await NotificationService.scheduleConsumptionReminder(
+          const intervalMin =
+            parseIntervalMinutesFromInstructions(rec.consumption_instructions) || 30;
+
+          const notifIds = await NotificationService.scheduleConsumptionReminder(
             rec.product_name,
             rec.consumption_timing,
             rec.timing_minutes,
-            sessionDate
+            sessionDate,
+            updatedSession.duration_min,
+            intervalMin,
+            preferredTime
           );
-          if (notifId) programadas++;
+          programadas += notifIds.length;
         }
       }
 

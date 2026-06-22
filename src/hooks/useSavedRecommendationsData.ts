@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useContext } from 'react';
 import AuthContext from '../context/AuthContext';
 import { getSavedRecommendations, getUserFeedbackHistory } from '../services/api';
 import { MIN_SKELETON_MS, withMinimumDuration } from '../utils/withMinimumDuration';
+import { SavedRecommendation } from '../types/UserTypes';
 
 /**
  * Carga recomendaciones guardadas + historial de feedback (lógica extraída de recommendations.tsx).
@@ -11,8 +12,8 @@ export function useSavedRecommendationsData() {
   if (!context) throw new Error('AuthContext must be used within an AuthProvider');
   const { userToken, user } = context;
 
-  const [recommendations, setRecommendations] = useState<any[]>([]);
-  const [negativeRecommendations, setNegativeRecommendations] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<SavedRecommendation[]>([]);
+  const [negativeRecommendations, setNegativeRecommendations] = useState<SavedRecommendation[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -63,18 +64,16 @@ export function useSavedRecommendationsData() {
           });
         }
 
-        const sessionBasedRecs =
+        const allRecs =
           savedRecommendations && Array.isArray(savedRecommendations)
-            ? savedRecommendations.filter(
-                (rec: any) => rec.session_id != null && rec.session_id !== ''
-              )
+            ? savedRecommendations
             : [];
 
-        if (sessionBasedRecs.length > 0) {
-          const positiveRecs: any[] = [];
-          const negativeRecs: any[] = [];
+        if (allRecs.length > 0) {
+          const positiveRecs: SavedRecommendation[] = [];
+          const negativeRecs: SavedRecommendation[] = [];
 
-          sessionBasedRecs.forEach((rec: any) => {
+          allRecs.forEach((rec: SavedRecommendation) => {
             const productId = rec.product_id || rec.product_details?.product_id;
             const feedback = feedbackMap[productId];
             if (feedback === 'negativo') {
@@ -85,7 +84,7 @@ export function useSavedRecommendationsData() {
           });
 
           const seenNamesPos = new Set<string>();
-          const uniquePositiveRecs = positiveRecs.filter((rec: any) => {
+          const uniquePositiveRecs = positiveRecs.filter((rec: SavedRecommendation) => {
             const productName =
               rec.product_details?.name ||
               rec.product_details?.product_name ||
@@ -98,7 +97,7 @@ export function useSavedRecommendationsData() {
           });
 
           const seenNamesNeg = new Set<string>();
-          const uniqueNegativeRecs = negativeRecs.filter((rec: any) => {
+          const uniqueNegativeRecs = negativeRecs.filter((rec: SavedRecommendation) => {
             const productName =
               rec.product_details?.name ||
               rec.product_details?.product_name ||

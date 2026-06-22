@@ -249,6 +249,25 @@ const ProfileScreen = () => {
     await updateNotificationPrefs(consumptionReminders, value, preferredTime);
   };
 
+  const handlePreferredTimeBlur = async () => {
+    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+    if (!timeRegex.test(preferredTime)) {
+      Toast.show({
+        type: 'error',
+        text1: 'Hora inválida',
+        text2: 'Usa el formato HH:MM (24 horas).',
+      });
+      setPreferredTime('09:00');
+      return;
+    }
+
+    await updateNotificationPrefs(consumptionReminders, trainingAlerts, preferredTime);
+    if (trainingAlerts) {
+      await NotificationService.scheduleTrainingAlert(preferredTime);
+    }
+    Toast.show({ type: 'success', text1: 'Hora de notificaciones actualizada' });
+  };
+
   const openAppSettings = async () => {
     try {
       if (Platform.OS === 'ios') {
@@ -520,6 +539,26 @@ const ProfileScreen = () => {
             onValueChange={handleToggleTrainingAlerts}
             trackColor={{ false: colors.border, true: `${colors.primary}80` }}
             thumbColor={trainingAlerts ? colors.primary : colors.textSecondary}
+          />
+        </View>
+
+        <View style={styles.switchRow}>
+          <View style={styles.switchInfo}>
+            <Ionicons name='alarm-outline' size={20} color={colors.textSecondary} />
+            <View style={styles.switchTextContainer}>
+              <Text style={styles.switchLabel}>Hora preferida</Text>
+              <Text style={styles.switchSubtext}>Recordatorios diarios (formato 24h)</Text>
+            </View>
+          </View>
+          <TextInput
+            style={styles.preferredTimeInput}
+            value={preferredTime}
+            onChangeText={setPreferredTime}
+            onBlur={handlePreferredTimeBlur}
+            placeholder='09:00'
+            placeholderTextColor={colors.textMuted}
+            maxLength={5}
+            keyboardType='numbers-and-punctuation'
           />
         </View>
       </View>
@@ -1066,6 +1105,18 @@ const styles = StyleSheet.create({
   switchSubtext: {
     fontSize: 13,
     color: colors.textSecondary,
+  },
+  preferredTimeInput: {
+    backgroundColor: colors.surfaceMuted,
+    color: colors.textPrimary,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minWidth: 72,
+    textAlign: 'center',
+    fontFamily: fontFamily.semibold,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   emptyCard: {

@@ -13,19 +13,19 @@ import {
   Animated,
 } from 'react-native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 import api, { saveProductFeedback, unwrapApiPayload } from '../services/api';
 import Toast from 'react-native-toast-message';
 import { getProductImageSource } from '../utils/imageUtils';
 import { colors } from '../theme';
+import { SavedRecommendation, TrainingSession } from '../types/UserTypes';
+import { stripIntervalPrefixFromInstructions } from '../services/notificationService';
 
 const { width } = Dimensions.get('window');
 
 interface TrainingDetailModalProps {
   visible: boolean;
   onClose: () => void;
-  session: any;
+  session: TrainingSession | null;
   userId: number;
 }
 
@@ -84,7 +84,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
   userId,
 }) => {
   const [loading, setLoading] = useState(false);
-  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<SavedRecommendation[]>([]);
   const [feedbackStates, setFeedbackStates] = useState<{ [key: number]: string }>({});
   
   // Refs para control de estado
@@ -381,7 +381,9 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                       <Ionicons name='information-circle' size={18} color={colors.primary} />
                       <View style={styles.consumptionTextContainer}>
                         <Text style={styles.consumptionLabel}>Instrucciones</Text>
-                        <Text style={styles.consumptionValue}>{rec.consumption_instructions}</Text>
+                        <Text style={styles.consumptionValue}>
+                          {stripIntervalPrefixFromInstructions(rec.consumption_instructions)}
+                        </Text>
                       </View>
                     </View>
                   )}

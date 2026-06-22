@@ -39,8 +39,12 @@ export function useLoginWithProfileRedirect() {
     try {
       const response = await loginUser(email, password);
       if (response?.user && response?.token) {
+        if (!response.user.id) {
+          onIncompleteUser();
+          return;
+        }
         const userData = {
-          id: response.user.id || 1,
+          id: response.user.id,
           username: response.user.username || '',
           email: response.user.email || '',
           created_at: response.user.created_at || new Date().toISOString(),

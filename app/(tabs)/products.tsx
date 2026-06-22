@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
 import { colors, fontFamily } from '../../src/theme';
 import { MIN_SKELETON_MS, withMinimumDuration } from '../../src/utils/withMinimumDuration';
+import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
 
@@ -109,10 +110,15 @@ const ProductListScreen = () => {
         setProducts(result.products);
         setProductCount(result.total);
         setHasMore(result.hasMore);
-        setCurrentPage(0);
+        setCurrentPage(1);
         setSelectedCategory(null); // null = "Todos"
       } catch (error) {
         console.error('Error loading products:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Error al cargar productos',
+          text2: 'Verifica tu conexión e intenta de nuevo.',
+        });
       } finally {
         setLoading(false);
       }
@@ -137,9 +143,14 @@ const ProductListScreen = () => {
       setProducts(result.products);
       setProductCount(result.total);
       setHasMore(result.hasMore);
-      setCurrentPage(0);
+      setCurrentPage(1);
     } catch (error) {
       console.error('Error refreshing products:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error al actualizar',
+        text2: 'No se pudieron cargar los productos.',
+      });
     } finally {
       setRefreshing(false);
     }
@@ -209,6 +220,11 @@ const ProductListScreen = () => {
         setHasMore(result.hasMore);
       } catch (error) {
         console.error('Error en búsqueda:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Error en la búsqueda',
+          text2: 'No se pudieron obtener los productos.',
+        });
         if (resetPage) {
           setProducts([]);
           setProductCount(0);

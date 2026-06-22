@@ -11,10 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  getProductDetails,
-  getProductNutrition,
-  getProductFlavors,
-  getProductAttributes,
+  getFullProductDetails,
 } from '../../src/services/api';
 
 import { getProductImageSource } from '../../src/utils/imageUtils';
@@ -37,10 +34,16 @@ interface Product {
   usage_recommendation: string;
 }
 interface NutritionInfo {
-  serving_size: string;
-  energy_kcal: number;
-  protein_g: number;
-  // Agrega otros campos si getProductNutrition los devuelve
+  serving_size?: string;
+  energy_kcal?: number;
+  protein_g?: number;
+  carbs_g?: number;
+  sugars_g?: number;
+  sodium_mg?: number;
+  potassium_mg?: number;
+  magnesium_mg?: number;
+  caffeine_mg?: number;
+  other_components?: string;
 }
 interface Flavor {
   flavor_id: string | number; // Ajusta el tipo si es necesario
@@ -51,6 +54,26 @@ interface Attribute {
   name: string;
   description: string | null; // Permite que sea null
 }
+
+/** Oculta valores nulos, vacíos o numéricamente cero (p. ej. proteína 0.00g). */
+const hasNutritionValue = (value: string | number | undefined | null): boolean => {
+  if (value == null || value === '') return false;
+  const num = typeof value === 'number' ? value : parseFloat(String(value));
+  if (!Number.isNaN(num)) return num > 0;
+  return String(value).trim().length > 0;
+};
+
+const hasAnyNutritionData = (nutrition: NutritionInfo): boolean =>
+  hasNutritionValue(nutrition.serving_size) ||
+  hasNutritionValue(nutrition.energy_kcal) ||
+  hasNutritionValue(nutrition.protein_g) ||
+  hasNutritionValue(nutrition.carbs_g) ||
+  hasNutritionValue(nutrition.sugars_g) ||
+  hasNutritionValue(nutrition.sodium_mg) ||
+  hasNutritionValue(nutrition.potassium_mg) ||
+  hasNutritionValue(nutrition.magnesium_mg) ||
+  hasNutritionValue(nutrition.caffeine_mg) ||
+  Boolean(nutrition.other_components?.trim());
 
 const ProductDetailScreen = () => {
   const params = useLocalSearchParams<{ productId: string }>();
@@ -82,18 +105,12 @@ const ProductDetailScreen = () => {
         setError(null); // Resetea errores
 
         try {
-          // Carga todo en paralelo para mejorar rendimiento (opcional)
-          const [productData, nutritionData, flavorsData, attributesData] = await Promise.all([
-            getProductDetails(numericProductId.toString()),
-            getProductNutrition(numericProductId.toString()),
-            getProductFlavors(numericProductId.toString()),
-            getProductAttributes(numericProductId.toString()),
-          ]);
+          const fullData = await getFullProductDetails(numericProductId.toString());
 
-          setProduct(productData);
-          setNutrition(nutritionData);
-          setFlavors(flavorsData);
-          setAttributes(attributesData);
+          setProduct(fullData);
+          setNutrition(fullData.nutrition || null);
+          setFlavors(Array.isArray(fullData.flavors) ? fullData.flavors : []);
+          setAttributes(Array.isArray(fullData.attributes) ? fullData.attributes : []);
         } catch (err: any) {
           console.error('Error loading product details:', err);
           const msg =
@@ -202,7 +219,9 @@ const ProductDetailScreen = () => {
             <Ionicons name='bulb' size={24} color={colors.primary} />
           <Text style={styles.sectionTitle}>Recomendaciones de Uso</Text>
           </View>
-          <Text style={styles.sectionContent}>{product.usage_recommendation}</Text>
+          <Text style={styles.sectionContent}>
+            {product.usage_recommendation || 'No hay recomendaciones de uso disponibles para este producto.'}
+          </Text>
         </View>
 
         {/* Flavors Card */}
@@ -223,26 +242,71 @@ const ProductDetailScreen = () => {
         )}
 
         {/* Nutrition Card */}
-        {nutrition && (
+        {nutrition && hasAnyNutritionData(nutrition) && (
           <View style={styles.card}>
             <View style={styles.sectionHeader}>
               <Ionicons name='nutrition' size={24} color={colors.primary} />
             <Text style={styles.sectionTitle}>Información Nutricional</Text>
             </View>
             <View style={styles.nutritionGrid}>
-              <View style={styles.nutritionItem}>
-                <Text style={styles.nutritionLabel}>Porción</Text>
-                <Text style={styles.nutritionValue}>{nutrition.serving_size}</Text>
-              </View>
-              <View style={styles.nutritionItem}>
-                <Text style={styles.nutritionLabel}>Calorías</Text>
-                <Text style={styles.nutritionValue}>{nutrition.energy_kcal} kcal</Text>
-              </View>
-              <View style={styles.nutritionItem}>
-                <Text style={styles.nutritionLabel}>Proteína</Text>
-                <Text style={styles.nutritionValue}>{nutrition.protein_g}g</Text>
+              {hasNutritionValue(nutrition.serving_size) && (
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionLabel}>Porción</Text>
+                  <Text style={styles.nutritionValue}>{nutrition.serving_size}</Text>
+                </View>
+              )}
+              {hasNutritionValue(nutrition.energy_kcal) && (
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionLabel}>Calorías</Text>
+                  <Text style={styles.nutritionValue}>{nutrition.energy_kcal} kcal</Text>
+                </View>
+              )}
+              {hasNutritionValue(nutrition.protein_g) && (
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionLabel}>Proteína</Text>
+                  <Text style={styles.nutritionValue}>{nutrition.protein_g}g</Text>
+                </View>
+              )}
+              {hasNutritionValue(nutrition.carbs_g) && (
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionLabel}>Carbohidratos</Text>
+                  <Text style={styles.nutritionValue}>{nutrition.carbs_g}g</Text>
+                </View>
+              )}
+              {hasNutritionValue(nutrition.sugars_g) && (
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionLabel}>Azúcares</Text>
+                  <Text style={styles.nutritionValue}>{nutrition.sugars_g}g</Text>
+                </View>
+              )}
+              {hasNutritionValue(nutrition.sodium_mg) && (
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionLabel}>Sodio</Text>
+                  <Text style={styles.nutritionValue}>{nutrition.sodium_mg} mg</Text>
+                </View>
+              )}
+              {hasNutritionValue(nutrition.potassium_mg) && (
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionLabel}>Potasio</Text>
+                  <Text style={styles.nutritionValue}>{nutrition.potassium_mg} mg</Text>
+                </View>
+              )}
+              {hasNutritionValue(nutrition.magnesium_mg) && (
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionLabel}>Magnesio</Text>
+                  <Text style={styles.nutritionValue}>{nutrition.magnesium_mg} mg</Text>
+                </View>
+              )}
+              {hasNutritionValue(nutrition.caffeine_mg) && (
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionLabel}>Cafeína</Text>
+                  <Text style={styles.nutritionValue}>{nutrition.caffeine_mg} mg</Text>
+                </View>
+              )}
             </View>
-            </View>
+            {nutrition.other_components?.trim() ? (
+              <Text style={styles.otherComponents}>{nutrition.other_components}</Text>
+            ) : null}
           </View>
         )}
 
@@ -253,24 +317,16 @@ const ProductDetailScreen = () => {
               <Ionicons name='checkmark-circle' size={24} color={colors.primary} />
             <Text style={styles.sectionTitle}>Beneficios y Características</Text>
             </View>
-            {attributes.map((attr, index) =>
-              attr.description ? (
-                <View key={`attr-${attr.attribute_id}-${index}`} style={styles.attributeItem}>
-                  <View style={styles.attributeHeader}>
-                    <Ionicons name='star' size={16} color={colors.primary} />
-                  <Text style={styles.attributeName}>{attr.name}</Text>
-                  </View>
-                  <Text style={styles.attributeDescription}>{attr.description}</Text>
+            <View style={styles.flavorContainer}>
+              {attributes.map((attr, index) => (
+                <View key={`attr-${attr.attribute_id}-${index}`} style={styles.attributeChip}>
+                  <Ionicons name='checkmark' size={14} color={colors.primary} />
+                  <Text style={styles.attributeChipText}>
+                    {attr.name.charAt(0).toUpperCase() + attr.name.slice(1)}
+                  </Text>
                 </View>
-              ) : (
-                <View key={`attr-${attr.attribute_id}-${index}`} style={styles.attributeItem}>
-                  <View style={styles.attributeHeader}>
-                    <Ionicons name='star' size={16} color={colors.primary} />
-                    <Text style={styles.attributeName}>{attr.name}</Text>
-                  </View>
-                </View>
-              )
-            )}
+              ))}
+            </View>
           </View>
         )}
 
@@ -410,6 +466,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  attributeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.surfaceMuted,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  attributeChipText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
   nutritionGrid: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -438,29 +512,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
-  attributeItem: {
-    marginBottom: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderStrong,
-  },
-  attributeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  attributeName: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: '700',
-    marginLeft: 8,
-  },
-  attributeDescription: {
+  otherComponents: {
     color: colors.textPrimary,
     opacity: 0.88,
     fontSize: 14,
     lineHeight: 22,
-    marginLeft: 24,
+    marginTop: 12,
   },
 });
 

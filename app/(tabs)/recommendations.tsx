@@ -17,6 +17,7 @@ import { getProductImageSource } from '../../src/utils/imageUtils';
 import { colors, fontFamily } from '../../src/theme';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
 import { useSavedRecommendationsData } from '../../src/hooks/useSavedRecommendationsData';
+import { SavedRecommendation } from '../../src/types/UserTypes';
 
 const { width } = Dimensions.get('window');
 
@@ -66,7 +67,7 @@ const RecommendationScreen = () => {
     [key: string]: any; // Allow any other properties
   }
 
-  const renderRecommendationItem = ({ item }: { item: any }) => {
+  const renderRecommendationItem = ({ item }: { item: SavedRecommendation }) => {
     // Verificar que el item no sea null o undefined
     if (!item) {
       console.error('Item de recomendación es null o undefined');
@@ -90,7 +91,8 @@ const RecommendationScreen = () => {
         productName = product.name || product.product_name || 'Producto';
         productDescription =
           product.description || product.product_description || 'Sin descripción';
-        reasoning = item.reasoning || item.reasoningText || item.feedback || item.feedback_notes;
+        imageUrl = product.image_url || null;
+        reasoning = item.reasoning || item.reasoningText || item.feedback_notes || item.feedback;
       } else if (item.product_id) {
         // Formato alternativo donde el item mismo contiene los datos del producto
         product = item;

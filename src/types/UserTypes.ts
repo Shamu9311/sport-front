@@ -116,3 +116,37 @@ export interface AuthContextType {
   setHasProfile: (value: boolean) => void;
   handleRouteChanges: () => void;
 }
+
+export interface TrainingSession {
+  session_id: number;
+  user_id: number;
+  session_date: string;
+  start_time: string;
+  duration_min: number;
+  intensity: string;
+  type: string;
+  weather: string;
+  sport_type: string;
+  notes?: string;
+}
+
+export interface SavedRecommendation {
+  recommendation_id?: number;
+  product_id?: number;
+  session_id?: number | null;
+  product_name?: string;
+  product_description?: string;
+  image_url?: string;
+  reasoning?: string;
+  reasoningText?: string;
+  feedback?: string;
+  feedback_notes?: string;
+  product_details?: {
+    product_id: number;
+    name?: string;
+    product_name?: string;
+    description?: string;
+    product_description?: string;
+    image_url?: string;
+  };
+}
