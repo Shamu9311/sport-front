@@ -139,17 +139,29 @@ class NotificationService {
         }
 
         case 'durante': {
-          const interval = intervalMin && intervalMin > 0 ? intervalMin : 30;
-          const duration = sessionDurationMin && sessionDurationMin > 0 ? sessionDurationMin : 60;
-          const count = Math.max(1, Math.floor(duration / interval));
+          if (intervalMin && intervalMin > 0) {
+            const duration = sessionDurationMin && sessionDurationMin > 0 ? sessionDurationMin : 60;
+            const count = Math.max(1, Math.floor(duration / intervalMin));
 
-          for (let i = 0; i < count; i++) {
-            const fireAt = new Date(trainingTime.getTime() + i * interval * 60 * 1000);
-            const trigger = fireAt > now ? fireAt : { seconds: 5 + i * 2 };
+            for (let i = 0; i < count; i++) {
+              const fireAt = new Date(trainingTime.getTime() + i * intervalMin * 60 * 1000);
+              const trigger = fireAt > now ? fireAt : { seconds: 5 + i * 2 };
+              const id = await Notifications.scheduleNotificationAsync({
+                content: {
+                  title: '🏃 Consumo durante entrenamiento',
+                  body: `Consume ${productName} ahora (vez ${i + 1}/${count})`,
+                  sound: true,
+                },
+                trigger,
+              });
+              scheduledIds.push(id);
+            }
+          } else {
+            const trigger = trainingTime > now ? trainingTime : { seconds: 5 };
             const id = await Notifications.scheduleNotificationAsync({
               content: {
                 title: '🏃 Consumo durante entrenamiento',
-                body: `Consume ${productName} ahora (vez ${i + 1}/${count})`,
+                body: `Durante el entrenamiento, consume ${productName} para mantener tu energía`,
                 sound: true,
               },
               trigger,

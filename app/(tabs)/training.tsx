@@ -160,8 +160,7 @@ export default function TrainingScreen() {
       let programadas = 0;
       for (const rec of recommendations) {
         if (rec.consumption_timing && rec.product_name) {
-          const intervalMin =
-            parseIntervalMinutesFromInstructions(rec.consumption_instructions) || 30;
+          const intervalMin = parseIntervalMinutesFromInstructions(rec.consumption_instructions);
 
           const notifIds = await NotificationService.scheduleConsumptionReminder(
             rec.product_name,

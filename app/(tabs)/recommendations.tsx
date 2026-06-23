@@ -21,6 +21,31 @@ import { SavedRecommendation } from '../../src/types/UserTypes';
 
 const { width } = Dimensions.get('window');
 
+const STRATEGY_INTRO_PATTERN =
+  /^la estrategia de suplementaci[oó]n\s+(?:se centra en|se ha diseñado para|se enfoca en)\s+/i;
+
+const stripStrategyIntro = (text: string): string => {
+  let cleaned = text.trim();
+
+  if (cleaned.includes(' | ')) {
+    const [productPart, generalPart] = cleaned.split(' | ', 2);
+    cleaned = (productPart.trim() || generalPart.trim()).trim();
+  }
+
+  cleaned = cleaned.replace(STRATEGY_INTRO_PATTERN, '').trim();
+
+  if (cleaned.length > 0) {
+    cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  }
+
+  return cleaned;
+};
+
+const getDisplayReasoning = (text: string): string => {
+  const cleaned = stripStrategyIntro(text);
+  return cleaned || text.trim();
+};
+
 const RecommendationScreen = () => {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -137,8 +162,8 @@ const RecommendationScreen = () => {
               {reasoning && (
                 <View style={styles.reasoningContainer}>
                   <Text style={styles.reasoningTitle}>💡 Recomendado para ti</Text>
-                  <Text style={styles.reasoningText} numberOfLines={3}>
-                    {reasoning}
+                  <Text style={styles.reasoningText}>
+                    {getDisplayReasoning(reasoning)}
                   </Text>
                 </View>
               )}
