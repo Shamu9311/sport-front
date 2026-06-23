@@ -21,13 +21,17 @@ interface TrainingSessionItemProps {
 }
 
 const getIntensityColor = (intensity: string) => {
-  switch (intensity) {
+  switch (intensity?.toLowerCase()) {
+    case 'baja':
     case 'bajo':
       return colors.success;
+    case 'media':
     case 'medio':
       return colors.warning;
+    case 'alta':
     case 'alto':
       return colors.warning;
+    case 'muy alta':
     case 'muy alto':
       return colors.error;
     default:

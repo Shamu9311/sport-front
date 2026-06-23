@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  Dimensions,
   RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,7 +19,7 @@ import {
   deleteTrainingSession,
   getTrainingSession,
   getNotificationPreferences,
-  getTrainingSessionRecommendationsBySession,
+  pollTrainingRecommendations,
 } from '../../src/services/api';
 import TrainingSessionItem from '../../src/components/TrainingSessionItem';
 import AddTrainingModal from '../../src/components/AddTrainingModal';
@@ -31,9 +30,7 @@ import NotificationService, {
 import { colors, fontFamily } from '../../src/theme';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
 import Toast from 'react-native-toast-message';
-import { TrainingSession } from '../../src/types/UserTypes';
-
-const { width } = Dimensions.get('window');
+import { TrainingSession, SavedRecommendation } from '../../src/types/UserTypes';
 
 export default function TrainingScreen() {
   const insets = useSafeAreaInsets();
@@ -43,7 +40,13 @@ export default function TrainingScreen() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState<TrainingSession | null>(null);
+  const [prefetchedRecommendations, setPrefetchedRecommendations] = useState<
+    SavedRecommendation[] | null
+  >(null);
+  const [prefetchedRecsLoading, setPrefetchedRecsLoading] = useState(false);
+  const [usePrefetchedRecs, setUsePrefetchedRecs] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const isFetchingRef = useRef(false);
 
   useEffect(() => {
     if (user?.id) {
@@ -53,20 +56,22 @@ export default function TrainingScreen() {
 
   const fetchTrainingSessions = async (isRefresh = false) => {
     if (!user || !user.id) return;
+    if (isFetchingRef.current && !isRefresh) return;
 
+    isFetchingRef.current = true;
     try {
       if (!isRefresh) setLoading(true);
       const sessions = await getUserTrainingSessions(user.id);
       setTrainingSessions(sessions);
-      setLoading(false);
-      setRefreshing(false);
     } catch (error) {
       console.error('Error fetching training sessions:', error);
-      setLoading(false);
-      setRefreshing(false);
       if (!isRefresh) {
         Alert.alert('Error', 'No se pudieron cargar los entrenamientos');
       }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+      isFetchingRef.current = false;
     }
   };
 
@@ -91,13 +96,28 @@ export default function TrainingScreen() {
       if (newSession && newSession.session_id) {
         const fullSession = await getTrainingSession(newSession.session_id);
         setSelectedSession(fullSession);
+        setPrefetchedRecommendations(null);
+        setPrefetchedRecsLoading(true);
+        setUsePrefetchedRecs(true);
         setShowDetailModal(true);
 
-        // Programar notificaciones de consumo si están habilitadas
-        await scheduleConsumptionNotifications(fullSession);
+        const [recommendations] = await Promise.all([
+          pollTrainingRecommendations(fullSession.session_id),
+          fetchTrainingSessions(true),
+        ]);
+
+        if (recommendations.length > 0) {
+          setPrefetchedRecommendations(recommendations);
+          setPrefetchedRecsLoading(false);
+          await scheduleConsumptionNotifications(fullSession, recommendations);
+        } else {
+          setUsePrefetchedRecs(false);
+          setPrefetchedRecsLoading(false);
+        }
+      } else {
+        await fetchTrainingSessions(true);
       }
 
-      await fetchTrainingSessions(); // Refrescar la lista después de agregar
       setLoading(false);
     } catch (error) {
       console.error('Error adding training session:', error);
@@ -106,54 +126,25 @@ export default function TrainingScreen() {
     }
   };
 
-  const scheduleConsumptionNotifications = async (session: any) => {
+  const scheduleConsumptionNotifications = async (
+    session: TrainingSession,
+    recommendations: SavedRecommendation[]
+  ) => {
     if (!user?.id) return;
 
     try {
-      // Verificar si el usuario tiene habilitadas las notificaciones de consumo
       const prefs = await getNotificationPreferences(user.id);
-      if (!prefs?.data?.consumption_reminders) {
+      const consumptionEnabled =
+        prefs?.data?.consumption_reminders === true ||
+        prefs?.data?.consumption_reminders === 1;
+      if (!consumptionEnabled) {
         return;
       }
 
-      // Función para intentar obtener recomendaciones con reintentos
-      const fetchRecommendationsWithRetry = async (maxAttempts = 3, delayMs = 4000) => {
-        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-
-          const recommendations = await getTrainingSessionRecommendationsBySession(
-            session.session_id
-          );
-
-          if (recommendations && recommendations.length > 0) {
-            const updatedSession = await getTrainingSession(session.session_id);
-            return { session: updatedSession, recommendations };
-          }
-        }
-
-        return null;
-      };
-
-      const result = await fetchRecommendationsWithRetry();
-
-      if (!result) {
-        Alert.alert(
-          'Sin recomendaciones',
-          'No se pudieron generar recomendaciones para este entrenamiento. Intenta de nuevo más tarde.'
-        );
-        return;
-      }
-
-      const { session: updatedSession, recommendations } = result;
-
-      // Combinar fecha y hora del entrenamiento correctamente
-      const dateStr = updatedSession.session_date.split('T')[0]; // YYYY-MM-DD
-      const timeStr = updatedSession.start_time || '18:00:00'; // HH:MM:SS
-
-      // Crear fecha en zona horaria local
+      const dateStr = session.session_date.split('T')[0];
+      const timeStr = session.start_time || '18:00:00';
       const [year, month, day] = dateStr.split('-').map(Number);
       const [hours, minutes] = timeStr.split(':').map(Number);
-
       const sessionDate = new Date(year, month - 1, day, hours, minutes, 0);
       const preferredTime = prefs?.data?.preferred_time?.substring(0, 5) ?? '09:00';
 
@@ -167,7 +158,7 @@ export default function TrainingScreen() {
             rec.consumption_timing,
             rec.timing_minutes,
             sessionDate,
-            updatedSession.duration_min,
+            session.duration_min,
             intervalMin,
             preferredTime
           );
@@ -187,7 +178,10 @@ export default function TrainingScreen() {
     }
   };
 
-  const handleSessionPress = (session: any) => {
+  const handleSessionPress = (session: TrainingSession) => {
+    setUsePrefetchedRecs(false);
+    setPrefetchedRecommendations(null);
+    setPrefetchedRecsLoading(false);
     setSelectedSession(session);
     setShowDetailModal(true);
   };
@@ -302,9 +296,17 @@ export default function TrainingScreen() {
         {selectedSession && (
           <TrainingDetailModal
             visible={showDetailModal}
-            onClose={() => setShowDetailModal(false)}
+            onClose={() => {
+              setShowDetailModal(false);
+              setUsePrefetchedRecs(false);
+              setPrefetchedRecommendations(null);
+              setPrefetchedRecsLoading(false);
+            }}
             session={selectedSession}
             userId={user?.id || 0}
+            usePrefetchedRecommendations={usePrefetchedRecs}
+            prefetchedRecommendations={prefetchedRecommendations}
+            prefetchedRecommendationsLoading={prefetchedRecsLoading}
           />
         )}
       </SafeAreaView>

@@ -8,7 +8,6 @@ import {
   Image,
   TouchableOpacity,
   RefreshControl,
-  Dimensions,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,7 +18,14 @@ import SkeletonLoader from '../../src/components/SkeletonLoader';
 import { useSavedRecommendationsData } from '../../src/hooks/useSavedRecommendationsData';
 import { SavedRecommendation } from '../../src/types/UserTypes';
 
-const { width } = Dimensions.get('window');
+interface ProductDetails {
+  product_id: number;
+  name?: string;
+  product_name?: string;
+  description?: string;
+  product_description?: string;
+  image_url?: string;
+}
 
 const STRATEGY_INTRO_PATTERN =
   /^la estrategia de suplementaci[oó]n\s+(?:se centra en|se ha diseñado para|se enfoca en)\s+/i;
@@ -66,31 +72,6 @@ const RecommendationScreen = () => {
       return () => {};
     }, [fetchRecommendations])
   );
-
-  interface ProductDetails {
-    product_id: number;
-    name?: string;
-    product_name?: string;
-    description?: string;
-    product_description?: string;
-    image_url?: string;
-    [key: string]: any; // Allow any other properties
-  }
-
-  interface RecommendationItem {
-    product_details?: ProductDetails;
-    product_id?: number;
-    name?: string;
-    product_name?: string;
-    description?: string;
-    product_description?: string;
-    image_url?: string;
-    reasoning?: string;
-    reasoningText?: string;
-    feedback?: string;
-    feedback_notes?: string;
-    [key: string]: any; // Allow any other properties
-  }
 
   const renderRecommendationItem = ({ item }: { item: SavedRecommendation }) => {
     // Verificar que el item no sea null o undefined

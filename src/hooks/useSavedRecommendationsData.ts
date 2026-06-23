@@ -19,6 +19,10 @@ export function useSavedRecommendationsData() {
   const [refreshing, setRefreshing] = useState(false);
 
   const isFetchingRef = useRef(false);
+  const isLoadedRef = useRef(false);
+  const lastUserIdRef = useRef<number | null>(null);
+  const lastFetchTimeRef = useRef(0);
+  const MIN_FETCH_INTERVAL_MS = 30000;
   const listLengthsRef = useRef({ pos: 0, neg: 0 });
   listLengthsRef.current = {
     pos: recommendations.length,
@@ -38,6 +42,22 @@ export function useSavedRecommendationsData() {
         return;
       }
 
+      const userId = user?.id;
+      if (!userId) {
+        setError('No se pudo obtener el ID del usuario');
+        return;
+      }
+
+      const now = Date.now();
+      if (
+        !isRefresh &&
+        isLoadedRef.current &&
+        lastUserIdRef.current === userId &&
+        now - lastFetchTimeRef.current < MIN_FETCH_INTERVAL_MS
+      ) {
+        return;
+      }
+
       const hasData = listLengthsRef.current.pos + listLengthsRef.current.neg > 0;
       const showSkeleton = !isRefresh && !hasData;
 
@@ -46,11 +66,6 @@ export function useSavedRecommendationsData() {
       setError(null);
 
       try {
-        const userId = user?.id;
-        if (!userId) {
-          throw new Error('No se pudo obtener el ID del usuario');
-        }
-
         const fetchPair = Promise.all([getSavedRecommendations(), getUserFeedbackHistory()]);
         const [savedRecommendations, feedbackResponse] =
           isRefresh || !showSkeleton
@@ -59,7 +74,7 @@ export function useSavedRecommendationsData() {
 
         const feedbackMap: { [key: number]: string } = {};
         if (feedbackResponse.success && feedbackResponse.feedback) {
-          feedbackResponse.feedback.forEach((f: any) => {
+          feedbackResponse.feedback.forEach((f: { product_id: number; feedback: string }) => {
             feedbackMap[f.product_id] = f.feedback;
           });
         }
@@ -115,17 +130,23 @@ export function useSavedRecommendationsData() {
           setRecommendations([]);
           setNegativeRecommendations([]);
         }
-      } catch (err: any) {
+
+        isLoadedRef.current = true;
+        lastUserIdRef.current = userId;
+        lastFetchTimeRef.current = Date.now();
+      } catch (err: unknown) {
         let errorMessage = 'Error al obtener recomendaciones. Intenta más tarde.';
-        if (err.response?.data?.message) {
-          errorMessage = err.response.data.message;
-        } else if (err.message) {
-          errorMessage = err.message;
+        const apiErr = err as { response?: { data?: { message?: string } }; message?: string };
+        if (apiErr.response?.data?.message) {
+          errorMessage = apiErr.response.data.message;
+        } else if (apiErr.message) {
+          errorMessage = apiErr.message;
         }
         console.error('Error obteniendo recomendaciones:', err);
         setError(errorMessage);
         setRecommendations([]);
         setNegativeRecommendations([]);
+        isLoadedRef.current = false;
       } finally {
         isFetchingRef.current = false;
         if (!isRefresh) setLoading(false);

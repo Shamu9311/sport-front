@@ -3,6 +3,8 @@ import { createContext, useContext, useState, ReactNode, useEffect } from 'react
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getProfile } from '../services/api';
 import { setSessionInvalidatedHandler } from '../services/sessionInvalidation';
+import NotificationService from '../services/notificationService';
+import { saveToken, getToken, removeToken } from '../services/tokenStorage';
 import { useRouter, useSegments } from 'expo-router';
 
 interface User {
@@ -58,7 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const loadStoredSession = async () => {
       try {
         const storedUser = await AsyncStorage.getItem('user');
-        const storedToken = await AsyncStorage.getItem('token');
+        const storedToken = await getToken();
 
         if (storedUser && storedToken) {
           const userData = JSON.parse(storedUser);
@@ -179,8 +181,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const onSessionInvalidated = async () => {
       try {
-        await AsyncStorage.removeItem('user');
-        await AsyncStorage.removeItem('token');
+        await removeToken();
+        await NotificationService.cancelAllNotifications();
       } catch (e) {
         console.error('Error clearing session:', e);
       }
@@ -237,7 +239,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoadingAuth(true);
     try {
       await AsyncStorage.setItem('user', JSON.stringify(userData));
-      await AsyncStorage.setItem('token', token);
+      await saveToken(token);
 
       setUserToken(token);
       setUser(userData);
@@ -251,9 +253,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      // Limpiar AsyncStorage
+      await NotificationService.cancelAllNotifications();
       await AsyncStorage.removeItem('user');
-      await AsyncStorage.removeItem('token');
+      await removeToken();
 
       // Limpiar estado
       setUser(null);

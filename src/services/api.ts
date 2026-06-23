@@ -2,11 +2,13 @@ import axios from 'axios';
 import Constants from 'expo-constants';
 import { UserProfileData } from '../types/UserTypes';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getToken, removeToken } from './tokenStorage';
 import { setNetworkError, clearNetworkError } from './errorService';
 import { notifySessionInvalidated } from './sessionInvalidation';
 
+const configuredUrl = Constants.expoConfig?.extra?.apiUrl as string | undefined;
 export const API_URL =
-  Constants.expoConfig?.extra?.apiUrl || 'http://192.168.0.6:5000';
+  configuredUrl || (__DEV__ ? 'http://192.168.0.6:5000' : '');
 
 /** Normaliza respuestas `{ success, data }` del backend */
 export function unwrapApiPayload<T = unknown>(payload: unknown): T {
@@ -43,7 +45,7 @@ const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await getToken();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -73,7 +75,7 @@ api.interceptors.response.use(
     ) {
       try {
         await AsyncStorage.removeItem('user');
-        await AsyncStorage.removeItem('token');
+        await removeToken();
       } catch (storageError) {
         console.error('Error cleaning storage:', storageError);
       }
@@ -124,56 +126,6 @@ export const registerUser = async (userData: {
 }) => {
   const response = await api.post('/auth/register', userData);
   return response.data;
-};
-
-export const getRecommendations = async (trainingData?: Record<string, unknown>) => {
-  try {
-    const response = await api.post(`/recommendations/`, {
-      trainingData: trainingData || {},
-    });
-
-    const payload = response.data;
-    const data = unwrapApiPayload<{ recommendations?: unknown[] }>(payload);
-    let recommendations: unknown[] = [];
-
-    if (data?.recommendations && Array.isArray(data.recommendations)) {
-      recommendations = data.recommendations;
-    } else if (
-      payload?.recommendations &&
-      Array.isArray(payload.recommendations)
-    ) {
-      recommendations = payload.recommendations;
-    } else if (Array.isArray(data)) {
-      recommendations = data;
-    } else if (Array.isArray(payload)) {
-      recommendations = payload;
-    }
-
-    interface ProductRecommendation {
-      product_id: number;
-      name?: string;
-      description?: string;
-      reasoning?: string;
-      [key: string]: unknown;
-    }
-
-    if (recommendations.length > 0) {
-      return (recommendations as ProductRecommendation[]).map((product) => ({
-        ...product,
-        name: product.product_name || product.name || `Producto ${product.product_id}`,
-        description:
-          product.product_description ||
-          product.description ||
-          'Información no disponible en este momento',
-        image_url: product.image_url || '/assets/default-product.png',
-      }));
-    }
-
-    return recommendations;
-  } catch (error) {
-    console.error('Error al obtener recomendaciones:', error);
-    throw error;
-  }
 };
 
 export const getProfile = async (userId: number) => {
@@ -359,21 +311,6 @@ export const searchProducts = async (filters: {
   }
 };
 
-export const getProductDetails = async (productId: string) => {
-  const response = await api.get(`/products/${productId}`);
-  return unwrapApiPayload(response.data);
-};
-
-export const getProductNutrition = async (productId: string) => {
-  const response = await api.get(`/products/${productId}/nutrition`);
-  return unwrapApiPayload(response.data);
-};
-
-export const getProductFlavors = async (productId: string) => {
-  const response = await api.get(`/products/${productId}/flavors`);
-  return unwrapApiPayload(response.data);
-};
-
 export const getSavedRecommendations = async () => {
   const response = await api.get(`/recommendations/saved`);
   const payload = response.data;
@@ -386,11 +323,6 @@ export const getSavedRecommendations = async () => {
     return payload.recommendations;
   }
   return [];
-};
-
-export const getProductAttributes = async (productId: string) => {
-  const response = await api.get(`/products/${productId}/attributes`);
-  return unwrapApiPayload(response.data);
 };
 
 export const getFullProductDetails = async (productId: string) => {
@@ -473,6 +405,21 @@ export const getTrainingSessionRecommendationsBySession = async (sessionId: numb
   const response = await api.get(`/training/${sessionId}/recommendations`);
   const data = unwrapApiPayload(response.data);
   return Array.isArray(data) ? data : [];
+};
+
+export const pollTrainingRecommendations = async (
+  sessionId: number,
+  maxAttempts = 5,
+  delayMs = 4000
+) => {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    const recommendations = await getTrainingSessionRecommendationsBySession(sessionId);
+    if (recommendations.length > 0) {
+      return recommendations;
+    }
+  }
+  return [];
 };
 
 export const saveProductFeedback = async (

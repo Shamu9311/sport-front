@@ -1,7 +1,10 @@
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type NotificationsModule = typeof import('expo-notifications');
+
+const TRAINING_ALERT_ID_KEY = 'training_alert_notification_id';
 
 let notificationsImport: Promise<NotificationsModule> | null = null;
 let handlerRegistered = false;
@@ -173,13 +176,14 @@ class NotificationService {
 
         case 'despues': {
           const afterTime = new Date(trainingTime.getTime() + (minutes || 30) * 60 * 1000);
+          const trigger = afterTime > now ? afterTime : { seconds: 5 };
           const id = await Notifications.scheduleNotificationAsync({
             content: {
               title: '🏋️ Recordatorio de Consumo',
               body: `Es momento de consumir ${productName} para recuperarte`,
               sound: true,
             },
-            trigger: afterTime,
+            trigger,
           });
           scheduledIds.push(id);
           break;
@@ -219,6 +223,21 @@ class NotificationService {
   }
 
   /**
+   * Cancelar solo la alerta diaria de entrenamiento (no afecta recordatorios de consumo)
+   */
+  static async cancelTrainingAlert(): Promise<void> {
+    try {
+      const storedId = await AsyncStorage.getItem(TRAINING_ALERT_ID_KEY);
+      if (storedId) {
+        await this.cancelNotification(storedId);
+        await AsyncStorage.removeItem(TRAINING_ALERT_ID_KEY);
+      }
+    } catch (error) {
+      console.error('Error cancelando alerta de entrenamiento:', error);
+    }
+  }
+
+  /**
    * Programar alerta de entrenamiento
    */
   static async scheduleTrainingAlert(time: string): Promise<string | null> {
@@ -227,6 +246,8 @@ class NotificationService {
       if (!hasPermission) return null;
       const Notifications = await getNotifications();
       if (!Notifications) return null;
+
+      await this.cancelTrainingAlert();
 
       const [hours, minutes] = time.split(':').map(Number);
 
@@ -243,6 +264,10 @@ class NotificationService {
           repeats: true,
         },
       });
+
+      if (notificationId) {
+        await AsyncStorage.setItem(TRAINING_ALERT_ID_KEY, notificationId);
+      }
 
       return notificationId;
     } catch (error) {

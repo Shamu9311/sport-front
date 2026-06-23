@@ -27,6 +27,9 @@ interface TrainingDetailModalProps {
   onClose: () => void;
   session: TrainingSession | null;
   userId: number;
+  usePrefetchedRecommendations?: boolean;
+  prefetchedRecommendations?: SavedRecommendation[] | null;
+  prefetchedRecommendationsLoading?: boolean;
 }
 
 const getIntensityColor = (intensity: string) => {
@@ -82,6 +85,9 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
   onClose,
   session,
   userId,
+  usePrefetchedRecommendations = false,
+  prefetchedRecommendations = null,
+  prefetchedRecommendationsLoading = false,
 }) => {
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<SavedRecommendation[]>([]);
@@ -192,19 +198,42 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
 
   useEffect(() => {
     if (visible && session && session.session_id) {
-      setRecommendations([]); // Limpiar recomendaciones anteriores
+      if (usePrefetchedRecommendations) {
+        setRecommendations(prefetchedRecommendations || []);
+        setLoading(prefetchedRecommendationsLoading);
+        return;
+      }
+
+      setRecommendations([]);
       setLoading(true);
-      // Pequeño delay para asegurar que el modal esté completamente renderizado
       const timer = setTimeout(() => {
         fetchRecommendationsWithRetry(session.session_id);
       }, 100);
       return () => clearTimeout(timer);
     } else if (!visible) {
-      // Limpiar cuando se cierra el modal
       setRecommendations([]);
       setLoading(false);
     }
-  }, [visible, session?.session_id, userId, fetchRecommendationsWithRetry]);
+  }, [
+    visible,
+    session?.session_id,
+    userId,
+    fetchRecommendationsWithRetry,
+    usePrefetchedRecommendations,
+    prefetchedRecommendations,
+    prefetchedRecommendationsLoading,
+  ]);
+
+  useEffect(() => {
+    if (!usePrefetchedRecommendations || !visible) return;
+    setRecommendations(prefetchedRecommendations || []);
+    setLoading(prefetchedRecommendationsLoading);
+  }, [
+    usePrefetchedRecommendations,
+    prefetchedRecommendations,
+    prefetchedRecommendationsLoading,
+    visible,
+  ]);
 
   // Manejar feedback del usuario con animación
   const handleFeedback = async (productId: number, feedback: 'positivo' | 'negativo') => {

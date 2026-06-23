@@ -8,9 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   TouchableOpacity,
-  BackHandler,
   Platform,
-  Dimensions,
   Switch,
   Linking,
 } from 'react-native';
@@ -31,8 +29,6 @@ import { colors, fontFamily } from '../../src/theme';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
 import SelectField from '../../src/components/SelectField';
 import Toast from 'react-native-toast-message';
-
-const { width } = Dimensions.get('window');
 
 // Tipos (sin cambios)
 type Gender = 'hombre' | 'mujer' | 'otro' | 'prefiero no decir';
@@ -174,12 +170,6 @@ const ProfileScreen = () => {
     }, [user?.id])
   );
   
-  // Resetear flag cuando se edita el perfil
-  const forceReload = useCallback(() => {
-    isLoadedRef.current = false;
-    loadUserProfile();
-  }, [user?.id]);
-
   // Manejar cierre de sesión
   const handleLogout = () => {
     Alert.alert('Cerrar Sesión', '¿Estás seguro que deseas cerrar sesión?', [
@@ -241,8 +231,7 @@ const ProfileScreen = () => {
       // Programar alerta de entrenamiento
       await NotificationService.scheduleTrainingAlert(preferredTime);
     } else {
-      // Cancelar notificaciones
-      await NotificationService.cancelAllNotifications();
+      await NotificationService.cancelTrainingAlert();
     }
 
     setTrainingAlerts(value);
