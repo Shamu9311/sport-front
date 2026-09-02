@@ -80,6 +80,6 @@ describe('TrainingDetailModal', () => {
       />
     );
 
-    expect(screen.getByText('Buscando recomendaciones...')).toBeTruthy();
+    expect(screen.getByText('Analizando tu entrenamiento...')).toBeTruthy();
   });
 });

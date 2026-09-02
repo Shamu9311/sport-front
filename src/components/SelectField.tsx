@@ -140,13 +140,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.border,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
   },
   sheetTitle: {
     fontSize: 18,
     fontFamily: fontFamily.semibold,
-    color: colors.primary,
+    color: colors.textPrimary,
   },
   scroll: {
     maxHeight: 420,
@@ -175,6 +175,6 @@ const styles = StyleSheet.create({
   },
   optionTextActive: {
     fontFamily: fontFamily.semibold,
-    color: colors.primary,
+    color: colors.primaryText,
   },
 });

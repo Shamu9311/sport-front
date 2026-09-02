@@ -10,8 +10,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAuth } from '../../src/context/AuthContext';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import {
   getUserTrainingSessions,
@@ -27,13 +28,14 @@ import TrainingDetailModal from '../../src/components/TrainingDetailModal';
 import NotificationService, {
   parseIntervalMinutesFromInstructions,
 } from '../../src/services/notificationService';
-import { colors, fontFamily } from '../../src/theme';
+import { colors, fontFamily, radius, shadows, spacing } from '../../src/theme';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
+import EmptyState from '../../src/components/ui/EmptyState';
+import PressableScale from '../../src/components/ui/PressableScale';
 import Toast from 'react-native-toast-message';
 import { TrainingSession, SavedRecommendation } from '../../src/types/UserTypes';
 
 export default function TrainingScreen() {
-  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [trainingSessions, setTrainingSessions] = useState<TrainingSession[]>([]);
@@ -47,6 +49,7 @@ export default function TrainingScreen() {
   const [usePrefetchedRecs, setUsePrefetchedRecs] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const isFetchingRef = useRef(false);
+  const pendingDeletesRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
 
   useEffect(() => {
     if (user?.id) {
@@ -186,28 +189,57 @@ export default function TrainingScreen() {
     setShowDetailModal(true);
   };
 
-  const handleDeleteSession = (session: any) => {
-    Alert.alert('Eliminar Entrenamiento', '¿Estás seguro que deseas eliminar este entrenamiento?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Eliminar',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteTrainingSession(session.session_id);
-            fetchTrainingSessions();
-            Toast.show({
-              type: 'success',
-              text1: 'Entrenamiento eliminado',
-              text2: 'La sesión se eliminó correctamente.',
-            });
-          } catch (error) {
-            console.error('Error deleting session:', error);
-            Alert.alert('Error', 'No se pudo eliminar el entrenamiento');
-          }
-        },
+  // Eliminación optimista con opción de deshacer (~4 s antes de confirmar en el servidor)
+  const UNDO_DELETE_MS = 4000;
+
+  const handleDeleteSession = (session: TrainingSession) => {
+    const sessionId = session.session_id;
+    const index = trainingSessions.findIndex((s) => s.session_id === sessionId);
+    if (index === -1) return;
+
+    // Quitar de la lista inmediatamente (estado optimista)
+    setTrainingSessions((prev) => prev.filter((s) => s.session_id !== sessionId));
+
+    const restoreSession = () => {
+      setTrainingSessions((prev) => {
+        const next = [...prev];
+        next.splice(Math.min(index, next.length), 0, session);
+        return next;
+      });
+    };
+
+    const timer = setTimeout(async () => {
+      pendingDeletesRef.current.delete(sessionId);
+      try {
+        await deleteTrainingSession(sessionId);
+      } catch (error) {
+        console.error('Error deleting session:', error);
+        restoreSession();
+        Toast.show({
+          type: 'error',
+          text1: 'No se pudo eliminar',
+          text2: 'El entrenamiento fue restaurado. Intenta de nuevo.',
+        });
+      }
+    }, UNDO_DELETE_MS);
+
+    pendingDeletesRef.current.set(sessionId, timer);
+
+    Toast.show({
+      type: 'info',
+      text1: 'Entrenamiento eliminado',
+      text2: 'Toca aquí para deshacer',
+      visibilityTime: UNDO_DELETE_MS,
+      onPress: () => {
+        const pending = pendingDeletesRef.current.get(sessionId);
+        if (pending) {
+          clearTimeout(pending);
+          pendingDeletesRef.current.delete(sessionId);
+          restoreSession();
+        }
+        Toast.hide();
       },
-    ]);
+    });
   };
 
   return (
@@ -216,15 +248,21 @@ export default function TrainingScreen() {
         <StatusBar style='light' />
 
         {/* Header renovado */}
-        <View style={[styles.header, { paddingTop: Math.max(insets.top + 8, 20) }]}>
+        <View style={[styles.header, { paddingTop: 8 }]}>
           <View>
             <Text style={styles.headerTitle}>Entrenamientos</Text>
             <Text style={styles.headerSubtitle}>Registra y monitorea tu progreso</Text>
           </View>
-          <TouchableOpacity style={styles.addButton} onPress={() => setShowAddModal(true)}>
-            <Ionicons name='add-circle' size={24} color={colors.textOnPrimary} />
+          <PressableScale
+            style={styles.addButton}
+            onPress={() => setShowAddModal(true)}
+            haptic="light"
+            accessibilityRole='button'
+            accessibilityLabel='Agregar nuevo entrenamiento'
+          >
+            <Ionicons name='add' size={20} color={colors.textOnPrimary} />
             <Text style={styles.addButtonText}>Nuevo</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
 
         <ScrollView 
@@ -244,26 +282,22 @@ export default function TrainingScreen() {
               <SkeletonLoader type='trainingList' />
             </View>
           ) : trainingSessions.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Ionicons
-                name='barbell-outline'
-                size={80}
-                color={colors.primary}
-                style={{ marginBottom: 20 }}
-              />
-              <Text style={styles.emptyStateTitle}>No hay entrenamientos</Text>
-              <Text style={styles.emptyStateText}>
-                Registra tu primer entrenamiento para comenzar a recibir recomendaciones
-                personalizadas
-              </Text>
-              <TouchableOpacity
-                style={styles.emptyStateButton}
-                onPress={() => setShowAddModal(true)}
-              >
-                <Ionicons name='add-circle' size={22} color={colors.textOnPrimary} />
-                <Text style={styles.addButtonText}>Agregar Entrenamiento</Text>
-              </TouchableOpacity>
-            </View>
+            <EmptyState
+              iconName='barbell-outline'
+              title='No hay entrenamientos'
+              subtitle='Registra tu primer entrenamiento para comenzar a recibir recomendaciones personalizadas'
+              style={styles.emptyState}
+              action={
+                <TouchableOpacity
+                  style={styles.emptyStateButton}
+                  onPress={() => setShowAddModal(true)}
+                  accessibilityRole='button'
+                >
+                  <Ionicons name='add' size={20} color={colors.textOnPrimary} />
+                  <Text style={styles.addButtonText}>Agregar Entrenamiento</Text>
+                </TouchableOpacity>
+              }
+            />
           ) : (
             <View style={styles.sessionsList}>
               <View style={styles.sessionsHeader}>
@@ -273,13 +307,17 @@ export default function TrainingScreen() {
                 </Text>
                 <Text style={styles.swipeHint}>← Desliza para eliminar</Text>
               </View>
-              {trainingSessions.map((session) => (
-                <TrainingSessionItem
+              {trainingSessions.map((session, index) => (
+                <Animated.View
                   key={session.session_id}
-                  session={session}
-                  onPress={handleSessionPress}
-                  onDelete={handleDeleteSession}
-                />
+                  entering={FadeInDown.duration(250).delay(Math.min(index, 6) * 40)}
+                >
+                  <TrainingSessionItem
+                    session={session}
+                    onPress={handleSessionPress}
+                    onDelete={handleDeleteSession}
+                  />
+                </Animated.View>
               ))}
             </View>
           )}
@@ -324,33 +362,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingBottom: 24,
+    paddingBottom: spacing.lg,
     backgroundColor: colors.background,
-    borderBottomWidth: 3,
-    borderBottomColor: colors.primary,
   },
   headerTitle: {
-    fontSize: 26,
-    fontFamily: fontFamily.bold,
-    color: colors.primary,
-    marginBottom: 5,
+    fontSize: 28,
+    fontFamily: fontFamily.extrabold,
+    color: colors.textPrimary,
+    letterSpacing: -0.5,
+    marginBottom: 4,
   },
   headerSubtitle: {
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textSecondary,
   },
   addButton: {
     backgroundColor: colors.primary,
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 10,
-    borderRadius: 25,
+    borderRadius: radius.full,
     alignItems: 'center',
     flexDirection: 'row',
-    elevation: 3,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    ...shadows.card,
   },
   addButtonText: {
     color: colors.textOnPrimary,
@@ -373,37 +406,18 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 30,
-    marginTop: 60,
-  },
-  emptyStateTitle: {
-    color: colors.primary,
-    fontSize: 22,
-    fontFamily: fontFamily.bold,
-    marginBottom: 12,
-  },
-  emptyStateText: {
-    color: colors.textSecondary,
-    fontSize: 15,
-    textAlign: 'center',
-    marginBottom: 30,
-    lineHeight: 22,
+    marginTop: 40,
   },
   emptyStateButton: {
     backgroundColor: colors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 25,
+    paddingHorizontal: spacing.xxl,
+    paddingVertical: 13,
+    borderRadius: radius.full,
     alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
     flexDirection: 'row',
-    elevation: 3,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    ...shadows.card,
   },
   sessionsList: {
     paddingTop: 16,
@@ -417,13 +431,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   sessionsCount: {
-    color: colors.primary,
-    fontSize: 16,
+    color: colors.textPrimary,
+    fontSize: 15,
     fontFamily: fontFamily.bold,
   },
   swipeHint: {
     color: colors.textMuted,
     fontSize: 12,
-    fontStyle: 'italic',
   },
 });

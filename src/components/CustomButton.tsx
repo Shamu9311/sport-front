@@ -1,7 +1,8 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View, ActivityIndicator } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, spacing } from '../theme';
+import { colors, radius, shadows, spacing } from '../theme';
 
 type Variant = 'primary' | 'outline';
 
@@ -34,57 +35,85 @@ const CustomButton: React.FC<CustomButtonProps> = ({
 }) => {
   const isOutline = variant === 'outline';
   const resolvedIconColor =
-    iconColor ??
-    (isOutline ? colors.primary : colors.textOnPrimary);
+    iconColor ?? (isOutline ? colors.primary : colors.textOnPrimary);
+
+  const content = (
+    <View style={styles.contentContainer}>
+      {loading ? (
+        <ActivityIndicator
+          size="small"
+          color={isOutline ? colors.primary : colors.textOnPrimary}
+        />
+      ) : (
+        <>
+          {iconName && iconPosition === 'left' && (
+            <Ionicons
+              name={iconName}
+              size={iconSize}
+              color={resolvedIconColor}
+              style={styles.iconLeft}
+            />
+          )}
+          <Text
+            style={[
+              styles.buttonText,
+              isOutline ? styles.buttonTextOutline : styles.buttonTextPrimary,
+            ]}
+          >
+            {title}
+          </Text>
+          {iconName && iconPosition === 'right' && (
+            <Ionicons
+              name={iconName}
+              size={iconSize}
+              color={resolvedIconColor}
+              style={styles.iconRight}
+            />
+          )}
+        </>
+      )}
+    </View>
+  );
+
+  if (isOutline) {
+    return (
+      <TouchableOpacity
+        style={[
+          styles.button,
+          fullWidth && styles.buttonFullWidth,
+          styles.buttonOutline,
+          (disabled || loading) && styles.buttonDisabled,
+          style,
+        ]}
+        onPress={onPress}
+        disabled={disabled || loading}
+        activeOpacity={0.85}
+      >
+        {content}
+      </TouchableOpacity>
+    );
+  }
 
   return (
     <TouchableOpacity
       style={[
-        styles.button,
         fullWidth && styles.buttonFullWidth,
-        isOutline ? styles.buttonOutline : styles.buttonPrimary,
         (disabled || loading) && styles.buttonDisabled,
+        styles.buttonShadow,
         style,
       ]}
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.85}
+      activeOpacity={0.9}
     >
-      <View style={styles.contentContainer}>
-        {loading ? (
-          <ActivityIndicator
-            size="small"
-            color={isOutline ? colors.primary : colors.textOnPrimary}
-          />
-        ) : (
-          <>
-            {iconName && iconPosition === 'left' && (
-              <Ionicons
-                name={iconName}
-                size={iconSize}
-                color={resolvedIconColor}
-                style={styles.iconLeft}
-              />
-            )}
-            <Text
-              style={[
-                styles.buttonText,
-                isOutline ? styles.buttonTextOutline : styles.buttonTextPrimary,
-              ]}
-            >
-              {title}
-            </Text>
-            {iconName && iconPosition === 'right' && (
-              <Ionicons
-                name={iconName}
-                size={iconSize}
-                color={resolvedIconColor}
-                style={styles.iconRight}
-              />
-            )}
-          </>
-        )}
-      </View>
+      <LinearGradient
+        colors={[colors.primary, colors.primaryPressed]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.button, styles.buttonPrimary]}
+      >
+        {content}
+      </LinearGradient>
     </TouchableOpacity>
   );
 };
@@ -105,12 +134,19 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   buttonPrimary: {
-    backgroundColor: colors.primary,
+    width: '100%',
   },
   buttonOutline: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
     borderColor: colors.borderStrong,
+  },
+  buttonShadow: {
+    ...shadows.buttonPrimary,
+    borderRadius: radius.md,
+    alignSelf: 'center',
+    width: '80%',
+    maxWidth: 400,
   },
   buttonDisabled: {
     opacity: 0.45,
@@ -123,7 +159,7 @@ const styles = StyleSheet.create({
     color: colors.textOnPrimary,
   },
   buttonTextOutline: {
-    color: colors.primary,
+    color: colors.primaryText,
   },
   contentContainer: {
     flexDirection: 'row',

@@ -4,21 +4,24 @@ import {
   View,
   Text,
   Image,
-  Dimensions,
   ScrollView,
   TouchableOpacity,
   Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { getUserTrainingSessions } from '../../src/services/api';
 import AnimatedNumber from '../../src/components/AnimatedNumber';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
+import MetricCard from '../../src/components/ui/MetricCard';
+import SectionHeader from '../../src/components/ui/SectionHeader';
+import AppCard from '../../src/components/ui/AppCard';
+import ScreenHero from '../../src/components/ui/ScreenHero';
+import PressableScale from '../../src/components/ui/PressableScale';
 import { colors, shadows, spacing, radius, fontFamily } from '../../src/theme';
-
-const { width, height } = Dimensions.get('window');
 
 const logoPath = require('../../assets/images/login.png');
 
@@ -49,34 +52,31 @@ const HOME_FEATURES = [
   },
 ];
 
-function QuickAccessCard({ onPress, children }: { onPress: () => void; children: ReactNode }) {
-  const scale = useRef(new Animated.Value(1)).current;
-  const pressIn = () => {
-    Animated.spring(scale, {
-      toValue: 0.94,
-      friction: 5,
-      useNativeDriver: true,
-    }).start();
-  };
-  const pressOut = () => {
-    Animated.spring(scale, {
-      toValue: 1,
-      friction: 5,
-      useNativeDriver: true,
-    }).start();
-  };
+function QuickAccessCard({
+  onPress,
+  label,
+  iconSoft,
+  children,
+}: {
+  onPress: () => void;
+  label: string;
+  iconSoft: string;
+  children: ReactNode;
+}) {
   return (
-    <Animated.View style={[styles.quickAccessCard, { transform: [{ scale }] }]}>
-      <TouchableOpacity
-        activeOpacity={1}
-        onPressIn={pressIn}
-        onPressOut={pressOut}
-        onPress={onPress}
-        style={{ alignItems: 'center', width: '100%' }}
-      >
+    <PressableScale
+      onPress={onPress}
+      scaleTo={0.96}
+      haptic="light"
+      style={styles.quickAccessCard}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <View style={[styles.quickAccessIconWrap, { backgroundColor: iconSoft }]}>
         {children}
-      </TouchableOpacity>
-    </Animated.View>
+      </View>
+      <Text style={styles.quickAccessText}>{label}</Text>
+    </PressableScale>
   );
 }
 
@@ -97,7 +97,7 @@ const HomeScreen = () => {
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 1000,
+      duration: 600,
       useNativeDriver: true,
     }).start();
   }, []);
@@ -110,7 +110,7 @@ const HomeScreen = () => {
     featureContentOpacity.setValue(0);
     Animated.timing(featureContentOpacity, {
       toValue: 1,
-      duration: 380,
+      duration: 300,
       useNativeDriver: true,
     }).start();
   }, [currentFeature, featureContentOpacity]);
@@ -169,172 +169,170 @@ const HomeScreen = () => {
   const formatTime = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return hours > 0 ? `${hours}h ${mins}min` : `${mins}min`;
+    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
+  // Onboarding visible para usuarios sin entrenamientos; usuarios activos ven solo su actividad
+  const showOnboarding = !user || (!statsLoading && stats.trainings === 0);
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <StatusBar style="light" />
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <Animated.Image
-          source={logoPath}
-          style={[styles.logo, { opacity: fadeAnim }]}
-          resizeMode="contain"
-        />
+        <ScreenHero>
+          <Animated.View style={[styles.logoContainer, { opacity: fadeAnim }]}>
+            <Image source={logoPath} style={styles.logo} resizeMode="contain" />
+          </Animated.View>
 
-        <View style={styles.greetingRow}>
-          <Text style={styles.greeting}>
+          <Text style={styles.greeting} accessibilityRole="header">
             ¡Hola{user?.username ? `, ${user.username}` : ''}!
           </Text>
-          <Ionicons name="hand-left-outline" size={22} color={colors.primary} />
-        </View>
-        <Text style={styles.subGreeting}>Listo para optimizar tu rendimiento</Text>
+          <Text style={styles.subGreeting}>Listo para optimizar tu rendimiento</Text>
+        </ScreenHero>
 
         {user && (
-          <>
+          <View style={styles.activitySection}>
+            <SectionHeader title="Tu actividad" overline="Resumen de rendimiento" />
             {statsLoading ? (
               <SkeletonLoader type="stats" />
             ) : (
-              <View style={styles.statsCard}>
-                <View style={styles.statsHeader}>
-                  <Ionicons name="analytics" size={24} color={colors.primary} />
-                  <Text style={styles.statsTitle}>Tu Actividad</Text>
-                </View>
-
-                <View style={styles.statsGrid}>
-                  <View style={styles.statItem}>
-                    <Ionicons name="barbell" size={30} color={colors.accent1} />
-                    <AnimatedNumber value={stats.thisWeek} style={styles.statValue} />
-                    <Text style={styles.statLabel}>Esta semana</Text>
-                  </View>
-
-                  <View style={styles.statDivider} />
-
-                  <View style={styles.statItem}>
-                    <Ionicons name="time" size={30} color={colors.accent2} />
-                    <Text style={styles.statValue}>{formatTime(stats.totalMinutes)}</Text>
-                    <Text style={styles.statLabel}>Total</Text>
-                  </View>
-
-                  <View style={styles.statDivider} />
-
-                  <View style={styles.statItem}>
-                    <Ionicons name="trophy" size={30} color={colors.warning} />
-                    <AnimatedNumber value={stats.trainings} style={styles.statValue} />
-                    <Text style={styles.statLabel}>Entrenamientos</Text>
-                  </View>
-                </View>
+              <View style={styles.metricsRow}>
+                <MetricCard
+                  iconName="barbell-outline"
+                  value={<AnimatedNumber value={stats.thisWeek} style={styles.metricValue} />}
+                  label="Esta semana"
+                />
+                <MetricCard
+                  iconName="time-outline"
+                  value={formatTime(stats.totalMinutes)}
+                  label="Tiempo total"
+                />
+                <MetricCard
+                  iconName="trophy-outline"
+                  value={<AnimatedNumber value={stats.trainings} style={styles.metricValue} />}
+                  label="Entrenamientos"
+                />
               </View>
             )}
-          </>
+          </View>
         )}
 
-        <View style={styles.featuresSection}>
-          <View style={styles.carouselContainer}>
-            <View style={styles.featureCard}>
-              <View style={styles.featuresTitleContainer}>
-                <Text style={styles.featuresTitle}>¿Por qué SIS?</Text>
-              </View>
-
-              <Animated.View
-                style={[
-                  styles.featureContentAnimated,
-                  { opacity: featureContentOpacity },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.featureIconContainer,
-                    { backgroundColor: HOME_FEATURES[currentFeature].color + '33' },
-                  ]}
-                >
-                  <Ionicons
-                    name={HOME_FEATURES[currentFeature].icon as any}
-                    size={48}
-                    color={HOME_FEATURES[currentFeature].color}
-                  />
-                </View>
-                <Text style={styles.featureTitle}>{HOME_FEATURES[currentFeature].title}</Text>
-                <Text style={styles.featureDescription}>
-                  {HOME_FEATURES[currentFeature].description}
-                </Text>
-              </Animated.View>
-              <View style={styles.indicators}>
-                {HOME_FEATURES.map((_, index) => (
-                  <TouchableOpacity
-                    key={`indicator-${index}`}
-                    onPress={() => setCurrentFeature(index)}
-                    style={[styles.indicator, currentFeature === index && styles.indicatorActive]}
-                  />
-                ))}
-              </View>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.howItWorksCard}>
-          <View style={styles.howItWorksHeader}>
-            <Ionicons name="information-circle" size={24} color={colors.primary} />
-            <Text style={styles.howItWorksTitle}>Cómo Funciona</Text>
-          </View>
-
-          <Text style={styles.howItWorksText}>
-            Analizamos la información de tu <Text style={styles.highlight}>Perfil</Text> y las
-            características de nuestros productos para recomendarte la combinación ideal de
-            suplementos.
-          </Text>
-
-          <View style={styles.benefitsList}>
-            <View style={styles.benefitItem}>
-              <Ionicons name="flash" size={20} color={colors.accent1} />
-              <Text style={styles.benefitText}>Optimiza tu energía</Text>
-            </View>
-            <View style={styles.benefitItem}>
-              <Ionicons name="water" size={20} color={colors.accent2} />
-              <Text style={styles.benefitText}>Mejora tu hidratación</Text>
-            </View>
-            <View style={styles.benefitItem}>
-              <Ionicons name="fitness" size={20} color={colors.accent3} />
-              <Text style={styles.benefitText}>Acelera tu recuperación</Text>
-            </View>
-          </View>
-
-          <View style={styles.tipContainer}>
-            <Ionicons name="bulb" size={18} color={colors.primary} />
-            <Text style={styles.tipText}>
-              Completa tu perfil para obtener las mejores recomendaciones
-            </Text>
-          </View>
-        </View>
-
         <View style={styles.quickAccessSection}>
-          <Text style={styles.quickAccessTitle}>Acceso Rápido</Text>
-
+          <SectionHeader title="Acceso rápido" />
           <View style={styles.quickAccessGrid}>
-            <QuickAccessCard onPress={() => router.push('/(tabs)/products')}>
-              <Ionicons name="cube" size={36} color={colors.accent1} />
-              <Text style={styles.quickAccessText}>Productos</Text>
+            <QuickAccessCard
+              label="Productos"
+              iconSoft={colors.categoryEnergySoft}
+              onPress={() => router.push('/(tabs)/products')}
+            >
+              <Ionicons name="cube-outline" size={28} color={colors.categoryEnergy} />
             </QuickAccessCard>
 
-            <QuickAccessCard onPress={() => router.push('/(tabs)/training')}>
-              <Ionicons name="barbell" size={36} color={colors.accent2} />
-              <Text style={styles.quickAccessText}>Entrenar</Text>
+            <QuickAccessCard
+              label="Entrenar"
+              iconSoft={colors.categorySupplementSoft}
+              onPress={() => router.push('/(tabs)/training')}
+            >
+              <Ionicons name="barbell-outline" size={28} color={colors.categorySupplement} />
             </QuickAccessCard>
 
-            <QuickAccessCard onPress={() => router.push('/(tabs)/recommendations')}>
-              <Ionicons name="star" size={36} color={colors.warning} />
-              <Text style={styles.quickAccessText}>Para Ti</Text>
+            <QuickAccessCard
+              label="Para Ti"
+              iconSoft="rgba(224, 160, 62, 0.15)"
+              onPress={() => router.push('/(tabs)/recommendations')}
+            >
+              <Ionicons name="star-outline" size={28} color={colors.warning} />
             </QuickAccessCard>
 
-            <QuickAccessCard onPress={() => router.push('/(tabs)/profile')}>
-              <Ionicons name="person" size={36} color={colors.accent3} />
-              <Text style={styles.quickAccessText}>Perfil</Text>
+            <QuickAccessCard
+              label="Perfil"
+              iconSoft={colors.categoryHydrationSoft}
+              onPress={() => router.push('/(tabs)/profile')}
+            >
+              <Ionicons name="person-outline" size={28} color={colors.categoryHydration} />
             </QuickAccessCard>
           </View>
         </View>
+
+        {/* Secciones de onboarding: solo para usuarios sin entrenamientos registrados */}
+        {showOnboarding && (
+          <>
+            <View style={styles.featuresSection}>
+              <SectionHeader title="¿Por qué SIS?" />
+              <AppCard highlight style={styles.featureCard}>
+                <Animated.View
+                  style={[styles.featureContentAnimated, { opacity: featureContentOpacity }]}
+                >
+                  <View
+                    style={[
+                      styles.featureIconContainer,
+                      { backgroundColor: HOME_FEATURES[currentFeature].color + '1A' },
+                    ]}
+                  >
+                    <Ionicons
+                      name={HOME_FEATURES[currentFeature].icon as any}
+                      size={36}
+                      color={HOME_FEATURES[currentFeature].color}
+                    />
+                  </View>
+                  <Text style={styles.featureTitle}>{HOME_FEATURES[currentFeature].title}</Text>
+                  <Text style={styles.featureDescription}>
+                    {HOME_FEATURES[currentFeature].description}
+                  </Text>
+                </Animated.View>
+                <View style={styles.indicators}>
+                  {HOME_FEATURES.map((_, index) => (
+                    <TouchableOpacity
+                      key={`indicator-${index}`}
+                      onPress={() => setCurrentFeature(index)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Ver característica ${index + 1}`}
+                      hitSlop={8}
+                      style={[styles.indicator, currentFeature === index && styles.indicatorActive]}
+                    />
+                  ))}
+                </View>
+              </AppCard>
+            </View>
+
+            <View style={styles.howItWorksSection}>
+              <SectionHeader title="Cómo funciona" />
+              <AppCard>
+                <Text style={styles.howItWorksText}>
+                  Analizamos la información de tu <Text style={styles.highlight}>Perfil</Text> y las
+                  características de nuestros productos para recomendarte la combinación ideal de
+                  suplementos.
+                </Text>
+
+                <View style={styles.benefitsList}>
+                  <View style={styles.benefitItem}>
+                    <Ionicons name="flash-outline" size={18} color={colors.accent1} />
+                    <Text style={styles.benefitText}>Optimiza tu energía</Text>
+                  </View>
+                  <View style={styles.benefitItem}>
+                    <Ionicons name="water-outline" size={18} color={colors.accent2} />
+                    <Text style={styles.benefitText}>Mejora tu hidratación</Text>
+                  </View>
+                  <View style={styles.benefitItem}>
+                    <Ionicons name="fitness-outline" size={18} color={colors.accent3} />
+                    <Text style={styles.benefitText}>Acelera tu recuperación</Text>
+                  </View>
+                </View>
+
+                <View style={styles.tipContainer}>
+                  <Ionicons name="bulb-outline" size={16} color={colors.primary} />
+                  <Text style={styles.tipText}>
+                    Completa tu perfil para obtener las mejores recomendaciones
+                  </Text>
+                </View>
+              </AppCard>
+            </View>
+          </>
+        )}
 
         <View style={{ height: spacing.xxl }} />
       </ScrollView>
@@ -351,147 +349,81 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    alignItems: 'center',
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xl,
+    paddingTop: spacing.lg,
   },
-  logo: {
-    width: width * 0.5,
-    height: height * 0.12,
+  logoContainer: {
+    alignSelf: 'center',
     marginBottom: spacing.xl,
   },
-  greetingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
+  logo: {
+    width: 110,
+    height: 34,
   },
   greeting: {
-    fontSize: 22,
-    fontFamily: fontFamily.bold,
-    color: colors.primary,
+    fontSize: 28,
+    fontFamily: fontFamily.extrabold,
+    color: colors.textPrimary,
+    letterSpacing: -0.5,
     textAlign: 'center',
   },
   subGreeting: {
-    fontSize: 16,
+    fontSize: 15,
     color: colors.textSecondary,
-    textAlign: 'center',
+    marginTop: spacing.xs,
     marginBottom: spacing.xxl,
+    textAlign: 'center',
   },
-  statsCard: {
+  activitySection: {
     width: '100%',
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.xl,
-    marginBottom: spacing.xxl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.cardElevated,
+    marginBottom: spacing.xxxl,
   },
-  statsHeader: {
+  metricsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.xl,
-    paddingBottom: 15,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.border,
+    gap: spacing.sm,
   },
-  statsTitle: {
-    fontSize: 20,
-    fontFamily: fontFamily.bold,
-    color: colors.primary,
-    marginLeft: spacing.md,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  statItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statDivider: {
-    width: 1,
-    height: 50,
-    backgroundColor: colors.border,
-  },
-  statValue: {
-    fontSize: 20,
-    fontFamily: fontFamily.bold,
-    color: colors.primary,
-    marginTop: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  statLabel: {
-    fontSize: 11,
-    fontFamily: fontFamily.semibold,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    textTransform: 'uppercase',
+  metricValue: {
+    fontSize: 26,
+    fontFamily: fontFamily.extrabold,
+    color: colors.textPrimary,
+    letterSpacing: -0.5,
   },
   featuresSection: {
     width: '100%',
-    marginBottom: spacing.xxl,
-  },
-  featuresTitleContainer: {
-    marginBottom: spacing.xl,
-    paddingBottom: 15,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.border,
-    width: '100%',
-  },
-  featuresTitle: {
-    fontSize: 18,
-    fontFamily: fontFamily.bold,
-    color: colors.primary,
-    textAlign: 'center',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  carouselContainer: {
-    width: '100%',
+    marginBottom: spacing.xxxl,
   },
   featureCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: 30,
     alignItems: 'center',
-    minHeight: 220,
+    minHeight: 190,
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.card,
   },
   featureContentAnimated: {
     width: '100%',
     alignItems: 'center',
   },
   featureIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   featureTitle: {
     width: '100%',
-    fontSize: 22,
+    fontSize: 18,
     fontFamily: fontFamily.bold,
-    color: colors.primary,
-    marginBottom: spacing.md,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
     textAlign: 'center',
   },
   featureDescription: {
     width: '100%',
-    fontSize: 15,
-    color: colors.textPrimary,
-    opacity: 0.92,
+    fontSize: 14,
+    color: colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 21,
   },
   indicators: {
     flexDirection: 'row',
@@ -507,43 +439,21 @@ const styles = StyleSheet.create({
   },
   indicatorActive: {
     backgroundColor: colors.primary,
-    width: 24,
+    width: 22,
   },
-  howItWorksCard: {
+  howItWorksSection: {
     width: '100%',
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.xl,
-    marginBottom: spacing.xxl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.card,
-  },
-  howItWorksHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.border,
-  },
-  howItWorksTitle: {
-    fontSize: 20,
-    fontFamily: fontFamily.bold,
-    color: colors.primary,
-    marginLeft: spacing.md,
+    marginBottom: spacing.xxxl,
   },
   howItWorksText: {
-    fontSize: 15,
-    color: colors.textPrimary,
-    opacity: 0.92,
-    lineHeight: 24,
-    marginBottom: spacing.xl,
-    textAlign: 'center',
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 22,
+    marginBottom: spacing.lg,
   },
   highlight: {
-    color: colors.primary,
-    fontFamily: fontFamily.bold,
+    color: colors.primaryText,
+    fontFamily: fontFamily.semibold,
   },
   benefitsList: {
     marginBottom: spacing.lg,
@@ -551,11 +461,10 @@ const styles = StyleSheet.create({
   benefitItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.md,
-    paddingLeft: 10,
+    marginBottom: spacing.sm,
   },
   benefitText: {
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textPrimary,
     marginLeft: spacing.md,
     fontFamily: fontFamily.medium,
@@ -563,7 +472,7 @@ const styles = StyleSheet.create({
   tipContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.primarySoft,
     padding: spacing.md,
     borderRadius: radius.sm,
     borderLeftWidth: 3,
@@ -572,21 +481,13 @@ const styles = StyleSheet.create({
   tipText: {
     fontSize: 13,
     color: colors.textPrimary,
-    opacity: 0.9,
     marginLeft: 10,
     flex: 1,
-    lineHeight: 20,
+    lineHeight: 19,
   },
   quickAccessSection: {
     width: '100%',
     marginBottom: spacing.xl,
-  },
-  quickAccessTitle: {
-    fontSize: 20,
-    fontFamily: fontFamily.bold,
-    color: colors.primary,
-    marginBottom: spacing.lg,
-    textAlign: 'center',
   },
   quickAccessGrid: {
     flexDirection: 'row',
@@ -597,19 +498,25 @@ const styles = StyleSheet.create({
     width: '48%',
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
-    padding: spacing.xl,
+    paddingVertical: spacing.lg,
     alignItems: 'center',
     marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
     ...shadows.card,
   },
+  quickAccessIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   quickAccessText: {
     fontSize: 14,
     fontFamily: fontFamily.semibold,
     color: colors.textPrimary,
-    opacity: 0.9,
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
   },
 });
 

@@ -49,8 +49,8 @@ const styles = StyleSheet.create({
   title: {
     marginTop: 24,
     fontSize: 22,
-    fontWeight: '700',
-    color: colors.primary,
+    fontWeight: '800',
+    color: colors.textPrimary,
   },
   subtitle: {
     marginTop: 12,

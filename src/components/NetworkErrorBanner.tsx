@@ -39,10 +39,15 @@ const NetworkErrorBanner: React.FC = () => {
 
   return (
     <Animated.View style={[styles.banner, { opacity: fadeAnim }]}>
-      <Ionicons name="cloud-offline" size={22} color={colors.textPrimary} />
+      <Ionicons name="cloud-offline" size={22} color={colors.textOnPrimary} />
       <Text style={styles.text}>{errorMessage}</Text>
-      <TouchableOpacity onPress={handleDismiss} style={styles.dismissButton}>
-        <Ionicons name="close" size={22} color={colors.textPrimary} />
+      <TouchableOpacity
+        onPress={handleDismiss}
+        style={styles.dismissButton}
+        accessibilityRole="button"
+        accessibilityLabel="Cerrar aviso"
+      >
+        <Ionicons name="close" size={22} color={colors.textOnPrimary} />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -69,7 +74,7 @@ const styles = StyleSheet.create({
   },
   text: {
     flex: 1,
-    color: colors.textPrimary,
+    color: colors.textOnPrimary,
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 10,

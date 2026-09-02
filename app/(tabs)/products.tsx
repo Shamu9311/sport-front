@@ -19,8 +19,13 @@ import { getProductImageSource } from '../../src/utils/imageUtils';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
-import { colors, fontFamily } from '../../src/theme';
+import FilterChip from '../../src/components/ui/FilterChip';
+import EmptyState from '../../src/components/ui/EmptyState';
+import PressableScale from '../../src/components/ui/PressableScale';
+import ProductImageFrame from '../../src/components/ui/ProductImageFrame';
+import { colors, fontFamily, radius, shadows, spacing } from '../../src/theme';
 import { MIN_SKELETON_MS, withMinimumDuration } from '../../src/utils/withMinimumDuration';
+import { getCategoryColorsFromName } from '../../src/utils/categoryColors';
 import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
@@ -290,32 +295,43 @@ const ProductListScreen = () => {
   };
 
   const renderProductItem = ({ item }: { item: Product }) => {
+    const productName = item.product_name || item.name || 'Sin nombre';
+    const categoryName =
+      item.category_name ||
+      categories.find((c) => c.category_id === item.category_id)?.name;
+    const { color: categoryColor } = getCategoryColorsFromName(categoryName);
+
     return (
-      <TouchableOpacity
+      <PressableScale
         style={styles.productItem}
         onPress={() => router.push(`/products/${item.product_id}`)}
-        activeOpacity={0.7}
+        haptic="light"
+        accessibilityRole="button"
+        accessibilityLabel={`Ver producto ${productName}`}
       >
+        <View style={[styles.categoryStripe, { backgroundColor: categoryColor }]} />
         <View style={styles.productImageContainer}>
-          <Image
-            source={getProductImageSource(item.image_url)}
-            style={styles.productImage}
-            resizeMode='contain'
-          />
+          <ProductImageFrame style={styles.productImageFrame}>
+            <Image
+              source={getProductImageSource(item.image_url)}
+              style={styles.productImage}
+              resizeMode='contain'
+            />
+          </ProductImageFrame>
         </View>
         <View style={styles.productInfo}>
           <Text style={styles.productName} numberOfLines={2}>
-            {item.product_name || item.name || 'Sin nombre'}
+            {productName}
           </Text>
-          <Text style={styles.productDescription} numberOfLines={3}>
+          <Text style={styles.productDescription} numberOfLines={2}>
             {item.product_description || item.description || 'Sin descripción'}
           </Text>
           <View style={styles.productFooter}>
-            <Ionicons name='arrow-forward-circle' size={18} color={colors.primary} />
             <Text style={styles.viewDetailsText}>Ver producto</Text>
+            <Ionicons name='chevron-forward' size={14} color={colors.primaryText} />
           </View>
         </View>
-      </TouchableOpacity>
+      </PressableScale>
     );
   };
 
@@ -353,11 +369,9 @@ const ProductListScreen = () => {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.timingScrollContainer}
           >
-            <TouchableOpacity
-              style={[
-                styles.timingFilterButton,
-                selectedCategory === null && styles.timingFilterButtonActive,
-              ]}
+            <FilterChip
+              label="Todos"
+              selected={selectedCategory === null}
               onPress={() => {
                 setSelectedCategory(null);
                 setSelectedTiming('');
@@ -365,35 +379,19 @@ const ProductListScreen = () => {
                 setIsSearching(true);
                 handleSearchRef.current(true, { q: '', category: null, timing: '' });
               }}
-            >
-              <Text
-                style={[
-                  styles.timingFilterText,
-                  selectedCategory === null && styles.timingFilterTextActive,
-                ]}
-              >
-                Todos
-              </Text>
-            </TouchableOpacity>
-            {categories.map((category) => (
-              <TouchableOpacity
-                key={category.category_id}
-                style={[
-                  styles.timingFilterButton,
-                  selectedCategory === category.category_id && styles.timingFilterButtonActive,
-                ]}
-                onPress={() => handleCategoryChange(category.category_id)}
-              >
-                <Text
-                  style={[
-                    styles.timingFilterText,
-                    selectedCategory === category.category_id && styles.timingFilterTextActive,
-                  ]}
-                >
-                  {category.name.charAt(0).toUpperCase() + category.name.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            />
+            {categories.map((category) => {
+              const { color } = getCategoryColorsFromName(category.name);
+              return (
+                <FilterChip
+                  key={category.category_id}
+                  label={category.name.charAt(0).toUpperCase() + category.name.slice(1)}
+                  selected={selectedCategory === category.category_id}
+                  selectedColor={color}
+                  onPress={() => handleCategoryChange(category.category_id)}
+                />
+              );
+            })}
           </ScrollView>
         </View>
 
@@ -411,23 +409,12 @@ const ProductListScreen = () => {
               { value: 'durante', label: 'Durante' },
               { value: 'despues', label: 'Después' },
             ].map((option) => (
-              <TouchableOpacity
+              <FilterChip
                 key={option.value}
-                style={[
-                  styles.timingFilterButton,
-                  selectedTiming === option.value && styles.timingFilterButtonActive,
-                ]}
+                label={option.label}
+                selected={selectedTiming === option.value}
                 onPress={() => handleTimingFilter(option.value)}
-              >
-                <Text
-                  style={[
-                    styles.timingFilterText,
-                    selectedTiming === option.value && styles.timingFilterTextActive,
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
+              />
             ))}
           </ScrollView>
         </View>
@@ -490,10 +477,11 @@ const ProductListScreen = () => {
             ) : null
           }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name='cube-outline' size={60} color={colors.textSecondary} style={{ marginBottom: 15 }} />
-              <Text style={styles.emptyText}>No hay productos disponibles en esta categoría.</Text>
-            </View>
+            <EmptyState
+              iconName='cube-outline'
+              title='Sin productos'
+              subtitle='No hay productos disponibles en esta categoría.'
+            />
           }
         />
       )}
@@ -513,10 +501,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   pageTitle: {
-    fontSize: 26,
-    fontFamily: fontFamily.bold,
-    color: colors.primary,
-    marginBottom: 5,
+    fontSize: 28,
+    fontFamily: fontFamily.extrabold,
+    color: colors.textPrimary,
+    letterSpacing: -0.5,
+    marginBottom: 4,
   },
   pageSubtitle: {
     fontSize: 15,
@@ -555,37 +544,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   filtersLabel: {
-    color: colors.primary,
-    fontSize: 14,
+    color: colors.textSecondary,
+    fontSize: 13,
     fontFamily: fontFamily.semibold,
     marginRight: 12,
     minWidth: 70,
   },
   timingScrollContainer: {
     paddingHorizontal: 4,
-  },
-  timingFilterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 8,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  timingFilterButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  timingFilterText: {
-    color: colors.textPrimary,
-    opacity: 0.85,
-    fontSize: 13,
-    fontFamily: fontFamily.semibold,
-  },
-  timingFilterTextActive: {
-    color: colors.textOnPrimary,
-    fontFamily: fontFamily.bold,
   },
   activeFiltersContainer: {
     flexDirection: 'row',
@@ -625,61 +591,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 15,
   },
-  categoryContainer: {
-    backgroundColor: colors.surface,
-    marginBottom: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    marginHorizontal: 0,
-    elevation: 3,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  categoryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-    paddingHorizontal: 4,
-  },
-  categoryTitle: {
-    color: colors.primary,
-    fontSize: 18,
-    fontFamily: fontFamily.bold,
-    marginLeft: 10,
-  },
-  categoryScrollContainer: {
-    paddingHorizontal: 4,
-    paddingBottom: 5,
-  },
-  categoryButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    marginRight: 10,
-    borderRadius: 25,
-    backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    minWidth: 110,
-    alignItems: 'center',
-  },
-  selectedCategory: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  categoryText: {
-    color: colors.textPrimary,
-    opacity: 0.88,
-    fontSize: 14,
-    fontFamily: fontFamily.semibold,
-  },
-  selectedCategoryText: {
-    color: colors.textOnPrimary,
-    fontFamily: fontFamily.bold,
-  },
-
   listContainer: {
     paddingHorizontal: 16,
     paddingBottom: 20,
@@ -697,78 +608,61 @@ const styles = StyleSheet.create({
   productItem: {
     flexDirection: 'row',
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    marginBottom: 12,
+    borderRadius: radius.lg,
+    marginBottom: spacing.md,
     overflow: 'hidden',
-    elevation: 5,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
     borderWidth: 1,
     borderColor: colors.border,
+    ...shadows.card,
+  },
+  categoryStripe: {
+    width: 3,
+    alignSelf: 'stretch',
   },
   productImageContainer: {
-    width: 120,
-    height: 120,
-    backgroundColor: colors.surfaceMuted,
+    width: 100,
+    alignSelf: 'stretch',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRightWidth: 1,
-    borderRightColor: colors.border,
+    paddingLeft: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  productImageFrame: {
+    width: 84,
+    height: 84,
   },
   productImage: {
-    width: 100,
-    height: 100,
+    width: 68,
+    height: 68,
   },
   productInfo: {
     flex: 1,
-    padding: 16,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     justifyContent: 'center',
   },
   productName: {
-    color: colors.primary,
-    fontSize: 17,
+    color: colors.textPrimary,
+    fontSize: 16,
     fontFamily: fontFamily.bold,
-    marginBottom: 8,
-    lineHeight: 22,
+    marginBottom: 4,
+    lineHeight: 21,
   },
   productDescription: {
-    color: colors.textPrimary,
-    opacity: 0.88,
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 10,
+    color: colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: spacing.sm,
   },
   productFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
   viewDetailsText: {
-    color: colors.primary,
-    fontSize: 14,
+    color: colors.primaryText,
+    fontSize: 13,
     fontFamily: fontFamily.semibold,
-    marginLeft: 6,
-  },
-
-  emptyContainer: {
-    flex: 1,
-    padding: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 300,
-  },
-  emptyText: {
-    color: colors.textPrimary,
-    opacity: 0.85,
-    textAlign: 'center',
-    fontSize: 16,
-    marginBottom: 10,
-    lineHeight: 24,
+    marginRight: 2,
   },
 });
 

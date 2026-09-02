@@ -27,6 +27,7 @@ import { useFocusEffect } from 'expo-router';
 import NotificationService from '../../src/services/notificationService';
 import { colors, fontFamily } from '../../src/theme';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
+import AnimatedNumber from '../../src/components/AnimatedNumber';
 import SelectField from '../../src/components/SelectField';
 import Toast from 'react-native-toast-message';
 
@@ -383,19 +384,28 @@ const ProfileScreen = () => {
             <View style={styles.statsGrid}>
               <View style={styles.statItem}>
                 <Ionicons name='calendar-outline' size={24} color={colors.primary} />
-                <Text style={styles.statValue}>{userInfo.profile.age}</Text>
+                <AnimatedNumber
+                  value={Number(userInfo.profile.age) || 0}
+                  style={styles.statValue}
+                />
                 <Text style={styles.statLabel}>Años</Text>
               </View>
 
               <View style={styles.statItem}>
                 <Ionicons name='scale-outline' size={24} color={colors.primary} />
-                <Text style={styles.statValue}>{userInfo.profile.weight}</Text>
+                <AnimatedNumber
+                  value={Number(userInfo.profile.weight) || 0}
+                  style={styles.statValue}
+                />
                 <Text style={styles.statLabel}>kg</Text>
               </View>
 
               <View style={styles.statItem}>
                 <Ionicons name='resize-outline' size={24} color={colors.primary} />
-                <Text style={styles.statValue}>{userInfo.profile.height}</Text>
+                <AnimatedNumber
+                  value={Number(userInfo.profile.height) || 0}
+                  style={styles.statValue}
+                />
                 <Text style={styles.statLabel}>cm</Text>
               </View>
             </View>
@@ -559,8 +569,12 @@ const ProfileScreen = () => {
           <Text style={styles.buttonText}>Editar Perfil</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Ionicons name='log-out-outline' size={22} color={colors.textPrimary} />
+        <TouchableOpacity
+          style={styles.logoutButtonMain}
+          onPress={handleLogout}
+          accessibilityRole='button'
+        >
+          <Ionicons name='log-out-outline' size={20} color={colors.error} />
           <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
         </TouchableOpacity>
 
@@ -970,10 +984,11 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   profileTitle: {
-    fontSize: 26,
-    fontFamily: fontFamily.bold,
-    color: colors.primary,
-    marginBottom: 5,
+    fontSize: 24,
+    fontFamily: fontFamily.extrabold,
+    color: colors.textPrimary,
+    letterSpacing: -0.4,
+    marginBottom: 4,
   },
   profileEmail: {
     fontSize: 15,
@@ -986,60 +1001,58 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 16,
     padding: 20,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
     borderWidth: 1,
     borderColor: colors.border,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-    paddingBottom: 15,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.border,
+    marginBottom: 16,
   },
   cardTitle: {
-    fontSize: 20,
+    fontSize: 17,
     fontFamily: fontFamily.bold,
-    color: colors.primary,
-    marginLeft: 12,
+    color: colors.textPrimary,
+    marginLeft: 10,
   },
 
   divider: {
     height: 1,
-    backgroundColor: colors.border,
-    marginVertical: 20,
+    backgroundColor: colors.divider,
+    marginVertical: 16,
   },
 
   statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: 20,
+    gap: 8,
+    marginBottom: 16,
   },
   statItem: {
     alignItems: 'center',
     backgroundColor: colors.surfaceMuted,
-    padding: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
     borderRadius: 12,
-    minWidth: '28%',
-    borderWidth: 1,
-    borderColor: colors.border,
+    flex: 1,
   },
   statValue: {
-    fontSize: 24,
-    fontFamily: fontFamily.bold,
-    color: colors.primary,
-    marginTop: 8,
-    marginBottom: 4,
+    fontSize: 22,
+    fontFamily: fontFamily.extrabold,
+    color: colors.textPrimary,
+    marginTop: 6,
+    marginBottom: 2,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textSecondary,
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 
   infoRow: {
@@ -1048,7 +1061,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderStrong,
+    borderBottomColor: colors.divider,
   },
   infoItem: {
     flexDirection: 'row',
@@ -1056,9 +1069,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   infoLabel: {
-    color: colors.textPrimary,
-    opacity: 0.85,
-    fontSize: 15,
+    color: colors.textSecondary,
+    fontSize: 14,
     marginLeft: 10,
   },
   infoValue: {
@@ -1074,7 +1086,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderStrong,
+    borderBottomColor: colors.divider,
   },
   switchInfo: {
     flexDirection: 'row',
@@ -1119,9 +1131,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   noProfileText: {
-    color: colors.primary,
-    fontSize: 18,
-    fontFamily: fontFamily.bold,
+    color: colors.textPrimary,
+    fontSize: 17,
+    fontFamily: fontFamily.semibold,
     textAlign: 'center',
     marginBottom: 10,
   },
@@ -1140,28 +1152,40 @@ const styles = StyleSheet.create({
   editButton: {
     backgroundColor: colors.primary,
     borderRadius: 12,
-    paddingVertical: 16,
+    paddingVertical: 15,
     paddingHorizontal: 20,
     alignItems: 'center',
     marginBottom: 12,
     width: '90%',
     flexDirection: 'row',
     justifyContent: 'center',
-    elevation: 3,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
     shadowRadius: 4,
+    elevation: 2,
   },
   buttonText: {
     color: colors.textOnPrimary,
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: fontFamily.bold,
     marginLeft: 8,
   },
+  logoutButtonMain: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    width: '90%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
   logoutButtonText: {
-    color: colors.textPrimary,
-    fontSize: 16,
+    color: colors.error,
+    fontSize: 15,
     fontFamily: fontFamily.bold,
     marginLeft: 8,
   },
@@ -1198,12 +1222,12 @@ const styles = StyleSheet.create({
   },
 
   editHeader: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
     paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 16,
     paddingHorizontal: 20,
-    borderBottomWidth: 3,
-    borderBottomColor: colors.primary,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
   },
   backButtonEdit: {
     flexDirection: 'row',
@@ -1211,7 +1235,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   backButtonText: {
-    color: colors.primary,
+    color: colors.primaryText,
     fontSize: 16,
     fontFamily: fontFamily.semibold,
     marginLeft: 8,
@@ -1234,47 +1258,43 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
     borderWidth: 1,
     borderColor: colors.border,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   formCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-    paddingBottom: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.border,
+    marginBottom: 16,
   },
   formCardTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: fontFamily.bold,
-    color: colors.primary,
+    color: colors.textPrimary,
     marginLeft: 10,
   },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     marginBottom: 8,
-    color: colors.textPrimary,
-    opacity: 0.85,
-    fontFamily: fontFamily.medium,
+    color: colors.textSecondary,
+    fontFamily: fontFamily.semibold,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   input: {
     borderWidth: 1,
-    borderColor: colors.borderStrong,
+    borderColor: colors.border,
     borderRadius: 10,
-    paddingVertical: 14,
+    paddingVertical: 13,
     paddingHorizontal: 16,
     marginBottom: 20,
     color: colors.textPrimary,
     backgroundColor: colors.surfaceMuted,
-    fontSize: 16,
+    fontSize: 15,
   },
   button: {
     backgroundColor: colors.primary,

@@ -11,9 +11,18 @@ import {
   Platform,
   ActivityIndicator,
   Animated,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { colors } from '../theme';
+import { colors, fontFamily, radius, spacing } from '../theme';
+import LoadingState from './ui/LoadingState';
+import { hapticSuccess } from '../utils/haptics';
+
+const GENERATING_MESSAGES = [
+  'Analizando tu entrenamiento...',
+  'Buscando productos adecuados...',
+  'Generando recomendaciones personalizadas...',
+];
 // Función para formatear fechas en español
 const formatDate = (date: Date) => {
   return date.toLocaleDateString('es-ES', {
@@ -155,6 +164,7 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
     setSaving(true);
     try {
       await onSave(trainingData);
+      await hapticSuccess();
       setSaving(false);
       resetForm();
       onClose();
@@ -191,6 +201,10 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
     <Modal visible={visible} animationType='none' transparent={true} onRequestClose={handleClose}>
       <Animated.View style={[styles.centeredView, { opacity: fadeAnim }]}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.keyboardAvoiding}
+        >
         <Animated.View
           style={[
             styles.modalView,
@@ -202,14 +216,18 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
         >
           {saving && (
             <View style={styles.loadingOverlay}>
-              <ActivityIndicator size='large' color={colors.primary} />
-              <Text style={styles.loadingText}>Generando recomendaciones...</Text>
+              <LoadingState messages={GENERATING_MESSAGES} />
             </View>
           )}
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Agregar Entrenamiento</Text>
-            <TouchableOpacity onPress={handleClose}>
-              <MaterialCommunityIcons name='close' size={24} color={colors.textPrimary} />
+            <TouchableOpacity
+              onPress={handleClose}
+              hitSlop={10}
+              accessibilityRole='button'
+              accessibilityLabel='Cerrar'
+            >
+              <MaterialCommunityIcons name='close' size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -392,6 +410,7 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({ visible, onClose, o
             </TouchableOpacity>
           </View>
         </Animated.View>
+        </KeyboardAvoidingView>
       </Animated.View>
     </Modal>
   );
@@ -403,45 +422,54 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  keyboardAvoiding: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.overlay,
   },
   modalView: {
-    backgroundColor: colors.background,
-    margin: 20,
-    borderRadius: 15,
-    maxHeight: '80%',
+    backgroundColor: colors.surface,
+    margin: spacing.xl,
+    borderRadius: radius.xl,
+    maxHeight: '82%',
+    width: '92%',
+    maxWidth: 480,
     shadowColor: colors.shadow,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
+    overflow: 'hidden',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.divider,
   },
   modalTitle: {
     color: colors.textPrimary,
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
   },
   formContainer: {
-    padding: 20,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
   },
   label: {
-    color: colors.textPrimary,
-    fontSize: 16,
-    marginBottom: 8,
-    fontWeight: '500',
+    color: colors.textSecondary,
+    fontSize: 13,
+    marginBottom: spacing.sm,
+    fontFamily: fontFamily.semibold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   required: {
     color: colors.error,
@@ -450,10 +478,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: 10,
-    padding: 5,
+    marginBottom: spacing.xl,
+    backgroundColor: colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: 4,
   },
   dateButton: {
     padding: 10,
@@ -464,43 +494,47 @@ const styles = StyleSheet.create({
   },
   dateText: {
     color: colors.textPrimary,
-    fontSize: 16,
+    fontSize: 15,
+    fontFamily: fontFamily.medium,
   },
   timeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: spacing.sm,
     gap: 8,
   },
   timeInput: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: 10,
+    backgroundColor: colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
     color: colors.textPrimary,
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: fontFamily.bold,
     textAlign: 'center',
     width: 60,
     height: 50,
   },
   timeSeparator: {
-    color: colors.primary,
-    fontSize: 24,
-    fontWeight: 'bold',
+    color: colors.textSecondary,
+    fontSize: 22,
+    fontFamily: fontFamily.bold,
   },
   timeHint: {
-    color: colors.textSecondary,
+    color: colors.textMuted,
     fontSize: 12,
-    marginLeft: 10,
+    marginBottom: spacing.lg,
+    marginLeft: 2,
   },
   input: {
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: colors.surfaceMuted,
     color: colors.textPrimary,
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 8,
-    fontSize: 16,
+    borderRadius: radius.md,
+    padding: 14,
+    marginBottom: spacing.lg,
+    fontSize: 15,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: colors.border,
   },
   inputError: {
     borderColor: colors.error,
@@ -514,47 +548,49 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   notesInput: {
-    minHeight: 100,
+    minHeight: 90,
     textAlignVertical: 'top',
   },
   optionsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 20,
+    marginBottom: spacing.xl,
     gap: 8,
   },
   optionButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: colors.surfaceElevated,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: radius.full,
+    backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
-    borderColor: colors.borderStrong,
+    borderColor: colors.border,
+    minHeight: 32,
+    justifyContent: 'center',
   },
   selectedOption: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
   optionText: {
-    color: colors.textPrimary,
+    color: colors.textSecondary,
     textAlign: 'center',
-    fontSize: 14,
+    fontSize: 13,
+    fontFamily: fontFamily.semibold,
   },
   selectedOptionText: {
     color: colors.textOnPrimary,
-    fontWeight: '700',
   },
   modalFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 20,
+    padding: spacing.xl,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: colors.divider,
   },
   button: {
     flex: 1,
-    padding: 15,
-    borderRadius: 10,
+    padding: 14,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 50,
@@ -564,8 +600,8 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.textMuted,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
     marginRight: 10,
   },
   saveButton: {
@@ -574,8 +610,8 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: colors.textPrimary,
-    fontWeight: '700',
-    fontSize: 16,
+    fontFamily: fontFamily.bold,
+    fontSize: 15,
   },
   saveButtonText: {
     color: colors.textOnPrimary,
@@ -590,13 +626,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
-    borderRadius: 15,
-  },
-  loadingText: {
-    color: colors.primary,
-    marginTop: 16,
-    fontSize: 16,
-    fontWeight: '600',
+    borderRadius: radius.xl,
   },
 });
 

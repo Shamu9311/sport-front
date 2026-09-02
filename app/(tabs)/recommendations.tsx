@@ -10,12 +10,15 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getProductImageSource } from '../../src/utils/imageUtils';
-import { colors, fontFamily } from '../../src/theme';
+import { colors, fontFamily, radius, shadows, spacing } from '../../src/theme';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
+import ProductImageFrame from '../../src/components/ui/ProductImageFrame';
 import { useSavedRecommendationsData } from '../../src/hooks/useSavedRecommendationsData';
+import { hapticSelection } from '../../src/utils/haptics';
 import { SavedRecommendation } from '../../src/types/UserTypes';
 
 interface ProductDetails {
@@ -122,39 +125,46 @@ const RecommendationScreen = () => {
       const imageSource = getProductImageSource(imageUrl);
 
       return (
+        <Animated.View entering={FadeInDown.duration(250)}>
         <TouchableOpacity
           style={styles.itemContainer}
           onPress={() => {
             router.push(`/products/${productId}`);
           }}
-          activeOpacity={0.7}
+          activeOpacity={0.85}
+          accessibilityRole='button'
+          accessibilityLabel={`Ver detalles de ${productName}`}
         >
-          <View style={{ flexDirection: 'row' }}>
+          <View style={styles.cardTopRow}>
             <View style={styles.productImageContainer}>
-              <Image source={imageSource} style={styles.productImage} resizeMode='contain' />
+              <ProductImageFrame style={styles.productImageFrame}>
+                <Image source={imageSource} style={styles.productImage} resizeMode='contain' />
+              </ProductImageFrame>
             </View>
             <View style={styles.infoContainer}>
               <Text style={styles.productName} numberOfLines={2}>
                 {productName}
               </Text>
-              <Text style={styles.productDescription} numberOfLines={3}>
+              <Text style={styles.productDescription} numberOfLines={2}>
                 {productDescription}
               </Text>
-              {reasoning && (
-                <View style={styles.reasoningContainer}>
-                  <Text style={styles.reasoningTitle}>💡 Recomendado para ti</Text>
-                  <Text style={styles.reasoningText}>
-                    {getDisplayReasoning(reasoning)}
-                  </Text>
-                </View>
-              )}
               <View style={styles.cardFooter}>
-                <Ionicons name='arrow-forward-circle' size={18} color={colors.primary} />
                 <Text style={styles.viewDetailsText}>Ver detalles</Text>
+                <Ionicons name='chevron-forward' size={14} color={colors.primaryText} />
               </View>
             </View>
           </View>
+          {reasoning && (
+            <View style={styles.reasoningContainer}>
+              <View style={styles.reasoningHeader}>
+                <Ionicons name='sparkles' size={13} color={colors.primary} />
+                <Text style={styles.reasoningTitle}>Recomendado para ti</Text>
+              </View>
+              <Text style={styles.reasoningText}>{getDisplayReasoning(reasoning)}</Text>
+            </View>
+          )}
         </TouchableOpacity>
+        </Animated.View>
       );
     } catch (error) {
       console.error('Error al renderizar recomendación:', error);
@@ -220,26 +230,36 @@ const RecommendationScreen = () => {
       <View style={styles.tabsContainer}>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'positivas' && styles.tabActive]}
-          onPress={() => setActiveTab('positivas')}
+          onPress={() => {
+            void hapticSelection();
+            setActiveTab('positivas');
+          }}
           activeOpacity={0.7}
+          accessibilityRole='tab'
+          accessibilityState={{ selected: activeTab === 'positivas' }}
         >
           <Ionicons
             name='checkmark-circle'
-            size={20}
+            size={16}
             color={activeTab === 'positivas' ? colors.textOnPrimary : colors.textSecondary}
           />
           <Text style={[styles.tabText, activeTab === 'positivas' && styles.tabTextActive]}>
-            Que me sirvieron ({recommendations.length})
+            Me sirvieron ({recommendations.length})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'negativas' && styles.tabActive]}
-          onPress={() => setActiveTab('negativas')}
+          onPress={() => {
+            void hapticSelection();
+            setActiveTab('negativas');
+          }}
           activeOpacity={0.7}
+          accessibilityRole='tab'
+          accessibilityState={{ selected: activeTab === 'negativas' }}
         >
           <Ionicons
             name='close-circle'
-            size={20}
+            size={16}
             color={activeTab === 'negativas' ? colors.textOnPrimary : colors.textSecondary}
           />
           <Text style={[styles.tabText, activeTab === 'negativas' && styles.tabTextActive]}>
@@ -315,42 +335,39 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   title: {
-    fontSize: 26,
-    fontFamily: fontFamily.bold,
-    color: colors.primary,
-    marginBottom: 5,
+    fontSize: 28,
+    fontFamily: fontFamily.extrabold,
+    color: colors.textPrimary,
+    letterSpacing: -0.5,
+    marginBottom: 4,
   },
   subtitle: {
     fontSize: 14,
     color: colors.textSecondary,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   pullHint: {
     fontSize: 12,
     color: colors.textMuted,
-    fontStyle: 'italic',
   },
   tabsContainer: {
     flexDirection: 'row',
     marginHorizontal: 16,
     marginBottom: 16,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.full,
     padding: 4,
-    elevation: 3,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   tab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: radius.full,
     backgroundColor: 'transparent',
   },
   tabActive: {
@@ -358,27 +375,22 @@ const styles = StyleSheet.create({
   },
   tabText: {
     color: colors.textSecondary,
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: fontFamily.semibold,
-    marginLeft: 6,
+    marginLeft: 5,
   },
   tabTextActive: {
     color: colors.textOnPrimary,
-    fontFamily: fontFamily.bold,
   },
   actionButton: {
     backgroundColor: colors.primary,
     paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 25,
+    paddingVertical: 13,
+    borderRadius: radius.full,
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 20,
-    elevation: 3,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    ...shadows.card,
   },
   actionButtonText: {
     color: colors.textOnPrimary,
@@ -415,85 +427,88 @@ const styles = StyleSheet.create({
   itemContainer: {
     backgroundColor: colors.surface,
     marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 16,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    marginVertical: 6,
+    borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.border,
+    ...shadows.card,
   },
   listContainer: {
     paddingBottom: 20,
-    paddingTop: 10,
+    paddingTop: 4,
+  },
+  cardTopRow: {
+    flexDirection: 'row',
   },
   productImageContainer: {
-    padding: 12,
+    padding: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  productImageFrame: {
+    width: 92,
+    height: 92,
+  },
   productImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 12,
-    backgroundColor: colors.borderStrong,
+    width: 74,
+    height: 74,
   },
   infoContainer: {
     flex: 1,
-    padding: 16,
+    paddingVertical: spacing.md,
+    paddingRight: spacing.lg,
+    paddingLeft: spacing.xs,
     justifyContent: 'center',
   },
   productName: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: fontFamily.bold,
-    marginBottom: 8,
-    color: colors.primary,
+    marginBottom: 4,
+    color: colors.textPrimary,
   },
   productDescription: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    opacity: 0.88,
-    marginBottom: 12,
-    lineHeight: 20,
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+    lineHeight: 18,
   },
   reasoningContainer: {
-    marginTop: 12,
-    padding: 12,
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: 8,
-    borderLeftWidth: 4,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.sm,
+    borderLeftWidth: 3,
     borderLeftColor: colors.primary,
   },
+  reasoningHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 5,
+  },
   reasoningTitle: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: fontFamily.semibold,
-    marginBottom: 6,
-    color: colors.primary,
+    color: colors.primaryText,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   reasoningText: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textPrimary,
-    opacity: 0.9,
-    lineHeight: 20,
+    lineHeight: 19,
   },
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
   viewDetailsText: {
-    color: colors.primary,
-    fontSize: 14,
+    color: colors.primaryText,
+    fontSize: 13,
     fontFamily: fontFamily.semibold,
-    marginLeft: 4,
+    marginRight: 2,
   },
 });
 

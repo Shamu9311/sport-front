@@ -74,31 +74,15 @@ const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({ type = 'stats' }) => {
 
   if (type === 'stats') {
     return (
-      <View style={styles.statsCard}>
-        <View style={styles.statsHeader}>
-          <SkeletonBox style={{ width: 24, height: 24, borderRadius: 4 }} />
-          <SkeletonBox style={{ width: 100, height: 20, marginLeft: 12 }} />
-        </View>
-        <View style={styles.statsGrid}>
-          <View style={styles.statItem}>
-            <SkeletonBox style={{ width: 40, height: 40, borderRadius: 20 }} />
-            <SkeletonBox style={{ width: 50, height: 24, marginTop: 12 }} />
-            <SkeletonBox style={{ width: 70, height: 14, marginTop: 8 }} />
+      <View style={styles.statsRow}>
+        {[1, 2, 3].map((i) => (
+          <View key={i} style={styles.statsMetricCard}>
+            <SkeletonBox style={{ width: 18, height: 18, borderRadius: 9 }} />
+            <SkeletonBox style={{ width: 44, height: 24, marginTop: 8 }} />
+            <SkeletonBox style={{ width: 60, height: 12, marginTop: 8 }} />
+            <ShimmerOverlay />
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <SkeletonBox style={{ width: 40, height: 40, borderRadius: 20 }} />
-            <SkeletonBox style={{ width: 60, height: 24, marginTop: 12 }} />
-            <SkeletonBox style={{ width: 40, height: 14, marginTop: 8 }} />
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <SkeletonBox style={{ width: 40, height: 40, borderRadius: 20 }} />
-            <SkeletonBox style={{ width: 40, height: 24, marginTop: 12 }} />
-            <SkeletonBox style={{ width: 90, height: 14, marginTop: 8 }} />
-          </View>
-        </View>
-        <ShimmerOverlay />
+        ))}
       </View>
     );
   }
@@ -207,12 +191,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.borderStrong,
     borderRadius: 4,
   },
-  statsCard: {
+  statsRow: {
     width: '100%',
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 24,
+  },
+  statsMetricCard: {
+    flex: 1,
     backgroundColor: colors.surface,
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border,
     overflow: 'hidden',
@@ -227,29 +218,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: width * 0.35,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  statsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingBottom: 15,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.border,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  statItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statDivider: {
-    width: 1,
-    height: 50,
-    backgroundColor: colors.border,
+    backgroundColor: 'rgba(255,255,255,0.07)',
   },
   productListContainer: {
     paddingHorizontal: 16,
@@ -265,8 +234,10 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   productImageSkeleton: {
-    width: 120,
-    height: 120,
+    width: 84,
+    height: 84,
+    margin: 12,
+    borderRadius: 12,
     backgroundColor: colors.borderStrong,
   },
   productInfoSkeleton: {
@@ -301,8 +272,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   recommendationImage: {
-    width: 120,
-    height: 120,
+    width: 92,
+    height: 92,
     margin: 12,
     borderRadius: 12,
     backgroundColor: colors.borderStrong,

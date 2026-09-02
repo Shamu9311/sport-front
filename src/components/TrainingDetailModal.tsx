@@ -6,7 +6,6 @@ import {
   Modal,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   Image,
   Alert,
   Dimensions,
@@ -16,9 +15,18 @@ import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import api, { saveProductFeedback, unwrapApiPayload } from '../services/api';
 import Toast from 'react-native-toast-message';
 import { getProductImageSource } from '../utils/imageUtils';
-import { colors } from '../theme';
+import { colors, fontFamily, radius, shadows, spacing } from '../theme';
+import LoadingState from './ui/LoadingState';
+import ProductImageFrame from './ui/ProductImageFrame';
+import { hapticSuccess } from '../utils/haptics';
 import { SavedRecommendation, TrainingSession } from '../types/UserTypes';
 import { stripIntervalPrefixFromInstructions } from '../services/notificationService';
+
+const SEARCHING_MESSAGES = [
+  'Analizando tu entrenamiento...',
+  'Buscando productos adecuados...',
+  'Generando recomendaciones personalizadas...',
+];
 
 const { width } = Dimensions.get('window');
 
@@ -245,6 +253,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
 
     try {
       await saveProductFeedback(userId, productId, feedback);
+      await hapticSuccess();
       Toast.show({
         type: 'success',
         text1: 'Gracias por tu opinión',
@@ -264,12 +273,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
 
   const renderRecommendations = () => {
     if (loading) {
-      return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color={colors.primary} />
-          <Text style={styles.loadingText}>Buscando recomendaciones...</Text>
-        </View>
-      );
+      return <LoadingState messages={SEARCHING_MESSAGES} style={styles.loadingContainer} />;
     }
 
     if (!recommendations || recommendations.length === 0) {
@@ -294,7 +298,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
     return (
       <View style={styles.recommendationsContainer}>
         <View style={styles.recommendationsHeader}>
-          <Ionicons name='star' size={24} color={colors.primary} />
+          <Ionicons name='star' size={18} color={colors.primary} />
           <Text style={styles.sectionTitle}>Productos Recomendados</Text>
         </View>
         {recommendations.map((rec, recIndex) => {
@@ -336,8 +340,8 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
             >
               <Text style={styles.productName}>{rec.product_name}</Text>
 
-              <View style={styles.imageContainer}>
-                {rec.image_url ? (
+              {rec.image_url ? (
+                <ProductImageFrame style={styles.imageContainer}>
                   <Image
                     source={
                       rec.image_url.startsWith('http')
@@ -348,13 +352,13 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                     resizeMode='contain'
                     onError={() => {}}
                   />
-                ) : (
-                  <View style={styles.placeholderContainer}>
-                    <MaterialCommunityIcons name='image-off' size={40} color={colors.textMuted} />
-                    <Text style={styles.placeholderText}>Imagen no disponible</Text>
-                  </View>
-                )}
-              </View>
+                </ProductImageFrame>
+              ) : (
+                <View style={[styles.imageContainer, styles.placeholderContainer]}>
+                  <MaterialCommunityIcons name='image-off' size={40} color={colors.textMuted} />
+                  <Text style={styles.placeholderText}>Imagen no disponible</Text>
+                </View>
+              )}
 
               {rec.feedback && (
                 <View style={styles.reasoningBox}>
@@ -440,8 +444,8 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                           ? 'thumbs-up'
                           : 'thumbs-up-outline'
                       }
-                      size={24}
-                      color={feedbackStates[rec.product_id] === 'positivo' ? colors.textPrimary : colors.success}
+                      size={20}
+                      color={feedbackStates[rec.product_id] === 'positivo' ? colors.textOnPrimary : colors.success}
                     />
                     <Text
                       style={[
@@ -470,8 +474,8 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                           ? 'thumbs-down'
                           : 'thumbs-down-outline'
                       }
-                      size={24}
-                      color={feedbackStates[rec.product_id] === 'negativo' ? colors.textPrimary : colors.error}
+                      size={20}
+                      color={feedbackStates[rec.product_id] === 'negativo' ? colors.textOnPrimary : colors.error}
                     />
                     <Text
                       style={[
@@ -514,13 +518,19 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
           ]}
         >
           {/* Header del modal */}
+          <View style={styles.dragHandle} />
           <View style={styles.modalHeader}>
             <View style={styles.modalHeaderContent}>
-              <Ionicons name='barbell' size={28} color={colors.primary} />
+              <Ionicons name='barbell' size={22} color={colors.primary} />
               <Text style={styles.modalTitle}>Detalles del Entrenamiento</Text>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name='close-circle' size={32} color={colors.primary} />
+            <TouchableOpacity
+              onPress={onClose}
+              style={styles.closeButton}
+              accessibilityRole='button'
+              accessibilityLabel='Cerrar'
+            >
+              <Ionicons name='close' size={26} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -631,15 +641,23 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     overflow: 'hidden',
   },
+  dragHandle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.borderStrong,
+    marginTop: spacing.sm,
+  },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 20,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 3,
-    borderBottomColor: colors.primary,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
   },
   modalHeaderContent: {
     flexDirection: 'row',
@@ -647,10 +665,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modalTitle: {
-    color: colors.primary,
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginLeft: 12,
+    color: colors.textPrimary,
+    fontSize: 18,
+    fontFamily: fontFamily.bold,
+    marginLeft: 10,
   },
   closeButton: {
     padding: 4,
@@ -662,64 +680,54 @@ const styles = StyleSheet.create({
   // Session Card
   sessionCard: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    elevation: 3,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    ...shadows.card,
   },
   sessionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   iconContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: `${colors.primary}26`,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: colors.primarySoft,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
-    borderWidth: 2,
-    borderColor: `${colors.primary}4D`,
+    marginRight: spacing.lg,
   },
   dateText: {
-    color: colors.primary,
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  typeText: {
     color: colors.textPrimary,
     fontSize: 16,
+    fontFamily: fontFamily.bold,
+    marginBottom: 2,
+  },
+  typeText: {
+    color: colors.textSecondary,
+    fontSize: 14,
   },
   sportTypeText: {
-    color: colors.primary,
-    fontSize: 14,
-    marginTop: 4,
-    fontWeight: '600',
+    color: colors.primaryText,
+    fontSize: 13,
+    marginTop: 2,
+    fontFamily: fontFamily.semibold,
   },
 
   // Stats Card
   statsCard: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-around',
     borderWidth: 1,
     borderColor: colors.border,
-    elevation: 3,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    ...shadows.card,
   },
   statItem: {
     alignItems: 'center',
@@ -727,93 +735,86 @@ const styles = StyleSheet.create({
   },
   statDivider: {
     width: 1,
-    backgroundColor: colors.borderStrong,
+    backgroundColor: colors.divider,
     marginHorizontal: 8,
   },
   statValue: {
-    color: colors.primary,
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 8,
-    marginBottom: 4,
+    color: colors.textPrimary,
+    fontSize: 17,
+    fontFamily: fontFamily.extrabold,
+    marginTop: 6,
+    marginBottom: 2,
   },
   statLabel: {
     color: colors.textSecondary,
-    fontSize: 12,
+    fontSize: 11,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   intensityIndicator: {
-    width: 20,
-    height: 20,
-    borderRadius: 14,
-    marginBottom: 8,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    marginBottom: 6,
   },
 
   // Notes Card
   notesContainer: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    borderLeftWidth: 4,
+    borderLeftWidth: 3,
     borderLeftColor: colors.primary,
   },
   notesHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
   notesLabel: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontFamily: fontFamily.semibold,
     marginLeft: 8,
   },
   notesText: {
-    color: colors.textPrimary,
-    fontSize: 15,
-    lineHeight: 22,
+    color: colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 21,
   },
 
   // Recommendations
   recommendationsContainer: {
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
   recommendationsHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.border,
+    marginBottom: spacing.md,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.primary,
-    marginLeft: 12,
+    fontSize: 18,
+    fontFamily: fontFamily.bold,
+    color: colors.textPrimary,
+    marginLeft: 8,
   },
   recommendationCard: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    elevation: 3,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    ...shadows.card,
   },
   productName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.primary,
-    marginBottom: 12,
+    fontSize: 17,
+    fontFamily: fontFamily.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.md,
   },
   imageContainer: {
     width: '100%',
@@ -821,19 +822,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: 12,
-    overflow: 'hidden',
   },
   productImage: {
-    width: '100%',
-    height: 180,
+    width: '90%',
+    height: 150,
   },
   placeholderContainer: {
-    width: '100%',
-    height: 180,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: colors.surfaceMuted,
     borderRadius: 12,
   },
@@ -846,16 +840,16 @@ const styles = StyleSheet.create({
   reasoningBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.primarySoft,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: radius.sm,
     borderLeftWidth: 3,
     borderLeftColor: colors.primary,
   },
   recommendationReason: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textPrimary,
-    lineHeight: 20,
+    lineHeight: 19,
     marginLeft: 8,
     flex: 1,
   },
@@ -895,66 +889,60 @@ const styles = StyleSheet.create({
 
   // Guía de Consumo
   consumptionGuide: {
-    marginTop: 16,
+    marginTop: spacing.lg,
     backgroundColor: colors.surfaceMuted,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 2,
-    borderColor: colors.primary,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   consumptionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    marginBottom: spacing.md,
   },
   consumptionTitle: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: colors.primary,
-    marginLeft: 10,
+    fontSize: 15,
+    fontFamily: fontFamily.semibold,
+    color: colors.textPrimary,
+    marginLeft: 8,
   },
   consumptionItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderStrong,
+    marginBottom: spacing.md,
   },
   consumptionTextContainer: {
     flex: 1,
     marginLeft: 12,
   },
   consumptionLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 4,
-    fontWeight: '600',
+    marginBottom: 2,
+    fontFamily: fontFamily.semibold,
   },
   consumptionValue: {
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textPrimary,
     lineHeight: 20,
   },
 
   // Feedback Section
   feedbackSection: {
-    marginTop: 20,
-    paddingTop: 20,
+    marginTop: spacing.lg,
+    paddingTop: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: colors.divider,
   },
   feedbackQuestion: {
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textPrimary,
     textAlign: 'center',
-    marginBottom: 16,
-    fontWeight: '600',
+    marginBottom: spacing.md,
+    fontFamily: fontFamily.semibold,
   },
   feedbackButtons: {
     flexDirection: 'row',
@@ -966,12 +954,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
+    paddingVertical: 11,
     paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: colors.surfaceMuted,
-    borderWidth: 2,
-    borderColor: colors.border,
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
   },
   feedbackButtonPositive: {
     backgroundColor: colors.success,
@@ -985,10 +973,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     marginLeft: 8,
-    fontWeight: '600',
+    fontFamily: fontFamily.semibold,
   },
   feedbackButtonTextActive: {
-    color: colors.textPrimary,
+    color: colors.textOnPrimary,
   },
 });
 

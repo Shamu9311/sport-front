@@ -12,6 +12,7 @@ import {
   Inter_500Medium,
   Inter_600SemiBold,
   Inter_700Bold,
+  Inter_800ExtraBold,
 } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
 import Toast, { BaseToast, ErrorToast } from 'react-native-toast-message';
@@ -22,7 +23,7 @@ const toastConfig = {
       {...props}
       style={{ borderLeftColor: colors.primary, backgroundColor: colors.surface }}
       text1Style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}
-      text2Style={{ fontSize: 13, color: colors.textMuted }}
+      text2Style={{ fontSize: 13, color: colors.textSecondary }}
     />
   ),
   error: (props: any) => (
@@ -30,7 +31,15 @@ const toastConfig = {
       {...props}
       style={{ borderLeftColor: colors.error, backgroundColor: colors.surface }}
       text1Style={{ fontSize: 15, color: colors.textPrimary }}
-      text2Style={{ fontSize: 13, color: colors.textMuted }}
+      text2Style={{ fontSize: 13, color: colors.textSecondary }}
+    />
+  ),
+  info: (props: any) => (
+    <BaseToast
+      {...props}
+      style={{ borderLeftColor: colors.info, backgroundColor: colors.surface }}
+      text1Style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}
+      text2Style={{ fontSize: 13, color: colors.textSecondary }}
     />
   ),
 };
@@ -43,6 +52,7 @@ export default function RootLayout() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+    Inter_800ExtraBold,
   });
 
   useEffect(() => {
@@ -110,9 +120,10 @@ function RootLayoutNav() {
         },
         headerTintColor: colors.primary,
         headerTitleStyle: {
-          color: colors.primary,
+          color: colors.textPrimary,
           fontFamily: fontFamily.semibold,
         },
+        headerShadowVisible: false,
         contentStyle: {
           backgroundColor: colors.background,
         },
@@ -133,7 +144,7 @@ function RootLayoutNav() {
           },
           headerTintColor: colors.primary,
           headerTitleStyle: {
-            color: colors.primary,
+            color: colors.textPrimary,
           },
           headerShadowVisible: false,
           presentation: 'card',

@@ -18,7 +18,8 @@ import { getProductImageSource } from '../../src/utils/imageUtils';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../../src/theme';
+import ProductImageFrame from '../../src/components/ui/ProductImageFrame';
+import { colors, spacing } from '../../src/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -184,7 +185,7 @@ const ProductDetailScreen = () => {
             backgroundColor: colors.background,
           },
           headerTitleStyle: {
-            color: colors.primary,
+            color: colors.textPrimary,
           },
           headerShadowVisible: false,
           contentStyle: {
@@ -196,11 +197,13 @@ const ProductDetailScreen = () => {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Hero Image Section */}
         <View style={styles.imageContainer}>
-        <Image
-          source={getProductImageSource(product.image_url)}
-          style={styles.productImage}
-          resizeMode='contain'
-        />
+          <ProductImageFrame style={styles.imageFrame}>
+            <Image
+              source={getProductImageSource(product.image_url)}
+              style={styles.productImage}
+              resizeMode='contain'
+            />
+          </ProductImageFrame>
         </View>
 
         {/* Product Name and Description Card */}
@@ -381,15 +384,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   imageContainer: {
-    backgroundColor: colors.surface,
     padding: 20,
     alignItems: 'center',
-    borderBottomWidth: 3,
-    borderBottomColor: colors.primary,
+  },
+  imageFrame: {
+    width: '100%',
+    paddingVertical: spacing.lg,
   },
   productImage: {
-    width: width * 0.8,
-    height: 280,
+    width: width * 0.7,
+    height: 250,
   },
   card: {
     backgroundColor: colors.surface,
@@ -397,26 +401,26 @@ const styles = StyleSheet.create({
     marginTop: 16,
     borderRadius: 16,
     padding: 20,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
     borderWidth: 1,
     borderColor: colors.border,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   productName: {
-    color: colors.primary,
-    fontSize: 26,
-    fontWeight: '700',
+    color: colors.textPrimary,
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.4,
     marginBottom: 12,
     textAlign: 'center',
   },
   productDescription: {
-    color: colors.textPrimary,
-    opacity: 0.92,
-    fontSize: 16,
-    lineHeight: 24,
+    color: colors.textSecondary,
+    fontSize: 15,
+    lineHeight: 23,
     textAlign: 'center',
   },
   productDescriptionMuted: {
@@ -429,22 +433,18 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.border,
+    marginBottom: 12,
   },
   sectionTitle: {
-    color: colors.primary,
-    fontSize: 20,
+    color: colors.textPrimary,
+    fontSize: 17,
     fontWeight: '700',
-    marginLeft: 12,
+    marginLeft: 10,
   },
   sectionContent: {
-    color: colors.textPrimary,
-    opacity: 0.92,
-    fontSize: 15,
-    lineHeight: 24,
+    color: colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 22,
   },
   flavorContainer: {
     flexDirection: 'row',
@@ -452,36 +452,32 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   flavorChip: {
-    backgroundColor: colors.surfaceMuted,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    backgroundColor: colors.primarySoft,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.primary,
     marginRight: 8,
     marginBottom: 8,
   },
   flavorText: {
-    color: colors.primary,
-    fontSize: 14,
+    color: colors.primaryText,
+    fontSize: 13,
     fontWeight: '600',
   },
   attributeChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: colors.surfaceMuted,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    backgroundColor: colors.primarySoft,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.primary,
     marginRight: 8,
     marginBottom: 8,
   },
   attributeChipText: {
-    color: colors.primary,
-    fontSize: 14,
+    color: colors.primaryText,
+    fontSize: 13,
     fontWeight: '600',
   },
   nutritionGrid: {
@@ -492,31 +488,28 @@ const styles = StyleSheet.create({
   nutritionItem: {
     alignItems: 'center',
     backgroundColor: colors.surfaceMuted,
-    padding: 16,
+    padding: 14,
     borderRadius: 12,
     minWidth: '28%',
     marginBottom: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   nutritionLabel: {
     color: colors.textSecondary,
-    fontSize: 13,
-    marginBottom: 8,
+    fontSize: 11,
+    marginBottom: 6,
     textTransform: 'uppercase',
     fontWeight: '600',
     letterSpacing: 0.5,
   },
   nutritionValue: {
-    color: colors.primary,
-    fontSize: 18,
-    fontWeight: '700',
+    color: colors.textPrimary,
+    fontSize: 17,
+    fontWeight: '800',
   },
   otherComponents: {
-    color: colors.textPrimary,
-    opacity: 0.88,
-    fontSize: 14,
-    lineHeight: 22,
+    color: colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 20,
     marginTop: 12,
   },
 });

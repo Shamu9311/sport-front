@@ -1,30 +1,38 @@
 // Sport/app/(tabs)/_layout.tsx
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, fontFamily } from '../../src/theme';
 
-// Función helper para el icono de FontAwesome
 function TabBarIconFA(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
   focused?: boolean;
 }) {
   const iconSize = props.focused ? 26 : 24;
-  return <FontAwesome size={iconSize} {...props} />;
+  return (
+    <View style={styles.iconWrap}>
+      <FontAwesome size={iconSize} name={props.name} color={props.color} />
+      {props.focused ? <View style={styles.tabIndicator} /> : null}
+    </View>
+  );
 }
 
-// Función helper para el icono de MaterialCommunityIcons
 function TabBarIconMCI(props: {
   name: keyof typeof MaterialCommunityIcons.glyphMap;
   color: string;
   focused?: boolean;
 }) {
   const iconSize = props.focused ? 26 : 24;
-  return <MaterialCommunityIcons size={iconSize} name={props.name} color={props.color} />;
+  return (
+    <View style={styles.iconWrap}>
+      <MaterialCommunityIcons size={iconSize} name={props.name} color={props.color} />
+      {props.focused ? <View style={styles.tabIndicator} /> : null}
+    </View>
+  );
 }
 
 export default function TabLayout() {
@@ -33,25 +41,23 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
+        animation: 'shift',
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.tabInactive,
         tabBarStyle: {
-          backgroundColor: colors.background,
-          borderTopWidth: 1,
+          backgroundColor: colors.surface,
+          borderTopWidth: StyleSheet.hairlineWidth,
           borderTopColor: colors.border,
-          height: Platform.OS === 'ios' ? 38 + insets.bottom : 38,
-          paddingBottom: Platform.OS === 'ios' ? insets.bottom : 3,
-          paddingTop: 6,
-          elevation: 8,
-          shadowColor: colors.shadow,
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
+          height: Platform.OS === 'ios' ? 56 + insets.bottom : 60,
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom : 8,
+          paddingTop: 8,
+          elevation: 0,
+          shadowOpacity: 0,
         },
         tabBarLabelStyle: {
           fontSize: 11,
           fontFamily: fontFamily.semibold,
-          marginTop: 4,
+          marginTop: 2,
           marginBottom: 0,
         },
         tabBarIconStyle: {
@@ -123,3 +129,18 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  iconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 28,
+  },
+  tabIndicator: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.primary,
+    marginTop: 4,
+  },
+});

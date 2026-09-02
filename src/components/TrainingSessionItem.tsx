@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { colors } from '../theme';
+import { colors, fontFamily, radius, shadows, spacing } from '../theme';
 
 interface TrainingSessionItemProps {
   session: {
@@ -24,13 +24,13 @@ const getIntensityColor = (intensity: string) => {
   switch (intensity?.toLowerCase()) {
     case 'baja':
     case 'bajo':
-      return colors.success;
+      return colors.categorySupplement;
     case 'media':
     case 'medio':
-      return colors.warning;
+      return colors.categoryHydration;
     case 'alta':
     case 'alto':
-      return colors.warning;
+      return colors.categoryEnergy;
     case 'muy alta':
     case 'muy alto':
       return colors.error;
@@ -108,9 +108,14 @@ const TrainingSessionItem: React.FC<TrainingSessionItemProps> = ({
     });
 
     return (
-      <TouchableOpacity style={styles.deleteButton} onPress={() => onDelete && onDelete(session)}>
-        <Animated.View style={{ transform: [{ scale }] }}>
-          <MaterialCommunityIcons name='delete' size={28} color={colors.textPrimary} />
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={() => onDelete && onDelete(session)}
+        accessibilityRole='button'
+        accessibilityLabel='Eliminar entrenamiento'
+      >
+        <Animated.View style={{ transform: [{ scale }], alignItems: 'center' }}>
+          <MaterialCommunityIcons name='delete-outline' size={26} color={colors.textOnPrimary} />
           <Text style={styles.deleteText}>Eliminar</Text>
         </Animated.View>
       </TouchableOpacity>
@@ -133,30 +138,36 @@ const TrainingSessionItem: React.FC<TrainingSessionItemProps> = ({
             name={
               session.sport_type ? getSportTypeIcon(session.sport_type) : getTypeIcon(session.type)
             }
-            size={32}
+            size={22}
             color={colors.primary}
           />
         </View>
         <View style={styles.contentContainer}>
-          <Text style={styles.date}>{formatDate(session.session_date)}</Text>
-          <View style={styles.detailsRow}>
-            <View style={styles.detail}>
-              <MaterialCommunityIcons name='clock-outline' size={16} color={colors.textSecondary} />
-              <Text style={styles.detailText}>{session.duration_min} min</Text>
-            </View>
-            <View style={styles.detail}>
-              <View
-                style={[
-                  styles.intensityDot,
-                  { backgroundColor: getIntensityColor(session.intensity) },
-                ]}
-              />
-              <Text style={styles.detailText}>
+          <View style={styles.titleRow}>
+            <Text style={styles.date} numberOfLines={1}>
+              {formatDate(session.session_date)}
+            </Text>
+            <View
+              style={[
+                styles.intensityBadge,
+                { backgroundColor: `${getIntensityColor(session.intensity)}1A` },
+              ]}
+            >
+              <Text
+                style={[styles.intensityText, { color: getIntensityColor(session.intensity) }]}
+              >
                 {session.intensity.charAt(0).toUpperCase() + session.intensity.slice(1)}
               </Text>
             </View>
+          </View>
+          <View style={styles.detailsRow}>
             <View style={styles.detail}>
-              <Text style={styles.typeText}>
+              <MaterialCommunityIcons name='clock-outline' size={14} color={colors.textSecondary} />
+              <Text style={styles.detailText}>{session.duration_min} min</Text>
+            </View>
+            <View style={styles.detail}>
+              <MaterialCommunityIcons name='tag-outline' size={14} color={colors.textSecondary} />
+              <Text style={styles.detailText}>
                 {session.type.charAt(0).toUpperCase() + session.type.slice(1)}
               </Text>
             </View>
@@ -164,7 +175,7 @@ const TrainingSessionItem: React.FC<TrainingSessionItemProps> = ({
               <View style={styles.detail}>
                 <MaterialCommunityIcons
                   name={getSportTypeIcon(session.sport_type)}
-                  size={16}
+                  size={14}
                   color={colors.textSecondary}
                 />
                 <Text style={styles.detailText}>
@@ -174,7 +185,7 @@ const TrainingSessionItem: React.FC<TrainingSessionItemProps> = ({
             )}
           </View>
         </View>
-        <MaterialCommunityIcons name='chevron-right' size={24} color={colors.primary} />
+        <MaterialCommunityIcons name='chevron-right' size={22} color={colors.textMuted} />
       </TouchableOpacity>
     </Swipeable>
   );
@@ -185,36 +196,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 5,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
+    ...shadows.card,
   },
   iconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: `${colors.primary}26`,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primarySoft,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
-    borderWidth: 2,
-    borderColor: `${colors.primary}4D`,
+    marginRight: spacing.md,
   },
   contentContainer: {
     flex: 1,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+    gap: spacing.sm,
+  },
   date: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 8,
+    flex: 1,
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontFamily: fontFamily.bold,
+  },
+  intensityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+  },
+  intensityText: {
+    fontSize: 11,
+    fontFamily: fontFamily.semibold,
   },
   detailsRow: {
     flexDirection: 'row',
@@ -224,41 +245,28 @@ const styles = StyleSheet.create({
   detail: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 16,
-    marginBottom: 4,
-  },
-  intensityDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 6,
+    marginRight: spacing.md,
+    marginBottom: 2,
   },
   detailText: {
-    color: colors.textPrimary,
-    opacity: 0.88,
+    color: colors.textSecondary,
     fontSize: 13,
     marginLeft: 4,
-  },
-  typeText: {
-    color: colors.textPrimary,
-    opacity: 0.88,
-    fontSize: 13,
-    fontWeight: '600',
   },
   deleteButton: {
     backgroundColor: colors.error,
     justifyContent: 'center',
     alignItems: 'center',
-    width: 100,
-    marginBottom: 12,
-    borderRadius: 16,
-    marginLeft: 8,
+    width: 96,
+    marginBottom: spacing.md,
+    borderRadius: radius.lg,
+    marginLeft: spacing.sm,
   },
   deleteText: {
-    color: colors.textPrimary,
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: 4,
+    color: colors.textOnPrimary,
+    fontSize: 12,
+    fontFamily: fontFamily.semibold,
+    marginTop: 2,
   },
 });
 
