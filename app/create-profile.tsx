@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
-  Alert,
   Text,
   TouchableOpacity,
   Modal,
@@ -12,9 +11,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { colors, fontFamily } from '../src/theme';
+// fontFamily used in stepLabel
 import { useAuth } from '../src/context/AuthContext';
 import { saveUserProfile } from '../src/services/api';
 import CustomButton from '../src/components/CustomButton';
+import { notify } from '../src/services/feedback';
 import { Picker } from '@react-native-picker/picker';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
@@ -124,9 +125,9 @@ const CreateProfileScreen = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   const [profileData, setProfileData] = useState<ProfileData>({
-    age: '25',
-    weight: '70',
-    height: '170',
+    age: '',
+    weight: '',
+    height: '',
     gender: 'hombre',
     training_frequency: '3-4',
     primary_goal: 'ganar musculo',
@@ -159,6 +160,12 @@ const CreateProfileScreen = () => {
   };
 
   const handleNext = () => {
+    if (currentStep === 1) {
+      if (!profileData.age || !profileData.weight || !profileData.height) {
+        notify.error('Completa edad, peso y altura para continuar');
+        return;
+      }
+    }
     setCurrentStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
   };
 
@@ -168,7 +175,7 @@ const CreateProfileScreen = () => {
 
   const handleSaveProfile = async () => {
     if (!user) {
-      Alert.alert('Error', 'Debes iniciar sesión para crear un perfil');
+      notify.error('Debes iniciar sesión para crear un perfil');
       return;
     }
 
@@ -176,9 +183,9 @@ const CreateProfileScreen = () => {
       setIsSaving(true);
       const profileToSave = {
         ...profileData,
-        age: parseInt(profileData.age),
-        weight: parseInt(profileData.weight),
-        height: parseInt(profileData.height),
+        age: parseInt(profileData.age, 10),
+        weight: parseFloat(profileData.weight),
+        height: parseInt(profileData.height, 10),
         dietary_restrictions: [profileData.dietary_restrictions || 'no'],
         allergies: profileData.allergies.length > 0 ? profileData.allergies : [''],
         preferred_supplements:
@@ -189,27 +196,16 @@ const CreateProfileScreen = () => {
 
       if (response.success) {
         setHasProfile(true);
-        setTimeout(() => {
-          Alert.alert(
-            'Perfil Guardado',
-            '¡Perfil creado! Las recomendaciones de suplementos se generan para cada sesión de entrenamiento que registres.',
-            [
-              {
-                text: 'Registrar mi primera sesión',
-                onPress: () => router.replace('/(tabs)/training'),
-              },
-            ]
-          );
-        }, 100);
+        notify.success('Perfil creado', {
+          text2: 'Registra tu primera sesión para obtener recomendaciones.',
+        });
+        router.replace('/(tabs)/training');
       } else {
-        Alert.alert('Error', response.message || 'No se pudo guardar el perfil');
+        notify.error(response.message || 'No se pudo guardar el perfil');
       }
     } catch (error: any) {
       console.error('Error al guardar el perfil:', error);
-      Alert.alert(
-        'Error',
-        error.response?.data?.message || error.message || 'Ocurrió un error al guardar tu perfil'
-      );
+      notify.fromError(error, 'Ocurrió un error al guardar tu perfil');
     } finally {
       setIsSaving(false);
     }
@@ -230,6 +226,9 @@ const CreateProfileScreen = () => {
     if (currentStep === 0) return null;
     return (
       <View style={styles.progressZone}>
+        <Text style={styles.stepLabel}>
+          Paso {currentStep} de {TOTAL_STEPS}
+        </Text>
         <View style={styles.progressBarBg}>
           <View
             style={[
@@ -609,6 +608,13 @@ const styles = StyleSheet.create({
   progressZone: {
     paddingHorizontal: 20,
     paddingBottom: 8,
+  },
+  stepLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 6,
+    textAlign: 'center',
+    fontFamily: fontFamily.semibold,
   },
   progressBarBg: {
     height: 4,

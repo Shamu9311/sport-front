@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   shimmerWrap: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     overflow: 'hidden',
   },
   shimmerBar: {

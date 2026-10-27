@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Image,
-  Alert,
   StyleSheet,
   KeyboardAvoidingView,
   Keyboard,
@@ -10,11 +9,15 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AuthForm from '../src/components/AuthForm';
+import TextField from '../src/components/ui/TextField';
 import CustomButton from '../src/components/CustomButton';
 import { useRouter } from 'expo-router';
 import { colors, spacing } from '../src/theme';
 import { useLoginWithProfileRedirect } from '../src/hooks/useLoginWithProfileRedirect';
+import { isValidEmail } from '../src/utils/validation';
+import { getLastLoginEmail, consumeSessionExpiredNotice } from '../src/services/lastLoginEmail';
+import { saveLastLoginEmail } from '../src/services/lastLoginEmail';
+import { notify } from '../src/services/feedback';
 
 const LoginScreen = () => {
   const router = useRouter();
@@ -22,20 +25,41 @@ const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+
+  useEffect(() => {
+    getLastLoginEmail().then((stored) => {
+      if (stored) setEmail(stored);
+    });
+    consumeSessionExpiredNotice().then((pending) => {
+      if (pending) {
+        notify.warning('Tu sesión expiró', { text2: 'Inicia sesión de nuevo para continuar.' });
+      }
+    });
+  }, []);
 
   const handleLogin = async () => {
+    const nextErrors: typeof errors = {};
+    if (!email || !password) {
+      if (!email) nextErrors.email = 'El correo es obligatorio';
+      if (!password) nextErrors.password = 'La contraseña es obligatoria';
+    } else if (!isValidEmail(email)) {
+      nextErrors.email = 'Introduce un correo válido';
+    }
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return;
+
     setIsLoading(true);
     try {
       await submitLogin({
         email,
         password,
-        onMissingFields: () =>
-          Alert.alert('Error', 'Por favor completa todos los campos'),
-        onInvalidEmail: () =>
-          Alert.alert('Error', 'Introduce un correo electrónico válido.'),
-        onIncompleteUser: () => Alert.alert('Error', 'Datos de usuario incompletos'),
-        onError: (message) => Alert.alert('Error de Inicio de Sesión', message),
+        onMissingFields: () => setErrors({ email: 'Completa todos los campos' }),
+        onInvalidEmail: () => setErrors({ email: 'Correo inválido' }),
+        onIncompleteUser: () => notify.error('Datos de usuario incompletos'),
+        onError: (message) => notify.error(message),
       });
+      await saveLastLoginEmail(email);
     } finally {
       setIsLoading(false);
     }
@@ -54,25 +78,30 @@ const LoginScreen = () => {
               style={styles.logo}
               resizeMode="contain"
             />
-            <AuthForm
-              fields={[
-                {
-                  label: 'Correo Electrónico',
-                  value: email,
-                  onChangeText: setEmail,
-                  keyboardType: 'email-address',
-                  autoCapitalize: 'none',
-                },
-                {
-                  label: 'Contraseña',
-                  value: password,
-                  onChangeText: setPassword,
-                  secure: true,
-                },
-              ]}
+            <TextField
+              label="Correo electrónico"
+              value={email}
+              onChangeText={(t) => {
+                setEmail(t);
+                setErrors((e) => ({ ...e, email: undefined }));
+              }}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              error={errors.email}
+            />
+            <TextField
+              label="Contraseña"
+              value={password}
+              onChangeText={(t) => {
+                setPassword(t);
+                setErrors((e) => ({ ...e, password: undefined }));
+              }}
+              secureToggle
+              secureTextEntry
+              error={errors.password}
             />
             <CustomButton
-              title="INGRESAR"
+              title="Iniciar sesión"
               iconName="log-in-outline"
               iconPosition="right"
               iconSize={24}
@@ -83,7 +112,7 @@ const LoginScreen = () => {
               style={styles.buttonPrimary}
             />
             <CustomButton
-              title="REGISTRARSE"
+              title="Crear cuenta"
               iconName="person-add-outline"
               iconPosition="right"
               iconSize={24}
@@ -99,17 +128,15 @@ const LoginScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  keyboardView: {
-    flex: 1,
-  },
+  safeArea: { flex: 1, backgroundColor: colors.background },
+  keyboardView: { flex: 1 },
   container: {
     flex: 1,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     justifyContent: 'center',
+    maxWidth: 440,
+    width: '100%',
+    alignSelf: 'center',
   },
   logo: {
     width: '75%',
@@ -118,12 +145,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: spacing.xl,
   },
-  buttonPrimary: {
-    marginTop: spacing.md,
-  },
-  buttonSecondary: {
-    marginTop: spacing.sm,
-  },
+  buttonPrimary: { marginTop: spacing.md },
+  buttonSecondary: { marginTop: spacing.sm },
 });
 
 export default LoginScreen;

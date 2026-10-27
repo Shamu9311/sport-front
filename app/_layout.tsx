@@ -2,10 +2,14 @@
 import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
-import { ActivityIndicator, View, Text, TextInput, StyleSheet } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import NetworkErrorBanner from '../src/components/NetworkErrorBanner';
+import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
+import { ConfirmProvider } from '../src/context/ConfirmContext';
+import { appToastConfig } from '../src/components/ui/AppToast';
 import { colors, fontFamily } from '../src/theme';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   useFonts,
   Inter_400Regular,
@@ -15,34 +19,7 @@ import {
   Inter_800ExtraBold,
 } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
-import Toast, { BaseToast, ErrorToast } from 'react-native-toast-message';
-
-const toastConfig = {
-  success: (props: any) => (
-    <BaseToast
-      {...props}
-      style={{ borderLeftColor: colors.primary, backgroundColor: colors.surface }}
-      text1Style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}
-      text2Style={{ fontSize: 13, color: colors.textSecondary }}
-    />
-  ),
-  error: (props: any) => (
-    <ErrorToast
-      {...props}
-      style={{ borderLeftColor: colors.error, backgroundColor: colors.surface }}
-      text1Style={{ fontSize: 15, color: colors.textPrimary }}
-      text2Style={{ fontSize: 13, color: colors.textSecondary }}
-    />
-  ),
-  info: (props: any) => (
-    <BaseToast
-      {...props}
-      style={{ borderLeftColor: colors.info, backgroundColor: colors.surface }}
-      text1Style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}
-      text2Style={{ fontSize: 13, color: colors.textSecondary }}
-    />
-  ),
-};
+import Toast from 'react-native-toast-message';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -57,11 +34,6 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!fontsLoaded) return;
-    const baseText = { fontFamily: fontFamily.regular };
-    Text.defaultProps = Text.defaultProps ?? {};
-    Text.defaultProps.style = StyleSheet.flatten([Text.defaultProps.style, baseText]);
-    TextInput.defaultProps = TextInput.defaultProps ?? {};
-    TextInput.defaultProps.style = StyleSheet.flatten([TextInput.defaultProps.style, baseText]);
     SplashScreen.hideAsync();
   }, [fontsLoaded]);
 
@@ -81,20 +53,26 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <View style={{ flex: 1 }}>
-          <RootLayoutNav />
-          <NetworkErrorBanner />
-          <Toast config={toastConfig} />
-        </View>
-      </AuthProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <AppErrorBoundary>
+          <ConfirmProvider>
+            <AuthProvider>
+              <View style={{ flex: 1 }}>
+                <RootLayoutNav />
+                <NetworkErrorBanner />
+                <Toast config={appToastConfig} topOffset={56} />
+              </View>
+            </AuthProvider>
+          </ConfirmProvider>
+        </AppErrorBoundary>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
 function RootLayoutNav() {
-  const { user, isLoadingAuth } = useAuth();
+  const { isLoadingAuth } = useAuth();
 
   if (isLoadingAuth) {
     return (
@@ -113,7 +91,6 @@ function RootLayoutNav() {
 
   return (
     <Stack
-      initialRouteName={user ? '(tabs)' : 'login'}
       screenOptions={{
         headerStyle: {
           backgroundColor: colors.background,
@@ -131,11 +108,13 @@ function RootLayoutNav() {
         animationDuration: 300,
       }}
     >
+      <Stack.Screen name='index' options={{ headerShown: false }} />
       <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
       <Stack.Screen name='login' options={{ headerShown: false }} />
       <Stack.Screen name='register' options={{ headerShown: false }} />
       <Stack.Screen name='loading-profile' options={{ headerShown: false }} />
       <Stack.Screen name='create-profile' options={{ headerShown: false }} />
+      <Stack.Screen name='edit-profile' options={{ headerShown: false }} />
       <Stack.Screen
         name='products/[productId]'
         options={{

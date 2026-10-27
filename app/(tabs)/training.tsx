@@ -4,12 +4,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
-  Alert,
+  SectionList,
   RefreshControl,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAuth } from '../../src/context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +16,7 @@ import { StatusBar } from 'expo-status-bar';
 import {
   getUserTrainingSessions,
   createTrainingSession,
+  updateTrainingSession,
   deleteTrainingSession,
   getTrainingSession,
   getNotificationPreferences,
@@ -33,13 +33,20 @@ import SkeletonLoader from '../../src/components/SkeletonLoader';
 import EmptyState from '../../src/components/ui/EmptyState';
 import PressableScale from '../../src/components/ui/PressableScale';
 import Toast from 'react-native-toast-message';
+import { notify } from '../../src/services/feedback';
+import { groupTrainingSessions } from '../../src/utils/format';
 import { TrainingSession, SavedRecommendation } from '../../src/types/UserTypes';
+
+const SWIPE_HINT_KEY = 'training_swipe_hint_seen';
 
 export default function TrainingScreen() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [trainingSessions, setTrainingSessions] = useState<TrainingSession[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+  const [editingSession, setEditingSession] = useState<TrainingSession | null>(null);
+  const [showSwipeHint, setShowSwipeHint] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState<TrainingSession | null>(null);
   const [prefetchedRecommendations, setPrefetchedRecommendations] = useState<
@@ -57,6 +64,12 @@ export default function TrainingScreen() {
     }
   }, [user?.id]);
 
+  useEffect(() => {
+    AsyncStorage.getItem(SWIPE_HINT_KEY).then((v) => {
+      if (!v) setShowSwipeHint(true);
+    });
+  }, []);
+
   const fetchTrainingSessions = async (isRefresh = false) => {
     if (!user || !user.id) return;
     if (isFetchingRef.current && !isRefresh) return;
@@ -69,7 +82,7 @@ export default function TrainingScreen() {
     } catch (error) {
       console.error('Error fetching training sessions:', error);
       if (!isRefresh) {
-        Alert.alert('Error', 'No se pudieron cargar los entrenamientos');
+        notify.error('No se pudieron cargar los entrenamientos');
       }
     } finally {
       setLoading(false);
@@ -83,11 +96,48 @@ export default function TrainingScreen() {
     fetchTrainingSessions(true);
   };
 
-  const handleAddTraining = async (trainingData: any) => {
+  const openCreateModal = () => {
+    setFormMode('create');
+    setEditingSession(null);
+    setShowAddModal(true);
+  };
+
+  const openEditModal = (session: TrainingSession) => {
+    setFormMode('edit');
+    setEditingSession(session);
+    setShowAddModal(true);
+  };
+
+  const handleSaveTraining = async (trainingData: Record<string, unknown>) => {
     if (!user || !user.id) return;
 
     try {
-      setLoading(true);
+      if (formMode === 'edit' && editingSession) {
+        const response = await updateTrainingSession(editingSession.session_id, trainingData);
+        setShowAddModal(false);
+        await fetchTrainingSessions(true);
+        notify.success('Entrenamiento actualizado', {
+          text2: response.recommendationsRegenerating
+            ? 'Estamos actualizando tus recomendaciones.'
+            : undefined,
+        });
+        const updated = await getTrainingSession(editingSession.session_id);
+        setSelectedSession(updated);
+        setPrefetchedRecommendations(null);
+        setPrefetchedRecsLoading(!!response.recommendationsRegenerating);
+        setUsePrefetchedRecs(!!response.recommendationsRegenerating);
+        setShowDetailModal(true);
+        if (response.recommendationsRegenerating) {
+          const recommendations = await pollTrainingRecommendations(updated.session_id);
+          setPrefetchedRecommendations(recommendations);
+          setPrefetchedRecsLoading(false);
+          if (recommendations.length > 0) {
+            await scheduleConsumptionNotifications(updated, recommendations);
+          }
+        }
+        return;
+      }
+
       const newSession = await createTrainingSession({
         userId: user.id,
         ...trainingData,
@@ -121,11 +171,10 @@ export default function TrainingScreen() {
         await fetchTrainingSessions(true);
       }
 
-      setLoading(false);
     } catch (error) {
-      console.error('Error adding training session:', error);
-      setLoading(false);
-      Alert.alert('Error', 'No se pudo agregar el entrenamiento');
+      console.error('Error saving training session:', error);
+      notify.fromError(error, 'No se pudo guardar el entrenamiento');
+      throw error;
     }
   };
 
@@ -166,15 +215,19 @@ export default function TrainingScreen() {
             preferredTime
           );
           programadas += notifIds.length;
+          if (notifIds.length) {
+            await NotificationService.registerSessionNotificationIds(
+              session.session_id,
+              notifIds
+            );
+          }
         }
       }
 
       if (programadas > 0) {
-        Alert.alert(
-          '🔔 Notificaciones programadas',
-          `Se programaron ${programadas} recordatorios de consumo`,
-          [{ text: 'OK' }]
-        );
+        notify.info('Recordatorios programados', {
+          text2: `Se programaron ${programadas} avisos de consumo.`,
+        });
       }
     } catch (error) {
       console.error('Error verificando preferencias:', error);
@@ -211,6 +264,7 @@ export default function TrainingScreen() {
     const timer = setTimeout(async () => {
       pendingDeletesRef.current.delete(sessionId);
       try {
+        await NotificationService.cancelSessionNotifications(sessionId);
         await deleteTrainingSession(sessionId);
       } catch (error) {
         console.error('Error deleting session:', error);
@@ -225,11 +279,17 @@ export default function TrainingScreen() {
 
     pendingDeletesRef.current.set(sessionId, timer);
 
+    if (showSwipeHint) {
+      AsyncStorage.setItem(SWIPE_HINT_KEY, '1');
+      setShowSwipeHint(false);
+    }
+
     Toast.show({
       type: 'info',
       text1: 'Entrenamiento eliminado',
-      text2: 'Toca aquí para deshacer',
+      text2: 'Puedes deshacer esta acción',
       visibilityTime: UNDO_DELETE_MS,
+      props: { actionLabel: 'Deshacer' },
       onPress: () => {
         const pending = pendingDeletesRef.current.get(sessionId);
         if (pending) {
@@ -242,8 +302,9 @@ export default function TrainingScreen() {
     });
   };
 
+  const sections = groupTrainingSessions(trainingSessions);
+
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
         <StatusBar style='light' />
 
@@ -255,7 +316,7 @@ export default function TrainingScreen() {
           </View>
           <PressableScale
             style={styles.addButton}
-            onPress={() => setShowAddModal(true)}
+            onPress={openCreateModal}
             haptic="light"
             accessibilityRole='button'
             accessibilityLabel='Agregar nuevo entrenamiento'
@@ -265,69 +326,76 @@ export default function TrainingScreen() {
           </PressableScale>
         </View>
 
-        <ScrollView 
-          style={styles.content} 
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.primary}
-              colors={[colors.primary]}
-            />
-          }
-        >
-          {loading ? (
-            <View style={styles.loadingContainer}>
-              <SkeletonLoader type='trainingList' />
-            </View>
-          ) : trainingSessions.length === 0 ? (
-            <EmptyState
-              iconName='barbell-outline'
-              title='No hay entrenamientos'
-              subtitle='Registra tu primer entrenamiento para comenzar a recibir recomendaciones personalizadas'
-              style={styles.emptyState}
-              action={
-                <TouchableOpacity
-                  style={styles.emptyStateButton}
-                  onPress={() => setShowAddModal(true)}
-                  accessibilityRole='button'
-                >
-                  <Ionicons name='add' size={20} color={colors.textOnPrimary} />
-                  <Text style={styles.addButtonText}>Agregar Entrenamiento</Text>
-                </TouchableOpacity>
-              }
-            />
-          ) : (
-            <View style={styles.sessionsList}>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <SkeletonLoader type='trainingList' />
+          </View>
+        ) : trainingSessions.length === 0 ? (
+          <EmptyState
+            iconName='barbell-outline'
+            title='No hay entrenamientos'
+            subtitle='Registra tu primer entrenamiento para comenzar a recibir recomendaciones personalizadas'
+            style={styles.emptyState}
+            action={
+              <TouchableOpacity
+                style={styles.emptyStateButton}
+                onPress={openCreateModal}
+                accessibilityRole='button'
+              >
+                <Ionicons name='add' size={20} color={colors.textOnPrimary} />
+                <Text style={styles.addButtonText}>Agregar Entrenamiento</Text>
+              </TouchableOpacity>
+            }
+          />
+        ) : (
+          <SectionList
+            style={styles.content}
+            sections={sections}
+            keyExtractor={(item) => String(item.session_id)}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor={colors.primary}
+                colors={[colors.primary]}
+              />
+            }
+            ListHeaderComponent={
               <View style={styles.sessionsHeader}>
                 <Text style={styles.sessionsCount}>
                   {trainingSessions.length}{' '}
                   {trainingSessions.length === 1 ? 'entrenamiento' : 'entrenamientos'}
                 </Text>
-                <Text style={styles.swipeHint}>← Desliza para eliminar</Text>
+                {showSwipeHint ? (
+                  <Text style={styles.swipeHint}>Desliza ← eliminar · → editar</Text>
+                ) : null}
               </View>
-              {trainingSessions.map((session, index) => (
-                <Animated.View
-                  key={session.session_id}
-                  entering={FadeInDown.duration(250).delay(Math.min(index, 6) * 40)}
-                >
-                  <TrainingSessionItem
-                    session={session}
-                    onPress={handleSessionPress}
-                    onDelete={handleDeleteSession}
-                  />
-                </Animated.View>
-              ))}
-            </View>
-          )}
-        </ScrollView>
+            }
+            renderSectionHeader={({ section: { title } }) => (
+              <Text style={styles.sectionTitle}>{title}</Text>
+            )}
+            renderItem={({ item, index }) => (
+              <Animated.View entering={FadeInDown.duration(250).delay(Math.min(index, 6) * 40)}>
+                <TrainingSessionItem
+                  session={item}
+                  onPress={handleSessionPress}
+                  onDelete={handleDeleteSession}
+                  onEdit={openEditModal}
+                />
+              </Animated.View>
+            )}
+            contentContainerStyle={styles.sessionsList}
+          />
+        )}
 
         {/* Modal para agregar entrenamiento */}
         <AddTrainingModal
           visible={showAddModal}
           onClose={() => setShowAddModal(false)}
-          onSave={handleAddTraining}
+          onSave={handleSaveTraining}
+          mode={formMode}
+          initialSession={editingSession}
         />
 
         {/* Modal para ver detalles del entrenamiento */}
@@ -345,10 +413,10 @@ export default function TrainingScreen() {
             usePrefetchedRecommendations={usePrefetchedRecs}
             prefetchedRecommendations={prefetchedRecommendations}
             prefetchedRecommendationsLoading={prefetchedRecsLoading}
+            onEdit={openEditModal}
           />
         )}
       </SafeAreaView>
-    </GestureHandlerRootView>
   );
 }
 
@@ -438,5 +506,14 @@ const styles = StyleSheet.create({
   swipeHint: {
     color: colors.textMuted,
     fontSize: 12,
+  },
+  sectionTitle: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    fontFamily: fontFamily.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
   },
 });

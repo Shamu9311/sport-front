@@ -1,10 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import Swipeable from 'react-native-gesture-handler/Swipeable';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedStyle,
+  type SharedValue,
+} from 'react-native-reanimated';
 import { colors, fontFamily, radius, shadows, spacing } from '../theme';
-
+import { formatDuration, formatRelativeDate } from '../utils/format';
 interface TrainingSessionItemProps {
   session: {
     session_id: number;
@@ -18,6 +23,7 @@ interface TrainingSessionItemProps {
   };
   onPress: (session: any) => void;
   onDelete?: (session: any) => void;
+  onEdit?: (session: any) => void;
 }
 
 const getIntensityColor = (intensity: string) => {
@@ -61,9 +67,7 @@ const getSportTypeIcon = (sportType: string) => {
   switch (normalized) {
     case '10k':
     case '15k':
-      return 'run-fast';
     case 'media marathon':
-      return 'run-fast';
     case 'marathon':
       return 'run-fast';
     case 'trail':
@@ -81,51 +85,66 @@ const getSportTypeIcon = (sportType: string) => {
   }
 };
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('es-ES', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-};
+function DeleteAction({
+  translation,
+  onPress,
+}: {
+  translation: SharedValue<number>;
+  onPress: () => void;
+}) {
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        scale: interpolate(translation.value, [-120, 0], [1, 0.5], Extrapolation.CLAMP),
+      },
+    ],
+  }));
+
+  return (
+    <TouchableOpacity
+      style={styles.deleteButton}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Eliminar entrenamiento"
+    >
+      <Animated.View style={[{ alignItems: 'center' }, animatedStyle]}>
+        <MaterialCommunityIcons name="delete-outline" size={26} color={colors.textOnPrimary} />
+        <Text style={styles.actionText}>Eliminar</Text>
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
 
 const TrainingSessionItem: React.FC<TrainingSessionItemProps> = ({
   session,
   onPress,
   onDelete,
+  onEdit,
 }) => {
-  // Renderizar el botón de eliminar que aparece al deslizar
-  const renderRightActions = (
-    progress: Animated.AnimatedInterpolation<number>,
-    dragX: Animated.AnimatedInterpolation<number>
-  ) => {
-    const scale = dragX.interpolate({
-      inputRange: [-100, 0],
-      outputRange: [1, 0],
-      extrapolate: 'clamp',
-    });
+  const renderRightActions = (_progress: SharedValue<number>, translation: SharedValue<number>) =>
+    onDelete ? (
+      <DeleteAction translation={translation} onPress={() => onDelete(session)} />
+    ) : null;
 
-    return (
+  const renderLeftActions = () =>
+    onEdit ? (
       <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => onDelete && onDelete(session)}
-        accessibilityRole='button'
-        accessibilityLabel='Eliminar entrenamiento'
+        style={styles.editButton}
+        onPress={() => onEdit(session)}
+        accessibilityRole="button"
+        accessibilityLabel="Editar entrenamiento"
       >
-        <Animated.View style={{ transform: [{ scale }], alignItems: 'center' }}>
-          <MaterialCommunityIcons name='delete-outline' size={26} color={colors.textOnPrimary} />
-          <Text style={styles.deleteText}>Eliminar</Text>
-        </Animated.View>
+        <MaterialCommunityIcons name="pencil-outline" size={24} color={colors.textOnPrimary} />
+        <Text style={styles.actionText}>Editar</Text>
       </TouchableOpacity>
-    );
-  };
+    ) : null;
 
   return (
-    <Swipeable
+    <ReanimatedSwipeable
       renderRightActions={onDelete ? renderRightActions : undefined}
+      renderLeftActions={onEdit ? renderLeftActions : undefined}
       overshootRight={false}
+      overshootLeft={false}
       friction={2}
     >
       <TouchableOpacity
@@ -145,7 +164,7 @@ const TrainingSessionItem: React.FC<TrainingSessionItemProps> = ({
         <View style={styles.contentContainer}>
           <View style={styles.titleRow}>
             <Text style={styles.date} numberOfLines={1}>
-              {formatDate(session.session_date)}
+              {formatRelativeDate(session.session_date)}
             </Text>
             <View
               style={[
@@ -162,32 +181,20 @@ const TrainingSessionItem: React.FC<TrainingSessionItemProps> = ({
           </View>
           <View style={styles.detailsRow}>
             <View style={styles.detail}>
-              <MaterialCommunityIcons name='clock-outline' size={14} color={colors.textSecondary} />
-              <Text style={styles.detailText}>{session.duration_min} min</Text>
+              <MaterialCommunityIcons name="clock-outline" size={14} color={colors.textSecondary} />
+              <Text style={styles.detailText}>{formatDuration(session.duration_min)}</Text>
             </View>
             <View style={styles.detail}>
-              <MaterialCommunityIcons name='tag-outline' size={14} color={colors.textSecondary} />
+              <MaterialCommunityIcons name="tag-outline" size={14} color={colors.textSecondary} />
               <Text style={styles.detailText}>
                 {session.type.charAt(0).toUpperCase() + session.type.slice(1)}
               </Text>
             </View>
-            {session.sport_type && (
-              <View style={styles.detail}>
-                <MaterialCommunityIcons
-                  name={getSportTypeIcon(session.sport_type)}
-                  size={14}
-                  color={colors.textSecondary}
-                />
-                <Text style={styles.detailText}>
-                  {session.sport_type.charAt(0).toUpperCase() + session.sport_type.slice(1)}
-                </Text>
-              </View>
-            )}
           </View>
         </View>
-        <MaterialCommunityIcons name='chevron-right' size={22} color={colors.textMuted} />
+        <MaterialCommunityIcons name="chevron-right" size={22} color={colors.textMuted} />
       </TouchableOpacity>
-    </Swipeable>
+    </ReanimatedSwipeable>
   );
 };
 
@@ -212,9 +219,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: spacing.md,
   },
-  contentContainer: {
-    flex: 1,
-  },
+  contentContainer: { flex: 1 },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -233,26 +238,10 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: radius.full,
   },
-  intensityText: {
-    fontSize: 11,
-    fontFamily: fontFamily.semibold,
-  },
-  detailsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-  },
-  detail: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: spacing.md,
-    marginBottom: 2,
-  },
-  detailText: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    marginLeft: 4,
-  },
+  intensityText: { fontSize: 11, fontFamily: fontFamily.semibold },
+  detailsRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
+  detail: { flexDirection: 'row', alignItems: 'center', marginRight: spacing.md },
+  detailText: { color: colors.textSecondary, fontSize: 13, marginLeft: 4 },
   deleteButton: {
     backgroundColor: colors.error,
     justifyContent: 'center',
@@ -262,7 +251,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     marginLeft: spacing.sm,
   },
-  deleteText: {
+  editButton: {
+    backgroundColor: colors.info,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 96,
+    marginBottom: spacing.md,
+    borderRadius: radius.lg,
+    marginRight: spacing.sm,
+  },
+  actionText: {
     color: colors.textOnPrimary,
     fontSize: 12,
     fontFamily: fontFamily.semibold,

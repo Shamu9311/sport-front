@@ -19,6 +19,8 @@ import { useLocalSearchParams, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ProductImageFrame from '../../src/components/ui/ProductImageFrame';
+import SkeletonLoader from '../../src/components/SkeletonLoader';
+import { fontFamily } from '../../src/theme';
 import { colors, spacing } from '../../src/theme';
 
 const { width } = Dimensions.get('window');
@@ -134,8 +136,7 @@ const ProductDetailScreen = () => {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size='large' color={colors.primary} />
-        <Text style={styles.loadingText}>Cargando información del producto...</Text>
+        <SkeletonLoader type="productList" />
       </View>
     );
   }
@@ -415,13 +416,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: -0.4,
     marginBottom: 12,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   productDescription: {
     color: colors.textSecondary,
     fontSize: 15,
     lineHeight: 23,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   productDescriptionMuted: {
     color: colors.textSecondary,

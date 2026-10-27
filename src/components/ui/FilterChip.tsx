@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderRadius: radius.full,
     marginRight: spacing.sm,
-    minHeight: 32,
+    minHeight: 44,
   },
   chipUnselected: {
     backgroundColor: colors.surfaceMuted,

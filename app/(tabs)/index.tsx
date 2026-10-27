@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -22,6 +22,7 @@ import AppCard from '../../src/components/ui/AppCard';
 import ScreenHero from '../../src/components/ui/ScreenHero';
 import PressableScale from '../../src/components/ui/PressableScale';
 import { colors, shadows, spacing, radius, fontFamily } from '../../src/theme';
+import { formatDuration, formatRelativeDate } from '../../src/utils/format';
 
 const logoPath = require('../../assets/images/login.png');
 
@@ -52,34 +53,6 @@ const HOME_FEATURES = [
   },
 ];
 
-function QuickAccessCard({
-  onPress,
-  label,
-  iconSoft,
-  children,
-}: {
-  onPress: () => void;
-  label: string;
-  iconSoft: string;
-  children: ReactNode;
-}) {
-  return (
-    <PressableScale
-      onPress={onPress}
-      scaleTo={0.96}
-      haptic="light"
-      style={styles.quickAccessCard}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-    >
-      <View style={[styles.quickAccessIconWrap, { backgroundColor: iconSoft }]}>
-        {children}
-      </View>
-      <Text style={styles.quickAccessText}>{label}</Text>
-    </PressableScale>
-  );
-}
-
 const HomeScreen = () => {
   const router = useRouter();
   const { user } = useAuth();
@@ -89,6 +62,7 @@ const HomeScreen = () => {
     thisWeek: 0,
   });
   const [statsLoading, setStatsLoading] = useState(true);
+  const [lastSession, setLastSession] = useState<any | null>(null);
   const [currentFeature, setCurrentFeature] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const featureContentOpacity = useRef(new Animated.Value(1)).current;
@@ -143,6 +117,7 @@ const HomeScreen = () => {
         totalMinutes: totalMinutes,
         thisWeek: thisWeekSessions.length,
       });
+      setLastSession(sessions.length > 0 ? sessions[0] : null);
     } catch (error: any) {
       if (error?.status !== 401) {
         console.error('Error loading stats:', error);
@@ -221,42 +196,41 @@ const HomeScreen = () => {
           </View>
         )}
 
-        <View style={styles.quickAccessSection}>
-          <SectionHeader title="Acceso rápido" />
-          <View style={styles.quickAccessGrid}>
-            <QuickAccessCard
-              label="Productos"
-              iconSoft={colors.categoryEnergySoft}
-              onPress={() => router.push('/(tabs)/products')}
-            >
-              <Ionicons name="cube-outline" size={28} color={colors.categoryEnergy} />
-            </QuickAccessCard>
-
-            <QuickAccessCard
-              label="Entrenar"
-              iconSoft={colors.categorySupplementSoft}
-              onPress={() => router.push('/(tabs)/training')}
-            >
-              <Ionicons name="barbell-outline" size={28} color={colors.categorySupplement} />
-            </QuickAccessCard>
-
-            <QuickAccessCard
-              label="Para Ti"
-              iconSoft="rgba(224, 160, 62, 0.15)"
-              onPress={() => router.push('/(tabs)/recommendations')}
-            >
-              <Ionicons name="star-outline" size={28} color={colors.warning} />
-            </QuickAccessCard>
-
-            <QuickAccessCard
-              label="Perfil"
-              iconSoft={colors.categoryHydrationSoft}
-              onPress={() => router.push('/(tabs)/profile')}
-            >
-              <Ionicons name="person-outline" size={28} color={colors.categoryHydration} />
-            </QuickAccessCard>
+        {user && lastSession ? (
+          <View style={styles.lastSessionSection}>
+            <SectionHeader title="Último entrenamiento" />
+            <AppCard>
+              <Text style={styles.lastSessionDate}>
+                {formatRelativeDate(lastSession.session_date)}
+              </Text>
+              <Text style={styles.lastSessionMeta}>
+                {formatDuration(lastSession.duration_min)} ·{' '}
+                {String(lastSession.type || '').charAt(0).toUpperCase()}
+                {String(lastSession.type || '').slice(1)}
+              </Text>
+              <PressableScale
+                style={styles.lastSessionCta}
+                onPress={() => router.push('/(tabs)/training')}
+                haptic="light"
+              >
+                <Ionicons name="add-circle-outline" size={20} color={colors.textOnPrimary} />
+                <Text style={styles.lastSessionCtaText}>Registrar entrenamiento</Text>
+              </PressableScale>
+            </AppCard>
           </View>
-        </View>
+        ) : user ? (
+          <View style={styles.lastSessionSection}>
+            <SectionHeader title="Comienza hoy" />
+            <PressableScale
+              style={styles.lastSessionCta}
+              onPress={() => router.push('/(tabs)/training')}
+              haptic="light"
+            >
+              <Ionicons name="add-circle-outline" size={20} color={colors.textOnPrimary} />
+              <Text style={styles.lastSessionCtaText}>Registrar primer entrenamiento</Text>
+            </PressableScale>
+          </View>
+        ) : null}
 
         {/* Secciones de onboarding: solo para usuarios sin entrenamientos registrados */}
         {showOnboarding && (
@@ -485,38 +459,35 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 19,
   },
-  quickAccessSection: {
+  lastSessionSection: {
     width: '100%',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.xxxl,
   },
-  quickAccessGrid: {
+  lastSessionDate: {
+    fontSize: 18,
+    fontFamily: fontFamily.bold,
+    color: colors.textPrimary,
+    marginBottom: 4,
+  },
+  lastSessionMeta: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: spacing.lg,
+  },
+  lastSessionCta: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  quickAccessCard: {
-    width: '48%',
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.card,
-  },
-  quickAccessIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.primary,
+    paddingVertical: 13,
+    borderRadius: radius.full,
+    ...shadows.card,
   },
-  quickAccessText: {
-    fontSize: 14,
-    fontFamily: fontFamily.semibold,
-    color: colors.textPrimary,
-    marginTop: spacing.sm,
+  lastSessionCtaText: {
+    color: colors.textOnPrimary,
+    fontFamily: fontFamily.bold,
+    fontSize: 15,
   },
 });
 

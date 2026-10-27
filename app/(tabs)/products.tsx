@@ -375,9 +375,8 @@ const ProductListScreen = () => {
               onPress={() => {
                 setSelectedCategory(null);
                 setSelectedTiming('');
-                setSearchQuery('');
                 setIsSearching(true);
-                handleSearchRef.current(true, { q: '', category: null, timing: '' });
+                handleSearchRef.current(true, { q: searchQuery, category: null, timing: '' });
               }}
             />
             {categories.map((category) => {

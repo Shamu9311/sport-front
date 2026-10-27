@@ -6,6 +6,20 @@ type NotificationsModule = typeof import('expo-notifications');
 
 const TRAINING_ALERT_ID_KEY = 'training_alert_notification_id';
 
+function scheduleTrigger(Notifications: NotificationsModule, when: Date, now: Date, fallbackSeconds: number) {
+  if (when > now) {
+    return {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: when,
+    };
+  }
+
+  return {
+    type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+    seconds: fallbackSeconds,
+  };
+}
+
 let notificationsImport: Promise<NotificationsModule> | null = null;
 let handlerRegistered = false;
 
@@ -123,7 +137,7 @@ class NotificationService {
       switch (timing) {
         case 'antes': {
           const beforeTime = new Date(trainingTime.getTime() - (minutes || 30) * 60 * 1000);
-          const trigger = beforeTime > now ? beforeTime : { seconds: 5 };
+          const trigger = scheduleTrigger(Notifications, beforeTime, now, 5);
           const body =
             beforeTime > now
               ? `Consume ${productName} ahora, ${minutes || 30} minutos antes de tu entrenamiento`
@@ -148,7 +162,7 @@ class NotificationService {
 
             for (let i = 0; i < count; i++) {
               const fireAt = new Date(trainingTime.getTime() + i * intervalMin * 60 * 1000);
-              const trigger = fireAt > now ? fireAt : { seconds: 5 + i * 2 };
+              const trigger = scheduleTrigger(Notifications, fireAt, now, 5 + i * 2);
               const id = await Notifications.scheduleNotificationAsync({
                 content: {
                   title: '🏃 Consumo durante entrenamiento',
@@ -160,7 +174,7 @@ class NotificationService {
               scheduledIds.push(id);
             }
           } else {
-            const trigger = trainingTime > now ? trainingTime : { seconds: 5 };
+            const trigger = scheduleTrigger(Notifications, trainingTime, now, 5);
             const id = await Notifications.scheduleNotificationAsync({
               content: {
                 title: '🏃 Consumo durante entrenamiento',
@@ -176,7 +190,7 @@ class NotificationService {
 
         case 'despues': {
           const afterTime = new Date(trainingTime.getTime() + (minutes || 30) * 60 * 1000);
-          const trigger = afterTime > now ? afterTime : { seconds: 5 };
+          const trigger = scheduleTrigger(Notifications, afterTime, now, 5);
           const id = await Notifications.scheduleNotificationAsync({
             content: {
               title: '🏋️ Recordatorio de Consumo',
@@ -292,6 +306,36 @@ class NotificationService {
   /**
    * Cancelar una notificación específica
    */
+  static sessionNotifKey(sessionId: number) {
+    return `consumption_notif_session_${sessionId}`;
+  }
+
+  static async getSessionNotificationIds(sessionId: number): Promise<string[]> {
+    try {
+      const raw = await AsyncStorage.getItem(this.sessionNotifKey(sessionId));
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  static async registerSessionNotificationIds(sessionId: number, ids: string[]) {
+    if (!ids.length) return;
+    const prev = await this.getSessionNotificationIds(sessionId);
+    const merged = [...new Set([...prev, ...ids])];
+    await AsyncStorage.setItem(this.sessionNotifKey(sessionId), JSON.stringify(merged));
+  }
+
+  static async cancelSessionNotifications(sessionId: number): Promise<void> {
+    const ids = await this.getSessionNotificationIds(sessionId);
+    for (const id of ids) {
+      await this.cancelNotification(id);
+    }
+    await AsyncStorage.removeItem(this.sessionNotifKey(sessionId));
+  }
+
   static async cancelNotification(notificationId: string): Promise<void> {
     try {
       const Notifications = await getNotifications();

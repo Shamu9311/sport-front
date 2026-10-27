@@ -4,7 +4,8 @@ import { UserProfileData } from '../types/UserTypes';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getToken, removeToken } from './tokenStorage';
 import { setNetworkError, clearNetworkError } from './errorService';
-import { notifySessionInvalidated } from './sessionInvalidation';
+import { notifySessionInvalidated, isSessionInvalidationInProgress } from './sessionInvalidation';
+import { setSessionExpiredNoticePending } from './lastLoginEmail';
 
 const configuredUrl = Constants.expoConfig?.extra?.apiUrl as string | undefined;
 export const API_URL =
@@ -37,6 +38,7 @@ export function formatDietaryRestrictions(
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -71,11 +73,13 @@ api.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       hadAuthorization &&
-      !isAuthPath
+      !isAuthPath &&
+      !isSessionInvalidationInProgress()
     ) {
       try {
         await AsyncStorage.removeItem('user');
         await removeToken();
+        await setSessionExpiredNoticePending();
       } catch (storageError) {
         console.error('Error cleaning storage:', storageError);
       }
@@ -101,15 +105,25 @@ api.interceptors.response.use(
         response: error.response,
       });
     }
+    if (error.code === 'ECONNABORTED') {
+      setNetworkError('La solicitud tardó demasiado. Verifica tu conexión.');
+      return Promise.reject({
+        message: 'La solicitud tardó demasiado. Verifica tu conexión.',
+        status: 0,
+        code: 'ECONNABORTED',
+      });
+    }
     if (error.request) {
       setNetworkError('Sin conexión. Verifica tu red e intenta de nuevo.');
       return Promise.reject({
         message: 'No se recibió respuesta del servidor',
+        status: 0,
       });
     }
     setNetworkError('Error de conexión. Intenta de nuevo.');
     return Promise.reject({
       message: 'Error al configurar la solicitud',
+      status: 0,
     });
   }
 );
@@ -162,11 +176,7 @@ export const getProfile = async (userId: number) => {
   } catch (error: any) {
     const status = error?.status ?? error?.response?.status;
     if (status === 401) {
-      return {
-        success: false,
-        data: null,
-        message: 'Sesión expirada. Vuelve a iniciar sesión.',
-      };
+      throw error;
     }
     console.error('Error en getProfile:', error);
     if (error.response) {
@@ -351,18 +361,20 @@ export const getTrainingSession = async (sessionId: number) => {
   }
 };
 
-export const createTrainingSession = async (trainingData: {
-  userId: number;
-  sessionDate: string;
-  durationMin: number;
-  intensity: string;
-  type: string;
-  weather?: string;
-  sport_type?: string;
-  notes?: string;
-}) => {
+export const createTrainingSession = async (trainingData: Record<string, unknown>) => {
   try {
-    const response = await api.post('/training', trainingData);
+    const body = {
+      userId: trainingData.userId,
+      session_date: trainingData.session_date ?? trainingData.sessionDate,
+      start_time: trainingData.start_time ?? trainingData.startTime,
+      duration_min: trainingData.duration_min ?? trainingData.durationMin,
+      intensity: trainingData.intensity,
+      type: trainingData.type,
+      weather: trainingData.weather,
+      sport_type: trainingData.sport_type,
+      notes: trainingData.notes,
+    };
+    const response = await api.post('/training', body);
     return unwrapApiPayload(response.data);
   } catch (error) {
     console.error('Error creating training session:', error);
@@ -372,19 +384,20 @@ export const createTrainingSession = async (trainingData: {
 
 export const updateTrainingSession = async (
   sessionId: number,
-  trainingData: {
-    session_date?: string;
-    duration_min?: number;
-    intensity?: string;
-    type?: string;
-    weather?: string;
-    sport_type?: string;
-    notes?: string;
-  }
+  trainingData: Record<string, unknown>
 ) => {
   try {
     const response = await api.put(`/training/${sessionId}`, trainingData);
-    return unwrapApiPayload(response.data);
+    const payload = response.data;
+    if (payload && typeof payload === 'object' && 'success' in payload) {
+      return payload as {
+        success?: boolean;
+        data?: unknown;
+        recommendationsRegenerating?: boolean;
+        message?: string;
+      };
+    }
+    return { success: true, data: unwrapApiPayload(payload) };
   } catch (error) {
     console.error('Error updating training session:', error);
     throw error;

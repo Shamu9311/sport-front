@@ -5,6 +5,8 @@ import { getProfile } from '../services/api';
 import { setSessionInvalidatedHandler } from '../services/sessionInvalidation';
 import NotificationService from '../services/notificationService';
 import { saveToken, getToken, removeToken } from '../services/tokenStorage';
+import { isJwtExpired } from '../utils/jwt';
+import { notify } from '../services/feedback';
 import { useRouter, useSegments } from 'expo-router';
 
 interface User {
@@ -63,9 +65,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const storedToken = await getToken();
 
         if (storedUser && storedToken) {
-          const userData = JSON.parse(storedUser);
-          setUser(userData);
-          setUserToken(storedToken);
+          if (isJwtExpired(storedToken)) {
+            await AsyncStorage.removeItem('user');
+            await removeToken();
+          } else {
+            const userData = JSON.parse(storedUser);
+            setUser(userData);
+            setUserToken(storedToken);
+          }
         }
       } catch (error) {
         console.error('Error loading session:', error);
@@ -193,6 +200,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsCheckingProfile(false);
       lastNavigationRef.current = '';
       if (mountedRef.current) {
+        notify.warning('Tu sesión expiró', {
+          text2: 'Inicia sesión de nuevo para continuar.',
+        });
         router.replace('/login');
       }
     };

@@ -61,13 +61,16 @@ const RecommendationScreen = () => {
   const {
     recommendations,
     negativeRecommendations,
+    pendingRecommendations,
     loading,
     error,
     refreshing,
     fetchRecommendations,
     onRefresh,
   } = useSavedRecommendationsData();
-  const [activeTab, setActiveTab] = useState<'positivas' | 'negativas'>('positivas');
+  const [activeTab, setActiveTab] = useState<'pendientes' | 'positivas' | 'negativas'>(
+    'pendientes'
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -194,7 +197,12 @@ const RecommendationScreen = () => {
         </View>
       );
     }
-    if (!loading && recommendations.length === 0 && negativeRecommendations.length === 0) {
+    if (
+      !loading &&
+      recommendations.length === 0 &&
+      negativeRecommendations.length === 0 &&
+      pendingRecommendations.length === 0
+    ) {
       return (
         <View style={styles.centeredMessageContainer}>
           <Ionicons name='barbell-outline' size={80} color={colors.primary} style={styles.emptyIcon} />
@@ -216,18 +224,40 @@ const RecommendationScreen = () => {
   };
 
   const currentRecommendations =
-    activeTab === 'positivas' ? recommendations : negativeRecommendations;
+    activeTab === 'positivas'
+      ? recommendations
+      : activeTab === 'negativas'
+        ? negativeRecommendations
+        : pendingRecommendations;
 
   return (
     <View style={styles.container}>
       <View style={[styles.headerContainer, { paddingTop: Math.max(insets.top + 12, 52) }]}>
         <Text style={styles.title}>Tus Recomendaciones</Text>
         <Text style={styles.subtitle}>Productos personalizados según tu perfil</Text>
-        <Text style={styles.pullHint}>Desliza hacia abajo para actualizar</Text>
       </View>
 
       {/* Tabs */}
       <View style={styles.tabsContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'pendientes' && styles.tabActive]}
+          onPress={() => {
+            void hapticSelection();
+            setActiveTab('pendientes');
+          }}
+          activeOpacity={0.7}
+          accessibilityRole='tab'
+          accessibilityState={{ selected: activeTab === 'pendientes' }}
+        >
+          <Ionicons
+            name='help-circle'
+            size={16}
+            color={activeTab === 'pendientes' ? colors.textOnPrimary : colors.textSecondary}
+          />
+          <Text style={[styles.tabText, activeTab === 'pendientes' && styles.tabTextActive]}>
+            Por calificar ({pendingRecommendations.length})
+          </Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'positivas' && styles.tabActive]}
           onPress={() => {

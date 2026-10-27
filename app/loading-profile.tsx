@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useAuth } from '../src/context/AuthContext';
-import { colors } from '../src/theme';
+import { colors, fontFamily } from '../src/theme';
 
 const LOADING_HINTS = [
   'Verificando tu perfil...',
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   title: {
     marginTop: 24,
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: fontFamily.extrabold,
     color: colors.textPrimary,
   },
   subtitle: {

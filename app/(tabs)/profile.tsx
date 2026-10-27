@@ -24,12 +24,16 @@ import {
 import { useAuth } from '../../src/context/AuthContext';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useConfirm } from '../../src/context/ConfirmContext';
 import NotificationService from '../../src/services/notificationService';
 import { colors, fontFamily } from '../../src/theme';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
 import AnimatedNumber from '../../src/components/AnimatedNumber';
 import SelectField from '../../src/components/SelectField';
 import Toast from 'react-native-toast-message';
+import { notify } from '../../src/services/feedback';
+import ErrorState from '../../src/components/ui/ErrorState';
 
 // Tipos (sin cambios)
 type Gender = 'hombre' | 'mujer' | 'otro' | 'prefiero no decir';
@@ -78,11 +82,12 @@ interface UserInfo {
 // Componente principal de perfil
 const ProfileScreen = () => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { confirm } = useConfirm();
   const { user, logout } = useAuth();
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showEditForm, setShowEditForm] = useState(false);
 
   // Estados para notificaciones
   const [consumptionReminders, setConsumptionReminders] = useState(true);
@@ -172,17 +177,16 @@ const ProfileScreen = () => {
   );
   
   // Manejar cierre de sesión
-  const handleLogout = () => {
-    Alert.alert('Cerrar Sesión', '¿Estás seguro que deseas cerrar sesión?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Sí, cerrar sesión',
-        onPress: async () => {
-          await logout();
-          router.replace('/login');
-        },
-      },
-    ]);
+  const handleLogout = async () => {
+    const ok = await confirm({
+      title: 'Cerrar sesión',
+      message: '¿Estás seguro que deseas cerrar sesión?',
+      confirmLabel: 'Cerrar sesión',
+      destructive: true,
+    });
+    if (!ok) return;
+    await logout();
+    router.replace('/login');
   };
 
   // Manejadores de notificaciones
@@ -191,17 +195,13 @@ const ProfileScreen = () => {
       // Solicitar permisos antes de activar
       const hasPermission = await NotificationService.requestPermissions();
       if (!hasPermission) {
-        Alert.alert(
-          'Permisos de notificaciones',
-          'Para recibir recordatorios, debes permitir las notificaciones en la configuración de tu dispositivo.',
-          [
-            { text: 'Cancelar', style: 'cancel' },
-            {
-              text: 'Abrir Configuración',
-              onPress: () => openAppSettings(),
-            },
-          ]
-        );
+        const openSettings = await confirm({
+          title: 'Permisos de notificaciones',
+          message:
+            'Para recibir recordatorios, debes permitir las notificaciones en la configuración de tu dispositivo.',
+          confirmLabel: 'Abrir configuración',
+        });
+        if (openSettings) openAppSettings();
         return;
       }
     }
@@ -215,17 +215,13 @@ const ProfileScreen = () => {
       // Solicitar permisos antes de activar
       const hasPermission = await NotificationService.requestPermissions();
       if (!hasPermission) {
-        Alert.alert(
-          'Permisos de notificaciones',
-          'Para recibir alertas de entrenamiento, debes permitir las notificaciones en la configuración de tu dispositivo.',
-          [
-            { text: 'Cancelar', style: 'cancel' },
-            {
-              text: 'Abrir Configuración',
-              onPress: () => openAppSettings(),
-            },
-          ]
-        );
+        const openSettings = await confirm({
+          title: 'Permisos de notificaciones',
+          message:
+            'Para recibir alertas de entrenamiento, debes permitir las notificaciones en la configuración de tu dispositivo.',
+          confirmLabel: 'Abrir configuración',
+        });
+        if (openSettings) openAppSettings();
         return;
       }
 
@@ -268,7 +264,7 @@ const ProfileScreen = () => {
       }
     } catch (error) {
       console.error('Error abriendo configuración:', error);
-      Alert.alert('Error', 'No se pudo abrir la configuración');
+      notify.error('No se pudo abrir la configuración');
     }
   };
 
@@ -283,7 +279,7 @@ const ProfileScreen = () => {
       });
     } catch (error) {
       console.error('Error actualizando preferencias:', error);
-      Alert.alert('Error', 'No se pudieron guardar las preferencias de notificaciones');
+      notify.error('No se pudieron guardar las preferencias de notificaciones');
       // Revertir el cambio en caso de error
       await loadUserProfile();
     }
@@ -306,7 +302,7 @@ const ProfileScreen = () => {
 
   // Mostrar formulario de edición
   const handleEditProfile = () => {
-    setShowEditForm(true);
+    router.push('/edit-profile');
   };
 
   // Si está cargando, mostrar indicador
@@ -320,36 +316,14 @@ const ProfileScreen = () => {
 
   // Si hay error, mostrar mensaje
   if (error) {
-    return (
-      <View style={styles.centeredContainer}>
-        <Ionicons name='alert-circle' size={60} color={colors.error} style={{ marginBottom: 20 }} />
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.refreshButton} onPress={loadUserProfile}>
-          <Ionicons name='refresh' size={20} color={colors.textOnPrimary} style={{ marginRight: 8 }} />
-          <Text style={styles.refreshButtonText}>Reintentar</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  // Si se muestra el formulario de edición, renderizar el formulario
-  if (showEditForm) {
-    return (
-      <PersonalDataForm
-        onCancel={() => {
-          setShowEditForm(false);
-          loadUserProfile(); // Recargar datos después de cerrar el formulario
-        }}
-        currentProfile={userInfo?.profile}
-      />
-    );
+    return <ErrorState message={error} onRetry={loadUserProfile} />;
   }
 
   // Renderizar la información del perfil
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header con Avatar */}
-      <View style={styles.profileHeader}>
+      <View style={[styles.profileHeader, { paddingTop: insets.top + 16 }]}>
         <View style={styles.avatarContainer}>
           <Ionicons name='person-circle' size={100} color={colors.primary} />
         </View>
@@ -591,7 +565,7 @@ const ProfileScreen = () => {
 };
 
 // Componente de formulario de datos personales
-const PersonalDataForm = ({
+export const PersonalDataForm = ({
   onCancel,
   currentProfile,
 }: {
@@ -687,7 +661,7 @@ const PersonalDataForm = ({
   const handleSubmit = async () => {
     // Validación básica
     if (!userData.age || !userData.weight || !userData.height) {
-      Alert.alert('Error', 'Por favor completa todos los campos requeridos');
+      notify.error('Completa todos los campos requeridos');
       return;
     }
 
@@ -701,7 +675,7 @@ const PersonalDataForm = ({
 
     try {
       if (!user?.id) {
-        Alert.alert('Error', 'No se pudo identificar al usuario');
+        notify.error('No se pudo identificar al usuario');
         return;
       }
 
@@ -719,7 +693,7 @@ const PersonalDataForm = ({
       console.error('Error saving profile:', error);
       const errorMsg =
         error?.response?.data?.message || error?.message || 'No se pudo guardar el perfil.';
-      Alert.alert('Error', errorMsg);
+      notify.error(errorMsg);
     }
   };
 
@@ -919,26 +893,6 @@ const PersonalDataForm = ({
             style={[styles.button, !hasChanges && styles.buttonDisabled]}
           />
 
-          <CustomButton
-            title='CERRAR SESIÓN'
-            onPress={() => {
-              Alert.alert('Cerrar Sesión', '¿Estás seguro que deseas cerrar sesión?', [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                  text: 'Sí, cerrar sesión',
-                  onPress: async () => {
-                    await logout();
-                    router.replace('/login');
-                  },
-                },
-              ]);
-            }}
-            iconName='log-out-outline'
-            iconPosition='right'
-            iconColor={colors.textOnPrimary}
-            iconSize={20}
-            style={styles.logoutButton}
-          />
         </View>
       </View>
     </ScrollView>

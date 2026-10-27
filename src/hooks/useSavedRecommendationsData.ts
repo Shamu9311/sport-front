@@ -14,6 +14,7 @@ export function useSavedRecommendationsData() {
 
   const [recommendations, setRecommendations] = useState<SavedRecommendation[]>([]);
   const [negativeRecommendations, setNegativeRecommendations] = useState<SavedRecommendation[]>([]);
+  const [pendingRecommendations, setPendingRecommendations] = useState<SavedRecommendation[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -87,14 +88,17 @@ export function useSavedRecommendationsData() {
         if (allRecs.length > 0) {
           const positiveRecs: SavedRecommendation[] = [];
           const negativeRecs: SavedRecommendation[] = [];
+          const pendingRecs: SavedRecommendation[] = [];
 
           allRecs.forEach((rec: SavedRecommendation) => {
             const productId = rec.product_id || rec.product_details?.product_id;
             const feedback = feedbackMap[productId];
             if (feedback === 'negativo') {
               negativeRecs.push(rec);
-            } else {
+            } else if (feedback === 'positivo') {
               positiveRecs.push(rec);
+            } else {
+              pendingRecs.push(rec);
             }
           });
 
@@ -124,11 +128,26 @@ export function useSavedRecommendationsData() {
             return true;
           });
 
+          const seenPending = new Set<string>();
+          const uniquePendingRecs = pendingRecs.filter((rec: SavedRecommendation) => {
+            const productName =
+              rec.product_details?.name ||
+              rec.product_details?.product_name ||
+              rec.name ||
+              rec.product_name ||
+              '';
+            if (!productName || seenPending.has(productName)) return false;
+            seenPending.add(productName);
+            return true;
+          });
+
           setRecommendations(uniquePositiveRecs);
           setNegativeRecommendations(uniqueNegativeRecs);
+          setPendingRecommendations(uniquePendingRecs);
         } else {
           setRecommendations([]);
           setNegativeRecommendations([]);
+          setPendingRecommendations([]);
         }
 
         isLoadedRef.current = true;
@@ -146,6 +165,7 @@ export function useSavedRecommendationsData() {
         setError(errorMessage);
         setRecommendations([]);
         setNegativeRecommendations([]);
+        setPendingRecommendations([]);
         isLoadedRef.current = false;
       } finally {
         isFetchingRef.current = false;
@@ -164,6 +184,7 @@ export function useSavedRecommendationsData() {
   return {
     recommendations,
     negativeRecommendations,
+    pendingRecommendations,
     loading,
     error,
     refreshing,

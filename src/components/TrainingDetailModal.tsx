@@ -19,6 +19,8 @@ import { colors, fontFamily, radius, shadows, spacing } from '../theme';
 import LoadingState from './ui/LoadingState';
 import ProductImageFrame from './ui/ProductImageFrame';
 import { hapticSuccess } from '../utils/haptics';
+import { formatStartTimeDisplay } from '../utils/format';
+import { notify } from '../services/feedback';
 import { SavedRecommendation, TrainingSession } from '../types/UserTypes';
 import { stripIntervalPrefixFromInstructions } from '../services/notificationService';
 
@@ -38,6 +40,7 @@ interface TrainingDetailModalProps {
   usePrefetchedRecommendations?: boolean;
   prefetchedRecommendations?: SavedRecommendation[] | null;
   prefetchedRecommendationsLoading?: boolean;
+  onEdit?: (session: TrainingSession) => void;
 }
 
 const getIntensityColor = (intensity: string) => {
@@ -96,6 +99,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
   usePrefetchedRecommendations = false,
   prefetchedRecommendations = null,
   prefetchedRecommendationsLoading = false,
+  onEdit,
 }) => {
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<SavedRecommendation[]>([]);
@@ -267,7 +271,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
         delete newState[productId];
         return newState;
       });
-      Alert.alert('Error', 'No se pudo guardar tu feedback. Intenta de nuevo.');
+      notify.error('No se pudo guardar tu feedback');
     }
   };
 
@@ -436,7 +440,6 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                     ]}
                     onPress={() => handleFeedback(rec.product_id, 'positivo')}
                     activeOpacity={0.7}
-                    disabled={feedbackStates[rec.product_id] === 'positivo'}
                   >
                     <Ionicons
                       name={
@@ -466,7 +469,6 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                     ]}
                     onPress={() => handleFeedback(rec.product_id, 'negativo')}
                     activeOpacity={0.7}
-                    disabled={feedbackStates[rec.product_id] === 'negativo'}
                   >
                     <Ionicons
                       name={
@@ -518,20 +520,33 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
           ]}
         >
           {/* Header del modal */}
-          <View style={styles.dragHandle} />
           <View style={styles.modalHeader}>
             <View style={styles.modalHeaderContent}>
               <Ionicons name='barbell' size={22} color={colors.primary} />
               <Text style={styles.modalTitle}>Detalles del Entrenamiento</Text>
             </View>
-            <TouchableOpacity
-              onPress={onClose}
-              style={styles.closeButton}
-              accessibilityRole='button'
-              accessibilityLabel='Cerrar'
-            >
-              <Ionicons name='close' size={26} color={colors.textSecondary} />
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              {onEdit && session ? (
+                <TouchableOpacity
+                  onPress={() => {
+                    onClose();
+                    onEdit(session);
+                  }}
+                  style={styles.iconBtn}
+                  accessibilityLabel="Editar entrenamiento"
+                >
+                  <Ionicons name="create-outline" size={24} color={colors.primary} />
+                </TouchableOpacity>
+              ) : null}
+              <TouchableOpacity
+                onPress={onClose}
+                style={styles.closeButton}
+                accessibilityRole='button'
+                accessibilityLabel='Cerrar'
+              >
+                <Ionicons name='close' size={26} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -565,6 +580,14 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                 <MaterialCommunityIcons name='clock-outline' size={28} color={colors.primary} />
                 <Text style={styles.statValue}>{session.duration_min}</Text>
                 <Text style={styles.statLabel}>minutos</Text>
+              </View>
+
+              <View style={styles.statDivider} />
+
+              <View style={styles.statItem}>
+                <MaterialCommunityIcons name='timer-outline' size={28} color={colors.primary} />
+                <Text style={styles.statValue}>{formatStartTimeDisplay(session.start_time)}</Text>
+                <Text style={styles.statLabel}>inicio</Text>
               </View>
 
               <View style={styles.statDivider} />
@@ -630,7 +653,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: colors.overlayStrong,
   },
   modalView: {
@@ -640,14 +663,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: 'hidden',
-  },
-  dragHandle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.borderStrong,
-    marginTop: spacing.sm,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -669,6 +684,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: fontFamily.bold,
     marginLeft: 10,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  iconBtn: {
+    padding: 4,
   },
   closeButton: {
     padding: 4,
