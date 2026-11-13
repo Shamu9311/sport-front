@@ -7,7 +7,7 @@ import NotificationService from '../services/notificationService';
 import { saveToken, getToken, removeToken } from '../services/tokenStorage';
 import { isJwtExpired } from '../utils/jwt';
 import { notify } from '../services/feedback';
-import { useRouter, useSegments } from 'expo-router';
+import { usePathname, useRouter, useSegments } from 'expo-router';
 
 interface User {
   id: number;
@@ -44,6 +44,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const router = useRouter();
   const segments = useSegments();
+  const pathname = usePathname();
+  // Ruta pedida antes de la verificación de perfil (deep links / URL directa en web)
+  const pendingRouteRef = React.useRef<string | null>(null);
 
   // Usar un ref para saber si el componente está montado
   const mountedRef = React.useRef(false);
@@ -133,6 +136,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (isCheckingProfile && user) {
       const allowedDuringCheck = ['loading-profile', 'create-profile', 'login', 'register'];
       if (!allowedDuringCheck.includes(seg)) {
+        // Recordar la ruta pedida (deep link / URL directa) para volver a ella tras verificar el perfil.
+        // Antes siempre se terminaba en Inicio.
+        if (pathname && pathname !== '/') {
+          pendingRouteRef.current = pathname;
+        }
         router.replace('/loading-profile');
       }
       return;
@@ -147,7 +155,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (profileVerified) {
         if (isLoadingProfileRoute) {
           if (hasProfile) {
-            router.replace('/');
+            const target = pendingRouteRef.current || '/';
+            pendingRouteRef.current = null;
+            router.replace(target as any);
           } else {
             router.replace('/create-profile');
           }

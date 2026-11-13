@@ -141,6 +141,16 @@ export interface SavedRecommendation {
   reasoningText?: string;
   feedback?: string;
   feedback_notes?: string;
+  consumption_timing?: string | null;
+  consumption_instructions?: string | null;
+  recommended_quantity?: string | null;
+  timing_minutes?: number | null;
+  recommended_at?: string;
+  // Contexto de la sesión (GET /recommendations/saved)
+  session_date?: string | null;
+  start_time?: string | null;
+  duration_min?: number | null;
+  session_sport_type?: string | null;
   product_details?: {
     product_id: number;
     name?: string;

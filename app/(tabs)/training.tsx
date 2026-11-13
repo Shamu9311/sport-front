@@ -11,6 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAuth } from '../../src/context/AuthContext';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -56,6 +57,7 @@ export default function TrainingScreen() {
   const [usePrefetchedRecs, setUsePrefetchedRecs] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const isFetchingRef = useRef(false);
+  const savedEditRef = useRef(false);
   const pendingDeletesRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
 
   useEffect(() => {
@@ -69,6 +71,28 @@ export default function TrainingScreen() {
       if (!v) setShowSwipeHint(true);
     });
   }, []);
+
+  // Accesos directos desde Inicio:
+  //   /training?new=1        → abre el formulario de nuevo entrenamiento (antes había que tocar "Nuevo" otra vez)
+  //   /training?session=ID   → abre el detalle de ese entrenamiento
+  const params = useLocalSearchParams<{ new?: string; session?: string }>();
+  const router = useRouter();
+  useEffect(() => {
+    if (params.new === '1') {
+      openCreateModal();
+      router.setParams({ new: undefined });
+    }
+  }, [params.new]);
+
+  useEffect(() => {
+    const sessionId = Number(params.session);
+    if (!sessionId || loading) return;
+    const target = trainingSessions.find((s) => s.session_id === sessionId);
+    if (target) {
+      handleSessionPress(target);
+      router.setParams({ session: undefined });
+    }
+  }, [params.session, loading, trainingSessions]);
 
   const fetchTrainingSessions = async (isRefresh = false) => {
     if (!user || !user.id) return;
@@ -103,9 +127,19 @@ export default function TrainingScreen() {
   };
 
   const openEditModal = (session: TrainingSession) => {
+    savedEditRef.current = false;
     setFormMode('edit');
     setEditingSession(session);
     setShowAddModal(true);
+  };
+
+  // Al cerrar el formulario de edición sin guardar (o sin cambios) se vuelve al detalle desde el que se abrió.
+  const handleCloseForm = () => {
+    setShowAddModal(false);
+    if (formMode === 'edit' && editingSession && !savedEditRef.current) {
+      handleSessionPress(editingSession);
+    }
+    savedEditRef.current = false;
   };
 
   const handleSaveTraining = async (trainingData: Record<string, unknown>) => {
@@ -114,11 +148,12 @@ export default function TrainingScreen() {
     try {
       if (formMode === 'edit' && editingSession) {
         const response = await updateTrainingSession(editingSession.session_id, trainingData);
+        savedEditRef.current = true;
         setShowAddModal(false);
         await fetchTrainingSessions(true);
-        notify.success('Entrenamiento actualizado', {
+        notify.success('Cambios guardados', {
           text2: response.recommendationsRegenerating
-            ? 'Estamos actualizando tus recomendaciones.'
+            ? 'Actualizando tus recomendaciones…'
             : undefined,
         });
         const updated = await getTrainingSession(editingSession.session_id);
@@ -208,7 +243,7 @@ export default function TrainingScreen() {
           const notifIds = await NotificationService.scheduleConsumptionReminder(
             rec.product_name,
             rec.consumption_timing,
-            rec.timing_minutes,
+            rec.timing_minutes ?? undefined,
             sessionDate,
             session.duration_min,
             intervalMin,
@@ -368,7 +403,7 @@ export default function TrainingScreen() {
                   {trainingSessions.length === 1 ? 'entrenamiento' : 'entrenamientos'}
                 </Text>
                 {showSwipeHint ? (
-                  <Text style={styles.swipeHint}>Desliza ← eliminar · → editar</Text>
+                  <Text style={styles.swipeHint}>Desliza ← para eliminar</Text>
                 ) : null}
               </View>
             }
@@ -381,7 +416,6 @@ export default function TrainingScreen() {
                   session={item}
                   onPress={handleSessionPress}
                   onDelete={handleDeleteSession}
-                  onEdit={openEditModal}
                 />
               </Animated.View>
             )}
@@ -392,7 +426,7 @@ export default function TrainingScreen() {
         {/* Modal para agregar entrenamiento */}
         <AddTrainingModal
           visible={showAddModal}
-          onClose={() => setShowAddModal(false)}
+          onClose={handleCloseForm}
           onSave={handleSaveTraining}
           mode={formMode}
           initialSession={editingSession}

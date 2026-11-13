@@ -21,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ProductImageFrame from '../../src/components/ui/ProductImageFrame';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
 import { fontFamily } from '../../src/theme';
+import { displayLabel, formatNumber } from '../../src/utils/format';
 import { colors, spacing } from '../../src/theme';
 
 const { width } = Dimensions.get('window');
@@ -66,6 +67,12 @@ const hasNutritionValue = (value: string | number | undefined | null): boolean =
   return String(value).trim().length > 0;
 };
 
+/** "None" es el valor por defecto de other_components en la BD: no es un ingrediente. */
+const hasOtherComponents = (value?: string | null): boolean => {
+  const text = String(value ?? '').trim();
+  return text.length > 0 && text.toLowerCase() !== 'none';
+};
+
 const hasAnyNutritionData = (nutrition: NutritionInfo): boolean =>
   hasNutritionValue(nutrition.serving_size) ||
   hasNutritionValue(nutrition.energy_kcal) ||
@@ -76,7 +83,7 @@ const hasAnyNutritionData = (nutrition: NutritionInfo): boolean =>
   hasNutritionValue(nutrition.potassium_mg) ||
   hasNutritionValue(nutrition.magnesium_mg) ||
   hasNutritionValue(nutrition.caffeine_mg) ||
-  Boolean(nutrition.other_components?.trim());
+  hasOtherComponents(nutrition.other_components);
 
 const ProductDetailScreen = () => {
   const params = useLocalSearchParams<{ productId: string }>();
@@ -262,53 +269,53 @@ const ProductDetailScreen = () => {
               {hasNutritionValue(nutrition.energy_kcal) && (
                 <View style={styles.nutritionItem}>
                   <Text style={styles.nutritionLabel}>Calorías</Text>
-                  <Text style={styles.nutritionValue}>{nutrition.energy_kcal} kcal</Text>
+                  <Text style={styles.nutritionValue}>{formatNumber(nutrition.energy_kcal)} kcal</Text>
                 </View>
               )}
               {hasNutritionValue(nutrition.protein_g) && (
                 <View style={styles.nutritionItem}>
                   <Text style={styles.nutritionLabel}>Proteína</Text>
-                  <Text style={styles.nutritionValue}>{nutrition.protein_g}g</Text>
+                  <Text style={styles.nutritionValue}>{formatNumber(nutrition.protein_g)}g</Text>
                 </View>
               )}
               {hasNutritionValue(nutrition.carbs_g) && (
                 <View style={styles.nutritionItem}>
                   <Text style={styles.nutritionLabel}>Carbohidratos</Text>
-                  <Text style={styles.nutritionValue}>{nutrition.carbs_g}g</Text>
+                  <Text style={styles.nutritionValue}>{formatNumber(nutrition.carbs_g)}g</Text>
                 </View>
               )}
               {hasNutritionValue(nutrition.sugars_g) && (
                 <View style={styles.nutritionItem}>
                   <Text style={styles.nutritionLabel}>Azúcares</Text>
-                  <Text style={styles.nutritionValue}>{nutrition.sugars_g}g</Text>
+                  <Text style={styles.nutritionValue}>{formatNumber(nutrition.sugars_g)}g</Text>
                 </View>
               )}
               {hasNutritionValue(nutrition.sodium_mg) && (
                 <View style={styles.nutritionItem}>
                   <Text style={styles.nutritionLabel}>Sodio</Text>
-                  <Text style={styles.nutritionValue}>{nutrition.sodium_mg} mg</Text>
+                  <Text style={styles.nutritionValue}>{formatNumber(nutrition.sodium_mg)} mg</Text>
                 </View>
               )}
               {hasNutritionValue(nutrition.potassium_mg) && (
                 <View style={styles.nutritionItem}>
                   <Text style={styles.nutritionLabel}>Potasio</Text>
-                  <Text style={styles.nutritionValue}>{nutrition.potassium_mg} mg</Text>
+                  <Text style={styles.nutritionValue}>{formatNumber(nutrition.potassium_mg)} mg</Text>
                 </View>
               )}
               {hasNutritionValue(nutrition.magnesium_mg) && (
                 <View style={styles.nutritionItem}>
                   <Text style={styles.nutritionLabel}>Magnesio</Text>
-                  <Text style={styles.nutritionValue}>{nutrition.magnesium_mg} mg</Text>
+                  <Text style={styles.nutritionValue}>{formatNumber(nutrition.magnesium_mg)} mg</Text>
                 </View>
               )}
               {hasNutritionValue(nutrition.caffeine_mg) && (
                 <View style={styles.nutritionItem}>
                   <Text style={styles.nutritionLabel}>Cafeína</Text>
-                  <Text style={styles.nutritionValue}>{nutrition.caffeine_mg} mg</Text>
+                  <Text style={styles.nutritionValue}>{formatNumber(nutrition.caffeine_mg)} mg</Text>
                 </View>
               )}
             </View>
-            {nutrition.other_components?.trim() ? (
+            {hasOtherComponents(nutrition.other_components) ? (
               <Text style={styles.otherComponents}>{nutrition.other_components}</Text>
             ) : null}
           </View>
@@ -326,7 +333,7 @@ const ProductDetailScreen = () => {
                 <View key={`attr-${attr.attribute_id}-${index}`} style={styles.attributeChip}>
                   <Ionicons name='checkmark' size={14} color={colors.primary} />
                   <Text style={styles.attributeChipText}>
-                    {attr.name.charAt(0).toUpperCase() + attr.name.slice(1)}
+                    {displayLabel(attr.name)}
                   </Text>
                 </View>
               ))}

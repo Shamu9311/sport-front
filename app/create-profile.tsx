@@ -7,6 +7,7 @@ import {
   Modal,
   Pressable,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -85,7 +86,7 @@ interface ProfileData {
   age: string;
   weight: string;
   height: string;
-  gender: Gender;
+  gender: Gender | '';
   training_frequency: TrainingFrequency;
   primary_goal: PrimaryGoal;
   activity_level: ActivityLevel;
@@ -96,7 +97,16 @@ interface ProfileData {
   preferred_supplements: string[];
 }
 
-const TOTAL_STEPS = 4;
+// 4 pasos de datos + 1 de revisión antes de guardar
+const TOTAL_STEPS = 5;
+
+// Posición inicial de las ruedas numéricas. NO son valores del usuario: se muestran solo dentro del
+// selector y se confirman al pulsar "Listo" (antes se mostraban en la tarjeta como si ya estuvieran puestos).
+export const NUMBER_PICKER_DEFAULTS: Record<'age' | 'weight' | 'height', string> = {
+  age: '25',
+  weight: '70',
+  height: '170',
+};
 
 type ModalField =
   | 'age'
@@ -128,7 +138,7 @@ const CreateProfileScreen = () => {
     age: '',
     weight: '',
     height: '',
-    gender: 'hombre',
+    gender: '', // sin preselección: el usuario debe elegirlo (incluye "Prefiero no decir")
     training_frequency: '3-4',
     primary_goal: 'ganar musculo',
     activity_level: 'moderado',
@@ -152,6 +162,21 @@ const CreateProfileScreen = () => {
     setModalField(null);
   };
 
+  // "Listo": confirma el valor visible en el selector. Si el usuario no movió la rueda, el valor
+  // visible es el inicial, así que se guarda ese (antes quedaba vacío y luego aparecía un error).
+  const confirmModal = () => {
+    if (modalField && (NUMBER_FIELDS as string[]).includes(modalField)) {
+      const key = modalField as 'age' | 'weight' | 'height';
+      if (!profileData[key]) {
+        handleChange(key, NUMBER_PICKER_DEFAULTS[key]);
+      }
+    } else if (modalField && OPTION_SETS[modalField] && !profileData[modalField as keyof ProfileData]) {
+      // Opción sin elegir (p. ej. género): se confirma la primera, que es la visible en el selector
+      handleChange(modalField as keyof ProfileData, OPTION_SETS[modalField][0].value);
+    }
+    closeModal();
+  };
+
   const handleChange = (field: keyof ProfileData, value: any) => {
     setProfileData((prev) => ({
       ...prev,
@@ -161,8 +186,8 @@ const CreateProfileScreen = () => {
 
   const handleNext = () => {
     if (currentStep === 1) {
-      if (!profileData.age || !profileData.weight || !profileData.height) {
-        notify.error('Completa edad, peso y altura para continuar');
+      if (!profileData.age || !profileData.weight || !profileData.height || !profileData.gender) {
+        notify.error('Completa edad, peso, altura y género para continuar');
         return;
       }
     }
@@ -183,6 +208,7 @@ const CreateProfileScreen = () => {
       setIsSaving(true);
       const profileToSave = {
         ...profileData,
+        gender: profileData.gender as Gender, // validado en el paso 1 (no puede quedar vacío)
         age: parseInt(profileData.age, 10),
         weight: parseFloat(profileData.weight),
         height: parseInt(profileData.height, 10),
@@ -250,14 +276,75 @@ const CreateProfileScreen = () => {
       style={styles.tappableFieldFull}
       onPress={() => openModal(field)}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}: ${value ? getOptionLabel(field, value) : 'sin elegir'}`}
     >
       <View>
-        <Text style={styles.tappableValueFull}>{getOptionLabel(field, value)}</Text>
+        {value ? (
+          <Text style={styles.tappableValueFull}>{getOptionLabel(field, value)}</Text>
+        ) : (
+          <Text style={[styles.tappableValueFull, styles.placeholderValue]}>Toca para elegir</Text>
+        )}
         <Text style={styles.tappableLabel}>{label}</Text>
       </View>
       <Ionicons name="chevron-down" size={20} color={colors.primary} />
     </TouchableOpacity>
   );
+
+  // Tarjeta numérica: muestra "—" mientras no haya valor real (antes mostraba 25/70/170 falsos)
+  const renderNumberTile = (field: 'age' | 'weight' | 'height', label: string) => {
+    const value = profileData[field];
+    return (
+      <TouchableOpacity
+        style={styles.tappableField}
+        onPress={() => openModal(field)}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={`${label}: ${value || 'sin elegir'}`}
+      >
+        <Text style={[styles.tappableValue, !value && styles.placeholderValue]}>{value || '—'}</Text>
+        <Text style={styles.tappableLabel}>{label}</Text>
+        <Ionicons name="chevron-down" size={18} color={colors.primary} />
+      </TouchableOpacity>
+    );
+  };
+
+  const REVIEW_SECTIONS: { step: number; title: string; rows: { label: string; value: string }[] }[] = [
+    {
+      step: 1,
+      title: 'Datos físicos',
+      rows: [
+        { label: 'Edad', value: profileData.age ? `${profileData.age} años` : '—' },
+        { label: 'Peso', value: profileData.weight ? `${profileData.weight} kg` : '—' },
+        { label: 'Altura', value: profileData.height ? `${profileData.height} cm` : '—' },
+        { label: 'Género', value: profileData.gender ? getOptionLabel('gender', profileData.gender) : '—' },
+      ],
+    },
+    {
+      step: 2,
+      title: 'Actividad',
+      rows: [
+        { label: 'Nivel', value: getOptionLabel('activity_level', profileData.activity_level) },
+        { label: 'Frecuencia', value: getOptionLabel('training_frequency', profileData.training_frequency) },
+      ],
+    },
+    {
+      step: 3,
+      title: 'Objetivo',
+      rows: [
+        { label: 'Objetivo', value: getOptionLabel('primary_goal', profileData.primary_goal) },
+        { label: 'Sudoración', value: getOptionLabel('sweat_level', profileData.sweat_level) },
+      ],
+    },
+    {
+      step: 4,
+      title: 'Nutrición',
+      rows: [
+        { label: 'Cafeína', value: getOptionLabel('caffeine_tolerance', profileData.caffeine_tolerance) },
+        { label: 'Restricciones', value: getOptionLabel('dietary_restrictions', profileData.dietary_restrictions) },
+      ],
+    },
+  ];
 
   const renderStepBanner = (
     iconName: keyof typeof Ionicons.glyphMap,
@@ -314,33 +401,9 @@ const CreateProfileScreen = () => {
               )}
               <View style={styles.inputsZone}>
                 <View style={styles.tappableRow}>
-                  <TouchableOpacity
-                    style={styles.tappableField}
-                    onPress={() => openModal('age')}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.tappableValue}>{profileData.age || '25'}</Text>
-                    <Text style={styles.tappableLabel}>Edad (años)</Text>
-                    <Ionicons name="chevron-down" size={18} color={colors.primary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.tappableField}
-                    onPress={() => openModal('weight')}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.tappableValue}>{profileData.weight || '70'}</Text>
-                    <Text style={styles.tappableLabel}>Peso (kg)</Text>
-                    <Ionicons name="chevron-down" size={18} color={colors.primary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.tappableField}
-                    onPress={() => openModal('height')}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.tappableValue}>{profileData.height || '170'}</Text>
-                    <Text style={styles.tappableLabel}>Altura (cm)</Text>
-                    <Ionicons name="chevron-down" size={18} color={colors.primary} />
-                  </TouchableOpacity>
+                  {renderNumberTile('age', 'Edad (años)')}
+                  {renderNumberTile('weight', 'Peso (kg)')}
+                  {renderNumberTile('height', 'Altura (cm)')}
                 </View>
                 {renderTappableOption('gender', 'Género', profileData.gender)}
               </View>
@@ -451,14 +514,59 @@ const CreateProfileScreen = () => {
                   '¿Tienes restricciones alimenticias?',
                   profileData.dietary_restrictions
                 )}
-                <Text style={styles.subtitleCompact}>
-                  Ya tenemos tu perfil. Empieza tu camino hacia una versión más fuerte y sana.
-                </Text>
               </View>
               <View style={styles.buttonZone}>
                 <CustomButton
+                  title="REVISAR"
+                  onPress={handleNext}
+                  style={styles.button}
+                  iconName="arrow-forward-outline"
+                  iconPosition="right"
+                  iconSize={24}
+                  iconColor={colors.textOnPrimary}
+                />
+              </View>
+            </View>
+          </View>
+        );
+
+      case 5:
+        // Resumen antes de guardar, con acceso directo para corregir cada sección
+        return (
+          <View style={styles.stepContainer}>
+            <View style={styles.contentBlock}>
+              {renderStepBanner(
+                'checkmark-done-outline',
+                'Revisa tu perfil',
+                'Confirma que todo esté bien antes de guardar.'
+              )}
+              <ScrollView style={styles.reviewScroll} contentContainerStyle={styles.inputsZone}>
+                {REVIEW_SECTIONS.map((section) => (
+                  <View key={section.title} style={styles.reviewCard}>
+                    <View style={styles.reviewHeader}>
+                      <Text style={styles.reviewTitle}>{section.title}</Text>
+                      <TouchableOpacity
+                        onPress={() => setCurrentStep(section.step)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Editar ${section.title}`}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Text style={styles.reviewEdit}>Editar</Text>
+                      </TouchableOpacity>
+                    </View>
+                    {section.rows.map((row) => (
+                      <View key={row.label} style={styles.reviewRow}>
+                        <Text style={styles.reviewLabel}>{row.label}</Text>
+                        <Text style={styles.reviewValue}>{row.value}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ))}
+              </ScrollView>
+              <View style={styles.buttonZone}>
+                <CustomButton
                   title="GUARDAR PERFIL"
-                  iconName="save-outline"
+                  iconName="checkmark-outline"
                   iconPosition="right"
                   iconSize={24}
                   iconColor={colors.textOnPrimary}
@@ -508,7 +616,7 @@ const CreateProfileScreen = () => {
             </Text>
             {modalField === 'age' && (
               <Picker
-                selectedValue={profileData.age || '25'}
+                selectedValue={profileData.age || NUMBER_PICKER_DEFAULTS.age}
                 onValueChange={(v) => handleChange('age', v)}
                 style={styles.modalPicker}
                 itemStyle={styles.pickerItem}
@@ -521,7 +629,7 @@ const CreateProfileScreen = () => {
             )}
             {modalField === 'weight' && (
               <Picker
-                selectedValue={profileData.weight || '70'}
+                selectedValue={profileData.weight || NUMBER_PICKER_DEFAULTS.weight}
                 onValueChange={(v) => handleChange('weight', v)}
                 style={styles.modalPicker}
                 itemStyle={styles.pickerItem}
@@ -534,7 +642,7 @@ const CreateProfileScreen = () => {
             )}
             {modalField === 'height' && (
               <Picker
-                selectedValue={profileData.height || '170'}
+                selectedValue={profileData.height || NUMBER_PICKER_DEFAULTS.height}
                 onValueChange={(v) => handleChange('height', v)}
                 style={styles.modalPicker}
                 itemStyle={styles.pickerItem}
@@ -550,7 +658,8 @@ const CreateProfileScreen = () => {
               OPTION_SETS[modalField] && (
                 <Picker
                   selectedValue={
-                    profileData[modalField as keyof ProfileData] as string
+                    (profileData[modalField as keyof ProfileData] as string) ||
+                    OPTION_SETS[modalField][0].value
                   }
                   onValueChange={(v) =>
                     handleChange(modalField as keyof ProfileData, v)
@@ -571,7 +680,8 @@ const CreateProfileScreen = () => {
               )}
             <TouchableOpacity
               style={styles.modalButton}
-              onPress={closeModal}
+              onPress={confirmModal}
+              accessibilityRole="button"
             >
               <Text style={styles.modalButtonText}>Listo</Text>
             </TouchableOpacity>
@@ -688,7 +798,8 @@ const styles = StyleSheet.create({
   },
   motivationText: {
     fontSize: 13,
-    color: colors.primaryText,
+    // Antes en rojo (color de error); el rojo queda reservado para errores
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 4,
     lineHeight: 20,
@@ -767,6 +878,54 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: fontFamily.semibold,
     color: colors.textPrimary,
+  },
+  placeholderValue: {
+    color: colors.textMuted,
+  },
+  reviewScroll: {
+    flex: 1,
+    width: '100%',
+  },
+  reviewCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 14,
+    marginBottom: 10,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  reviewTitle: {
+    fontSize: 15,
+    fontFamily: fontFamily.bold,
+    color: colors.textPrimary,
+  },
+  reviewEdit: {
+    fontSize: 14,
+    fontFamily: fontFamily.semibold,
+    color: colors.primary,
+  },
+  reviewRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  reviewLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  reviewValue: {
+    fontSize: 14,
+    fontFamily: fontFamily.semibold,
+    color: colors.textPrimary,
+    flexShrink: 1,
+    textAlign: 'right',
+    marginLeft: 12,
   },
   modalOverlay: {
     flex: 1,

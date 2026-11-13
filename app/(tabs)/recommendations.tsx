@@ -20,6 +20,15 @@ import ProductImageFrame from '../../src/components/ui/ProductImageFrame';
 import { useSavedRecommendationsData } from '../../src/hooks/useSavedRecommendationsData';
 import { hapticSelection } from '../../src/utils/haptics';
 import { SavedRecommendation } from '../../src/types/UserTypes';
+import { formatRelativeDate, hasSessionEnded } from '../../src/utils/format';
+import { notify } from '../../src/services/feedback';
+
+const TIMING_LABELS: Record<string, string> = {
+  antes: 'Antes del entrenamiento',
+  durante: 'Durante el entrenamiento',
+  despues: 'Después del entrenamiento',
+  diario: 'Uso diario',
+};
 
 interface ProductDetails {
   product_id: number;
@@ -67,7 +76,20 @@ const RecommendationScreen = () => {
     refreshing,
     fetchRecommendations,
     onRefresh,
+    rateRecommendation,
   } = useSavedRecommendationsData();
+
+  const handleRate = async (item: SavedRecommendation, feedback: 'positivo' | 'negativo') => {
+    try {
+      await rateRecommendation(item, feedback);
+      void hapticSelection();
+      notify.success('Gracias por tu opinión', {
+        text2: feedback === 'positivo' ? 'Lo movimos a "Me sirvieron".' : 'Lo movimos a "No me sirvieron".',
+      });
+    } catch {
+      notify.error('No se pudo guardar tu calificación');
+    }
+  };
   const [activeTab, setActiveTab] = useState<'pendientes' | 'positivas' | 'negativas'>(
     'pendientes'
   );
@@ -104,7 +126,7 @@ const RecommendationScreen = () => {
         productDescription =
           product.description || product.product_description || 'Sin descripción';
         imageUrl = product.image_url || null;
-        reasoning = item.reasoning || item.reasoningText || item.feedback_notes || item.feedback;
+        reasoning = item.reasoning || item.reasoningText || item.feedback_notes || null;
       } else if (item.product_id) {
         // Formato alternativo donde el item mismo contiene los datos del producto
         product = item;
@@ -112,7 +134,8 @@ const RecommendationScreen = () => {
         productName = item.name || item.product_name || `Producto ${productId}`;
         productDescription = item.description || item.product_description || 'Sin descripción';
         imageUrl = item.image_url;
-        reasoning = item.reasoning || item.reasoningText || item.feedback || item.feedback_notes;
+        // feedback es la calificación (positivo/negativo), no un texto: no se usa como razonamiento
+        reasoning = item.reasoning || item.reasoningText || item.feedback_notes || null;
       } else {
         console.error('Formato de recomendación no reconocido:', item);
         return null;
@@ -126,6 +149,22 @@ const RecommendationScreen = () => {
 
       // Usar la función getProductImageSource para manejar las imágenes de forma consistente
       const imageSource = getProductImageSource(imageUrl);
+
+      const timingLabel = item.consumption_timing ? TIMING_LABELS[item.consumption_timing] : '';
+      const contextText = [
+        item.session_date ? `Sesión ${formatRelativeDate(item.session_date)}` : '',
+        timingLabel,
+      ]
+        .filter(Boolean)
+        .join(' · ');
+      // Sin datos de sesión (recomendación antigua sin sesión) se permite calificar
+      const canRate = item.session_date
+        ? hasSessionEnded({
+            session_date: item.session_date,
+            start_time: item.start_time,
+            duration_min: item.duration_min,
+          })
+        : true;
 
       return (
         <Animated.View entering={FadeInDown.duration(250)}>
@@ -157,7 +196,14 @@ const RecommendationScreen = () => {
               </View>
             </View>
           </View>
-          {reasoning && (
+          {/* Contexto: para qué sesión y en qué momento (antes la tarjeta no lo decía) */}
+          {contextText ? (
+            <View style={styles.contextRow}>
+              <Ionicons name='calendar-outline' size={13} color={colors.textSecondary} />
+              <Text style={styles.contextText}>{contextText}</Text>
+            </View>
+          ) : null}
+          {reasoning ? (
             <View style={styles.reasoningContainer}>
               <View style={styles.reasoningHeader}>
                 <Ionicons name='sparkles' size={13} color={colors.primary} />
@@ -165,7 +211,37 @@ const RecommendationScreen = () => {
               </View>
               <Text style={styles.reasoningText}>{getDisplayReasoning(reasoning)}</Text>
             </View>
-          )}
+          ) : null}
+          {/* Calificar aquí mismo, solo cuando la sesión ya ocurrió */}
+          {activeTab === 'pendientes' ? (
+            canRate ? (
+              <View style={styles.rateRow}>
+                <Text style={styles.rateQuestion}>¿Te funcionó?</Text>
+                <View style={styles.rateButtons}>
+                  <TouchableOpacity
+                    style={[styles.rateButton, styles.rateButtonGood]}
+                    onPress={() => handleRate(item, 'positivo')}
+                    accessibilityRole='button'
+                    accessibilityLabel={`Me sirvió ${productName}`}
+                  >
+                    <Ionicons name='thumbs-up-outline' size={16} color={colors.success} />
+                    <Text style={styles.rateButtonText}>Bueno</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.rateButton, styles.rateButtonBad]}
+                    onPress={() => handleRate(item, 'negativo')}
+                    accessibilityRole='button'
+                    accessibilityLabel={`No me sirvió ${productName}`}
+                  >
+                    <Ionicons name='thumbs-down-outline' size={16} color={colors.error} />
+                    <Text style={styles.rateButtonText}>Malo</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <Text style={styles.ratePending}>Podrás calificarlo después de tu entrenamiento.</Text>
+            )
+          ) : null}
         </TouchableOpacity>
         </Animated.View>
       );
@@ -529,6 +605,58 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textPrimary,
     lineHeight: 19,
+  },
+  contextRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: spacing.sm,
+  },
+  contextText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  rateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.divider,
+  },
+  rateQuestion: {
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  rateButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  rateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  rateButtonGood: {
+    borderColor: colors.success,
+  },
+  rateButtonBad: {
+    borderColor: colors.error,
+  },
+  rateButtonText: {
+    fontSize: 13,
+    color: colors.textPrimary,
+    fontFamily: fontFamily.semibold,
+  },
+  ratePending: {
+    marginTop: spacing.md,
+    fontSize: 12,
+    color: colors.textMuted,
   },
   cardFooter: {
     flexDirection: 'row',

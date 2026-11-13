@@ -42,15 +42,18 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         animation: 'shift',
+        tabBarShowLabel: true,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.tabInactive,
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopWidth: StyleSheet.hairlineWidth,
           borderTopColor: colors.border,
-          height: Platform.OS === 'ios' ? 56 + insets.bottom : 60,
-          paddingBottom: Platform.OS === 'ios' ? insets.bottom : 8,
-          paddingTop: 8,
+          // Altura suficiente para ícono + etiqueta: antes (60) la etiqueta quedaba recortada y la barra
+          // se veía solo con íconos, poco claros (p. ej. "Entrenar").
+          height: Platform.OS === 'ios' ? 64 + insets.bottom : 70,
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom : 10,
+          paddingTop: 6,
           elevation: 0,
           shadowOpacity: 0,
         },
@@ -134,13 +137,10 @@ const styles = StyleSheet.create({
   iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 28,
+    minHeight: 26,
   },
+  // Con etiquetas visibles el punto indicador sobra; se mantiene el componente por compatibilidad
   tabIndicator: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.primary,
-    marginTop: 4,
+    display: 'none',
   },
 });

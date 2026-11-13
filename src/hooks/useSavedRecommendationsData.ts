@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useContext } from 'react';
 import AuthContext from '../context/AuthContext';
-import { getSavedRecommendations, getUserFeedbackHistory } from '../services/api';
+import { getSavedRecommendations, getUserFeedbackHistory, saveProductFeedback } from '../services/api';
 import { MIN_SKELETON_MS, withMinimumDuration } from '../utils/withMinimumDuration';
 import { SavedRecommendation } from '../types/UserTypes';
 
@@ -181,6 +181,26 @@ export function useSavedRecommendationsData() {
     fetchRecommendations(true);
   }, [fetchRecommendations]);
 
+  /**
+   * Calificar desde la pestaña Sugerencias (antes "Por calificar" no permitía calificar ahí).
+   * Mueve la tarjeta a la lista correspondiente sin recargar.
+   */
+  const rateRecommendation = useCallback(
+    async (rec: SavedRecommendation, feedback: 'positivo' | 'negativo') => {
+      const userId = user?.id;
+      const productId = rec.product_id || rec.product_details?.product_id;
+      if (!userId || !productId) return;
+      await saveProductFeedback(userId, productId, feedback);
+      const notSame = (r: SavedRecommendation) => (r.product_id || r.product_details?.product_id) !== productId;
+      setPendingRecommendations((prev) => prev.filter(notSame));
+      setRecommendations((prev) => (feedback === 'positivo' ? [rec, ...prev.filter(notSame)] : prev.filter(notSame)));
+      setNegativeRecommendations((prev) =>
+        feedback === 'negativo' ? [rec, ...prev.filter(notSame)] : prev.filter(notSame)
+      );
+    },
+    [user?.id]
+  );
+
   return {
     recommendations,
     negativeRecommendations,
@@ -190,5 +210,6 @@ export function useSavedRecommendationsData() {
     refreshing,
     fetchRecommendations,
     onRefresh,
+    rateRecommendation,
   };
 }

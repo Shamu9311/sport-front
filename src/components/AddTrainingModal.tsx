@@ -22,8 +22,39 @@ import {
   roundTimeTo5Min,
   sportTypeToDefaultTrainingType,
   toLocalDateString,
+  weatherToUi,
+  displayLabel,
 } from '../utils/format';
 import { TrainingSession } from '../types/UserTypes';
+import { notify } from '../services/feedback';
+
+/** Valores del formulario tal como quedan al abrir un entrenamiento existente. */
+export function buildInitialTrainingData(session: TrainingSession): Record<string, unknown> {
+  return {
+    session_date: String(session.session_date).split('T')[0],
+    start_time: `${String(session.start_time || '18:00:00').substring(0, 5)}:00`,
+    duration_min: Number(session.duration_min),
+    intensity: intensityToUi(session.intensity),
+    type: session.type || 'cardio',
+    sport_type: session.sport_type || '10K',
+    weather: weatherToUi(session.weather),
+    notes: session.notes || '',
+  };
+}
+
+/** Devuelve solo los campos cuyo valor cambió respecto al inicial. */
+export function diffTrainingData(
+  initial: Record<string, unknown>,
+  current: Record<string, unknown>
+): Record<string, unknown> {
+  const changes: Record<string, unknown> = {};
+  Object.keys(current).forEach((key) => {
+    if (String(current[key] ?? '') !== String(initial[key] ?? '')) {
+      changes[key] = current[key];
+    }
+  });
+  return changes;
+}
 
 const intensityOptions = ['baja', 'media', 'alta', 'muy alta'];
 const typeOptions = ['cardio', 'fuerza', 'hiit', 'resistencia', 'mixed', 'otro'];
@@ -94,7 +125,7 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({
       setIntensity(intensityToUi(initialSession.intensity));
       setType(initialSession.type || 'cardio');
       setSportType(initialSession.sport_type || '10K');
-      setWeather(initialSession.weather || 'soleado');
+      setWeather(weatherToUi(initialSession.weather));
       setNotes(initialSession.notes || '');
     } else if (!isEdit) {
       setDate(new Date());
@@ -114,8 +145,10 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({
   const datePreset = useMemo(() => {
     const today = toLocalDateString(new Date());
     const yesterday = toLocalDateString(new Date(Date.now() - 86400000));
+    const tomorrow = toLocalDateString(new Date(Date.now() + 86400000));
     const current = toLocalDateString(date);
     if (current === today) return 'today';
+    if (current === tomorrow) return 'tomorrow';
     if (current === yesterday) return 'yesterday';
     return 'custom';
   }, [date]);
@@ -130,7 +163,7 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({
       return;
     }
     setDurationError('');
-    const trainingData = {
+    const trainingData: Record<string, unknown> = {
       session_date: toLocalDateString(date),
       start_time: `${formatTimeHHMM(startTime)}:00`,
       duration_min: resolvedDuration,
@@ -140,9 +173,22 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({
       weather,
       notes,
     };
+
+    // Al editar se envían SOLO los campos modificados. Antes se enviaban todos y el backend
+    // borraba y regeneraba las recomendaciones aunque no se hubiera cambiado nada.
+    let payload = trainingData;
+    if (isEdit && initialSession) {
+      payload = diffTrainingData(buildInitialTrainingData(initialSession), trainingData);
+      if (Object.keys(payload).length === 0) {
+        notify.info('No hiciste cambios');
+        onClose();
+        return;
+      }
+    }
+
     setSaving(true);
     try {
-      await onSave(trainingData);
+      await onSave(payload);
       await hapticSuccess();
       onClose();
     } catch {
@@ -165,8 +211,9 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({
           onPress={() => onSelect(option)}
           activeOpacity={0.7}
         >
+          {/* Etiqueta legible ("Natación", "Media maratón", "Mixto", "HIIT"); el valor enviado no cambia */}
           <Text style={[styles.optionText, value === option && styles.selectedOptionText]}>
-            {option.charAt(0).toUpperCase() + option.slice(1)}
+            {displayLabel(option)}
           </Text>
         </TouchableOpacity>
       ))}
@@ -202,7 +249,9 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({
               <Text style={styles.label}>Fecha</Text>
               <View style={styles.rowChips}>
                 {[
+                  // "Mañana": planificar la sesión es cuando más sirven las recomendaciones "antes"
                   { id: 'today', label: 'Hoy' },
+                  { id: 'tomorrow', label: 'Mañana' },
                   { id: 'yesterday', label: 'Ayer' },
                   { id: 'custom', label: 'Elegir…' },
                 ].map((p) => (
@@ -214,7 +263,11 @@ const AddTrainingModal: React.FC<AddTrainingModalProps> = ({
                     ]}
                     onPress={() => {
                       if (p.id === 'today') setDate(new Date());
-                      else if (p.id === 'yesterday') {
+                      else if (p.id === 'tomorrow') {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 1);
+                        setDate(d);
+                      } else if (p.id === 'yesterday') {
                         const d = new Date();
                         d.setDate(d.getDate() - 1);
                         setDate(d);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Image,
   KeyboardAvoidingView,
@@ -63,7 +64,7 @@ const RegisterScreen = () => {
         loginResponse.token
       );
       await saveLastLoginEmail(email);
-      notify.success('¡Bienvenido!', { text2: 'Vamos a configurar tu perfil.' });
+      // Sin toast: la pantalla siguiente ya da la bienvenida (el toast la duplicaba y tapaba el ícono)
       router.replace('/create-profile');
     } catch (error: unknown) {
       notify.error('Error de registro', { text2: messageFromError(error) });
@@ -120,7 +121,7 @@ const RegisterScreen = () => {
             />
             <CustomButton
               title="Crear cuenta"
-              iconName="save-outline"
+              iconName="person-add-outline"
               iconPosition="right"
               iconSize={24}
               variant="primary"
@@ -129,8 +130,10 @@ const RegisterScreen = () => {
               disabled={isLoading}
               style={styles.buttonPrimary}
             />
+            {/* Texto corto en el botón (antes se partía en 2 líneas) y la pregunta como contexto */}
+            <Text style={styles.haveAccount}>¿Ya tienes cuenta?</Text>
             <CustomButton
-              title="¿Ya tienes cuenta? Inicia sesión"
+              title="Iniciar sesión"
               iconName="log-in-outline"
               iconPosition="right"
               iconSize={24}
@@ -164,7 +167,13 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   buttonPrimary: { marginTop: spacing.md },
-  buttonSecondary: { marginTop: spacing.sm },
+  buttonSecondary: { marginTop: spacing.xs },
+  haveAccount: {
+    marginTop: spacing.lg,
+    textAlign: 'center',
+    color: colors.textSecondary,
+    fontSize: 14,
+  },
 });
 
 export default RegisterScreen;

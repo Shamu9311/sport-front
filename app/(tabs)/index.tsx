@@ -13,7 +13,10 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
-import { getUserTrainingSessions } from '../../src/services/api';
+import {
+  getUserTrainingSessions,
+  getTrainingSessionRecommendationsBySession,
+} from '../../src/services/api';
 import AnimatedNumber from '../../src/components/AnimatedNumber';
 import SkeletonLoader from '../../src/components/SkeletonLoader';
 import MetricCard from '../../src/components/ui/MetricCard';
@@ -22,9 +25,36 @@ import AppCard from '../../src/components/ui/AppCard';
 import ScreenHero from '../../src/components/ui/ScreenHero';
 import PressableScale from '../../src/components/ui/PressableScale';
 import { colors, shadows, spacing, radius, fontFamily } from '../../src/theme';
-import { formatDuration, formatRelativeDate } from '../../src/utils/format';
+import {
+  displayLabel,
+  formatDuration,
+  formatRelativeDate,
+  formatStartTimeDisplay,
+  hasSessionEnded,
+} from '../../src/utils/format';
 
 const logoPath = require('../../assets/images/login.png');
+
+const TIMING_ORDER = ['antes', 'durante', 'despues', 'diario'];
+const TIMING_LABELS: Record<string, string> = {
+  antes: 'Antes',
+  durante: 'Durante',
+  despues: 'Después',
+  diario: 'Diario',
+};
+
+function sessionStart(s: { session_date: string; start_time?: string | null }) {
+  const [y, m, d] = String(s.session_date).split('T')[0].split('-').map(Number);
+  const [hh, mm] = String(s.start_time || '00:00').split(':').map(Number);
+  return new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0).getTime();
+}
+
+function sortByTiming<T extends { consumption_timing?: string | null }>(recs: T[]): T[] {
+  return [...recs].sort(
+    (a, b) =>
+      TIMING_ORDER.indexOf(a.consumption_timing || '') - TIMING_ORDER.indexOf(b.consumption_timing || '')
+  );
+}
 
 const HOME_FEATURES = [
   {
@@ -55,14 +85,15 @@ const HOME_FEATURES = [
 
 const HomeScreen = () => {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, hasProfile } = useAuth();
   const [stats, setStats] = useState({
     trainings: 0,
     totalMinutes: 0,
     thisWeek: 0,
   });
   const [statsLoading, setStatsLoading] = useState(true);
-  const [lastSession, setLastSession] = useState<any | null>(null);
+  const [featuredSession, setFeaturedSession] = useState<{ session: any; upcoming: boolean } | null>(null);
+  const [featuredRecs, setFeaturedRecs] = useState<any[]>([]);
   const [currentFeature, setCurrentFeature] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const featureContentOpacity = useRef(new Animated.Value(1)).current;
@@ -117,7 +148,20 @@ const HomeScreen = () => {
         totalMinutes: totalMinutes,
         thisWeek: thisWeekSessions.length,
       });
-      setLastSession(sessions.length > 0 ? sessions[0] : null);
+
+      // Sesión destacada: la próxima que aún no termina (la más cercana) o, si no hay, la más reciente
+      const upcoming = sessions
+        .filter((s: any) => !hasSessionEnded(s))
+        .sort((a: any, b: any) => sessionStart(a) - sessionStart(b));
+      const featured = upcoming[0] || sessions[0] || null;
+      setFeaturedSession(featured ? { session: featured, upcoming: upcoming.length > 0 } : null);
+      if (featured) {
+        getTrainingSessionRecommendationsBySession(featured.session_id)
+          .then((recs) => setFeaturedRecs(sortByTiming(recs as any[])))
+          .catch(() => setFeaturedRecs([]));
+      } else {
+        setFeaturedRecs([]);
+      }
     } catch (error: any) {
       if (error?.status !== 401) {
         console.error('Error loading stats:', error);
@@ -189,28 +233,65 @@ const HomeScreen = () => {
                 <MetricCard
                   iconName="trophy-outline"
                   value={<AnimatedNumber value={stats.trainings} style={styles.metricValue} />}
-                  label="Entrenamientos"
+                  label="Sesiones"
                 />
               </View>
             )}
           </View>
         )}
 
-        {user && lastSession ? (
+        {user && featuredSession ? (
           <View style={styles.lastSessionSection}>
-            <SectionHeader title="Último entrenamiento" />
+            <SectionHeader
+              title={featuredSession.upcoming ? 'Tu próxima sesión' : 'Último entrenamiento'}
+            />
             <AppCard>
-              <Text style={styles.lastSessionDate}>
-                {formatRelativeDate(lastSession.session_date)}
-              </Text>
-              <Text style={styles.lastSessionMeta}>
-                {formatDuration(lastSession.duration_min)} ·{' '}
-                {String(lastSession.type || '').charAt(0).toUpperCase()}
-                {String(lastSession.type || '').slice(1)}
-              </Text>
+              {/* La tarjeta abre el detalle de la sesión (antes no era tocable) */}
+              <TouchableOpacity
+                onPress={() =>
+                  router.push(`/(tabs)/training?session=${featuredSession.session.session_id}`)
+                }
+                accessibilityRole="button"
+                accessibilityLabel="Ver detalle del entrenamiento"
+                activeOpacity={0.7}
+              >
+                <View style={styles.featuredHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.lastSessionDate}>
+                      {formatRelativeDate(featuredSession.session.session_date)}
+                      {featuredSession.session.start_time
+                        ? ` · ${formatStartTimeDisplay(featuredSession.session.start_time)}`
+                        : ''}
+                    </Text>
+                    <Text style={styles.lastSessionMeta}>
+                      {formatDuration(featuredSession.session.duration_min)} ·{' '}
+                      {displayLabel(featuredSession.session.sport_type || featuredSession.session.type)}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                </View>
+
+                {/* Lo más valioso de la app: qué tomar en cada momento */}
+                {featuredRecs.length > 0 ? (
+                  <View style={styles.featuredRecs}>
+                    {featuredRecs.slice(0, 4).map((rec) => (
+                      <View key={rec.recommendation_id || rec.product_id} style={styles.featuredRecRow}>
+                        <Text style={styles.featuredRecTiming}>
+                          {TIMING_LABELS[rec.consumption_timing] || 'Recomendado'}
+                        </Text>
+                        <Text style={styles.featuredRecName} numberOfLines={1}>
+                          {rec.product_name}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={styles.featuredRecsEmpty}>Preparando tus recomendaciones…</Text>
+                )}
+              </TouchableOpacity>
               <PressableScale
                 style={styles.lastSessionCta}
-                onPress={() => router.push('/(tabs)/training')}
+                onPress={() => router.push('/(tabs)/training?new=1')}
                 haptic="light"
               >
                 <Ionicons name="add-circle-outline" size={20} color={colors.textOnPrimary} />
@@ -223,7 +304,7 @@ const HomeScreen = () => {
             <SectionHeader title="Comienza hoy" />
             <PressableScale
               style={styles.lastSessionCta}
-              onPress={() => router.push('/(tabs)/training')}
+              onPress={() => router.push('/(tabs)/training?new=1')}
               haptic="light"
             >
               <Ionicons name="add-circle-outline" size={20} color={colors.textOnPrimary} />
@@ -297,12 +378,15 @@ const HomeScreen = () => {
                   </View>
                 </View>
 
-                <View style={styles.tipContainer}>
-                  <Ionicons name="bulb-outline" size={16} color={colors.primary} />
-                  <Text style={styles.tipText}>
-                    Completa tu perfil para obtener las mejores recomendaciones
-                  </Text>
-                </View>
+                {/* Solo si de verdad falta el perfil (antes aparecía siempre) */}
+                {hasProfile === false ? (
+                  <View style={styles.tipContainer}>
+                    <Ionicons name="bulb-outline" size={16} color={colors.primary} />
+                    <Text style={styles.tipText}>
+                      Completa tu perfil para obtener las mejores recomendaciones
+                    </Text>
+                  </View>
+                ) : null}
               </AppCard>
             </View>
           </>
@@ -472,6 +556,38 @@ const styles = StyleSheet.create({
   lastSessionMeta: {
     fontSize: 14,
     color: colors.textSecondary,
+    marginBottom: spacing.md,
+  },
+  featuredHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  featuredRecs: {
+    borderTopWidth: 1,
+    borderTopColor: colors.divider,
+    paddingTop: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  featuredRecRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  featuredRecTiming: {
+    width: 72,
+    fontSize: 12,
+    fontFamily: fontFamily.semibold,
+    color: colors.primary,
+    textTransform: 'uppercase',
+  },
+  featuredRecName: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  featuredRecsEmpty: {
+    fontSize: 13,
+    color: colors.textMuted,
     marginBottom: spacing.lg,
   },
   lastSessionCta: {

@@ -34,6 +34,7 @@ import SelectField from '../../src/components/SelectField';
 import Toast from 'react-native-toast-message';
 import { notify } from '../../src/services/feedback';
 import ErrorState from '../../src/components/ui/ErrorState';
+import { profileValueLabel } from '../../src/utils/format';
 
 // Tipos (sin cambios)
 type Gender = 'hombre' | 'mujer' | 'otro' | 'prefiero no decir';
@@ -389,7 +390,7 @@ const ProfileScreen = () => {
                 <Ionicons name='male-female' size={18} color={colors.textSecondary} />
                 <Text style={styles.infoLabel}>Género</Text>
               </View>
-              <Text style={styles.infoValue}>{userInfo.profile.gender}</Text>
+              <Text style={styles.infoValue}>{profileValueLabel('gender', userInfo.profile.gender)}</Text>
             </View>
           </>
         )}
@@ -409,7 +410,7 @@ const ProfileScreen = () => {
                 <Ionicons name='trending-up' size={18} color={colors.textSecondary} />
                 <Text style={styles.infoLabel}>Nivel de actividad</Text>
               </View>
-              <Text style={styles.infoValue}>{userInfo.profile.activity_level}</Text>
+              <Text style={styles.infoValue}>{profileValueLabel('activity_level', userInfo.profile.activity_level)}</Text>
             </View>
 
             <View style={styles.infoRow}>
@@ -417,7 +418,7 @@ const ProfileScreen = () => {
                 <Ionicons name='repeat' size={18} color={colors.textSecondary} />
                 <Text style={styles.infoLabel}>Frecuencia</Text>
               </View>
-              <Text style={styles.infoValue}>{userInfo.profile.training_frequency} veces/sem</Text>
+              <Text style={styles.infoValue}>{profileValueLabel('training_frequency', userInfo.profile.training_frequency)}</Text>
             </View>
 
             <View style={styles.infoRow}>
@@ -425,7 +426,7 @@ const ProfileScreen = () => {
                 <Ionicons name='trophy' size={18} color={colors.textSecondary} />
                 <Text style={styles.infoLabel}>Objetivo</Text>
               </View>
-              <Text style={styles.infoValue}>{userInfo.profile.primary_goal}</Text>
+              <Text style={styles.infoValue}>{profileValueLabel('primary_goal', userInfo.profile.primary_goal)}</Text>
             </View>
           </View>
 
@@ -441,7 +442,7 @@ const ProfileScreen = () => {
                 <Ionicons name='water' size={18} color={colors.textSecondary} />
                 <Text style={styles.infoLabel}>Sudoración</Text>
               </View>
-              <Text style={styles.infoValue}>{userInfo.profile.sweat_level}</Text>
+              <Text style={styles.infoValue}>{profileValueLabel('sweat_level', userInfo.profile.sweat_level)}</Text>
             </View>
 
             <View style={styles.infoRow}>
@@ -449,7 +450,7 @@ const ProfileScreen = () => {
                 <Ionicons name='cafe' size={18} color={colors.textSecondary} />
                 <Text style={styles.infoLabel}>Tolerancia cafeína</Text>
               </View>
-              <Text style={styles.infoValue}>{userInfo.profile.caffeine_tolerance}</Text>
+              <Text style={styles.infoValue}>{profileValueLabel('caffeine_tolerance', userInfo.profile.caffeine_tolerance)}</Text>
             </View>
 
             <View style={styles.infoRow}>
@@ -457,7 +458,7 @@ const ProfileScreen = () => {
                 <Ionicons name='restaurant' size={18} color={colors.textSecondary} />
                 <Text style={styles.infoLabel}>Restricciones</Text>
               </View>
-              <Text style={styles.infoValue}>{userInfo.profile.dietary_restrictions}</Text>
+              <Text style={styles.infoValue}>{profileValueLabel('dietary_restrictions', userInfo.profile.dietary_restrictions)}</Text>
             </View>
           </View>
         </>

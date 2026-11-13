@@ -26,6 +26,7 @@ import ProductImageFrame from '../../src/components/ui/ProductImageFrame';
 import { colors, fontFamily, radius, shadows, spacing } from '../../src/theme';
 import { MIN_SKELETON_MS, withMinimumDuration } from '../../src/utils/withMinimumDuration';
 import { getCategoryColorsFromName } from '../../src/utils/categoryColors';
+import { displayLabel } from '../../src/utils/format';
 import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
@@ -384,7 +385,7 @@ const ProductListScreen = () => {
               return (
                 <FilterChip
                   key={category.category_id}
-                  label={category.name.charAt(0).toUpperCase() + category.name.slice(1)}
+                  label={displayLabel(category.name)}
                   selected={selectedCategory === category.category_id}
                   selectedColor={color}
                   onPress={() => handleCategoryChange(category.category_id)}

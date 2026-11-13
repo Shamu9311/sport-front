@@ -12,23 +12,61 @@ import {
   Animated,
 } from 'react-native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
-import api, { saveProductFeedback, unwrapApiPayload } from '../services/api';
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+  initialWindowMetrics,
+} from 'react-native-safe-area-context';
+
+// El Modal crea una nueva raíz nativa: necesita su propio SafeAreaProvider. Con métricas iniciales
+// se pinta desde el primer frame (y funciona en tests, donde no hay medición nativa).
+const SAFE_AREA_METRICS = initialWindowMetrics ?? {
+  frame: { x: 0, y: 0, width: 0, height: 0 },
+  insets: { top: 0, left: 0, right: 0, bottom: 0 },
+};
+import api, { getUserFeedbackHistory, saveProductFeedback, unwrapApiPayload } from '../services/api';
 import Toast from 'react-native-toast-message';
 import { getProductImageSource } from '../utils/imageUtils';
 import { colors, fontFamily, radius, shadows, spacing } from '../theme';
 import LoadingState from './ui/LoadingState';
 import ProductImageFrame from './ui/ProductImageFrame';
 import { hapticSuccess } from '../utils/haptics';
-import { formatStartTimeDisplay } from '../utils/format';
+import {
+  displayLabel,
+  formatConsumptionWhen,
+  formatStartTimeDisplay,
+  hasSessionEnded,
+  weatherLabel,
+} from '../utils/format';
 import { notify } from '../services/feedback';
 import { SavedRecommendation, TrainingSession } from '../types/UserTypes';
-import { stripIntervalPrefixFromInstructions } from '../services/notificationService';
+import {
+  parseIntervalMinutesFromInstructions,
+  stripIntervalPrefixFromInstructions,
+} from '../services/notificationService';
 
 const SEARCHING_MESSAGES = [
   'Analizando tu entrenamiento...',
   'Buscando productos adecuados...',
   'Generando recomendaciones personalizadas...',
 ];
+
+const SKELETON_PHASES = [
+  { timing: 'antes', label: 'Antes', icon: 'time-outline' },
+  { timing: 'durante', label: 'Durante', icon: 'fitness-outline' },
+  { timing: 'despues', label: 'Después', icon: 'checkmark-circle-outline' },
+  { timing: 'diario', label: 'Diario', icon: 'calendar-outline' },
+];
+
+/**
+ * Razonamiento del LLM guardado en feedback_notes. Algunas filas guardan "razón del producto | estrategia
+ * general"; se muestra solo la parte del producto.
+ */
+export function getRecommendationReason(rec: Partial<SavedRecommendation> & { feedback_notes?: string | null }) {
+  const notes = typeof rec?.feedback_notes === 'string' ? rec.feedback_notes.trim() : '';
+  if (!notes) return '';
+  return notes.split(' | ')[0].trim();
+}
 
 const { width } = Dimensions.get('window');
 
@@ -104,7 +142,30 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<SavedRecommendation[]>([]);
   const [feedbackStates, setFeedbackStates] = useState<{ [key: number]: string }>({});
-  
+  const sessionEnded = session ? hasSessionEnded(session) : false;
+
+  // Cargar las calificaciones ya guardadas: antes "Bueno/Malo" aparecía sin marcar al reabrir,
+  // aunque el feedback estaba guardado en el servidor.
+  useEffect(() => {
+    if (!visible || !session?.session_id) return;
+    let cancelled = false;
+    getUserFeedbackHistory()
+      .then((res: { feedback?: { product_id: number; feedback: string }[] }) => {
+        if (cancelled || !res?.feedback) return;
+        const saved: { [key: number]: string } = {};
+        res.feedback.forEach((f) => {
+          saved[f.product_id] = f.feedback;
+        });
+        setFeedbackStates(saved);
+      })
+      .catch(() => {
+        /* sin historial: los botones quedan sin marcar */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, session?.session_id]);
+
   // Refs para control de estado
   const isMountedRef = useRef(true);
   const isVisibleRef = useRef(visible);
@@ -277,7 +338,24 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
 
   const renderRecommendations = () => {
     if (loading) {
-      return <LoadingState messages={SEARCHING_MESSAGES} style={styles.loadingContainer} />;
+      // Esqueleto de las 4 fases: la pantalla no "salta" cuando llegan los productos y el usuario
+      // ve desde el inicio qué va a recibir.
+      return (
+        <View style={styles.recommendationsContainer} testID="recommendations-skeleton">
+          <LoadingState messages={SEARCHING_MESSAGES} style={styles.skeletonLoadingMessage} />
+          {SKELETON_PHASES.map((phase) => (
+            <View key={phase.timing} style={styles.skeletonCard}>
+              <View style={styles.skeletonPhaseRow}>
+                <Ionicons name={phase.icon as any} size={18} color={colors.textMuted} />
+                <Text style={styles.skeletonPhaseLabel}>{phase.label}</Text>
+              </View>
+              <View style={styles.skeletonImage} />
+              <View style={[styles.skeletonLine, { width: '70%' }]} />
+              <View style={[styles.skeletonLine, { width: '45%' }]} />
+            </View>
+          ))}
+        </View>
+      );
     }
 
     if (!recommendations || recommendations.length === 0) {
@@ -364,15 +442,19 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                 </View>
               )}
 
-              {rec.feedback && (
+              {/* Antes se leía rec.feedback (calificación, normalmente vacía) y nunca se mostraba el porqué */}
+              {getRecommendationReason(rec) ? (
                 <View style={styles.reasoningBox}>
                   <Ionicons name='bulb' size={16} color={colors.primary} />
-                  <Text style={styles.recommendationReason}>{rec.feedback}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.reasoningTitle}>Por qué te lo recomendamos</Text>
+                    <Text style={styles.recommendationReason}>{getRecommendationReason(rec)}</Text>
+                  </View>
                 </View>
-              )}
+              ) : null}
 
               {/* Guía de Consumo */}
-              {(rec.consumption_timing ||
+              {!!(rec.consumption_timing ||
                 rec.recommended_quantity ||
                 rec.consumption_instructions) && (
                 <View style={styles.consumptionGuide}>
@@ -382,7 +464,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                   </View>
 
                   {/* Cuándo consumir */}
-                  {rec.consumption_timing && (
+                  {!!rec.consumption_timing && (
                     <View style={styles.consumptionItem}>
                       <Ionicons
                         name={getTimingIcon(rec.consumption_timing)}
@@ -392,17 +474,18 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                       <View style={styles.consumptionTextContainer}>
                         <Text style={styles.consumptionLabel}>Cuándo</Text>
                         <Text style={styles.consumptionValue}>
-                          {rec.consumption_timing.charAt(0).toUpperCase() +
-                            rec.consumption_timing.slice(1)}{' '}
-                          del entrenamiento
-                          {rec.timing_minutes && ` (${rec.timing_minutes} min)`}
+                          {formatConsumptionWhen(
+                            rec.consumption_timing,
+                            rec.timing_minutes,
+                            parseIntervalMinutesFromInstructions(rec.consumption_instructions)
+                          )}
                         </Text>
                       </View>
                     </View>
                   )}
 
                   {/* Cantidad */}
-                  {rec.recommended_quantity && (
+                  {!!rec.recommended_quantity && (
                     <View style={styles.consumptionItem}>
                       <Ionicons name='flask' size={18} color={colors.primary} />
                       <View style={styles.consumptionTextContainer}>
@@ -413,7 +496,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                   )}
 
                   {/* Instrucciones */}
-                  {rec.consumption_instructions && (
+                  {!!rec.consumption_instructions && (
                     <View style={styles.consumptionItem}>
                       <Ionicons name='information-circle' size={18} color={colors.primary} />
                       <View style={styles.consumptionTextContainer}>
@@ -427,7 +510,15 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                 </View>
               )}
 
-              {/* Sección de Feedback */}
+              {/* Sección de Feedback: solo tiene sentido después de entrenar */}
+              {!sessionEnded ? (
+                <View style={styles.feedbackPending}>
+                  <Ionicons name='time-outline' size={16} color={colors.textMuted} />
+                  <Text style={styles.feedbackPendingText}>
+                    Podrás calificarlo después de tu entrenamiento.
+                  </Text>
+                </View>
+              ) : (
               <View style={styles.feedbackSection}>
                 <Text style={styles.feedbackQuestion}>¿Te funcionó este producto?</Text>
 
@@ -491,6 +582,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                   </TouchableOpacity>
                 </View>
               </View>
+              )}
             </View>
           );
         })}
@@ -503,50 +595,46 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
   }
 
   return (
-    <Modal visible={visible} animationType='none' transparent={true} onRequestClose={onClose}>
-      <Animated.View style={[styles.centeredView, { opacity: fadeAnim }]}>
-        <TouchableOpacity 
-          style={styles.backdrop} 
-          activeOpacity={1} 
-          onPress={onClose}
-        />
-        <Animated.View 
-          style={[
-            styles.modalView,
-            {
-              transform: [{ translateY: slideAnim }],
-              opacity: fadeAnim,
-            },
-          ]}
-        >
-          {/* Header del modal */}
+    // Pantalla completa: antes era una hoja inferior que ocupaba ~60 % mientras cargaba y "saltaba"
+    // a casi toda la pantalla al llegar las recomendaciones.
+    <Modal
+      visible={visible}
+      animationType='slide'
+      presentationStyle='fullScreen'
+      onRequestClose={onClose}
+    >
+      <SafeAreaProvider initialMetrics={SAFE_AREA_METRICS}>
+        <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
+          {/* Header: volver a la izquierda y "Editar" (con texto) a la derecha, separados */}
           <View style={styles.modalHeader}>
-            <View style={styles.modalHeaderContent}>
-              <Ionicons name='barbell' size={22} color={colors.primary} />
-              <Text style={styles.modalTitle}>Detalles del Entrenamiento</Text>
-            </View>
-            <View style={styles.headerActions}>
-              {onEdit && session ? (
-                <TouchableOpacity
-                  onPress={() => {
-                    onClose();
-                    onEdit(session);
-                  }}
-                  style={styles.iconBtn}
-                  accessibilityLabel="Editar entrenamiento"
-                >
-                  <Ionicons name="create-outline" size={24} color={colors.primary} />
-                </TouchableOpacity>
-              ) : null}
+            <TouchableOpacity
+              onPress={onClose}
+              style={styles.backButton}
+              accessibilityRole='button'
+              accessibilityLabel='Volver a entrenamientos'
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name='chevron-back' size={26} color={colors.textPrimary} />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle} numberOfLines={1}>
+              Detalle del entrenamiento
+            </Text>
+            {onEdit && session ? (
               <TouchableOpacity
-                onPress={onClose}
-                style={styles.closeButton}
+                onPress={() => {
+                  onClose();
+                  onEdit(session);
+                }}
+                style={styles.editButton}
                 accessibilityRole='button'
-                accessibilityLabel='Cerrar'
+                accessibilityLabel='Editar entrenamiento'
               >
-                <Ionicons name='close' size={26} color={colors.textSecondary} />
+                <Ionicons name='create-outline' size={18} color={colors.primary} />
+                <Text style={styles.editButtonText}>Editar</Text>
               </TouchableOpacity>
-            </View>
+            ) : (
+              <View style={styles.headerSpacer} />
+            )}
           </View>
 
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -563,11 +651,11 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                 <View style={{ flex: 1 }}>
                   <Text style={styles.dateText}>{formatDate(session.session_date)}</Text>
                   <Text style={styles.typeText}>
-                    {session.type.charAt(0).toUpperCase() + session.type.slice(1)}
+                    {displayLabel(session.type)}
                   </Text>
-                  {session.sport_type && (
+                  {!!session.sport_type && (
                     <Text style={styles.sportTypeText}>
-                      {session.sport_type.charAt(0).toUpperCase() + session.sport_type.slice(1)}
+                      {displayLabel(session.sport_type)}
                     </Text>
                   )}
                 </View>
@@ -600,12 +688,12 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                   ]}
                 />
                 <Text style={styles.statValue}>
-                  {session.intensity.charAt(0).toUpperCase() + session.intensity.slice(1)}
+                  {displayLabel(session.intensity)}
                 </Text>
                 <Text style={styles.statLabel}>intensidad</Text>
               </View>
 
-              {session.weather && (
+              {!!session.weather && (
                 <>
                   <View style={styles.statDivider} />
                   <View style={styles.statItem}>
@@ -614,17 +702,15 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                       size={28}
                       color={colors.primary}
                     />
-                    <Text style={styles.statValue}>
-                      {session.weather.charAt(0).toUpperCase() + session.weather.slice(1)}
-                    </Text>
+                    <Text style={styles.statValue}>{weatherLabel(session.weather)}</Text>
                     <Text style={styles.statLabel}>clima</Text>
                   </View>
                 </>
               )}
             </View>
 
-            {/* Notes Card */}
-            {session.notes && (
+            {/* Notes Card (!! evita renderizar '' como nodo de texto suelto) */}
+            {!!session.notes && (
               <View style={styles.notesContainer}>
                 <View style={styles.notesHeader}>
                   <Ionicons name='document-text' size={20} color={colors.primary} />
@@ -638,66 +724,115 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
             {renderRecommendations()}
 
             {/* Bottom spacing */}
-            <View style={{ height: 20 }} />
+            <View style={{ height: 40 }} />
           </ScrollView>
-        </Animated.View>
-      </Animated.View>
+        </SafeAreaView>
+      </SafeAreaProvider>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  centeredView: {
+  screen: {
     flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: colors.overlayStrong,
-  },
-  modalView: {
-    width: '100%',
-    maxHeight: '95%',
     backgroundColor: colors.background,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    overflow: 'hidden',
   },
   modalHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     backgroundColor: colors.background,
     borderBottomWidth: 1,
     borderBottomColor: colors.divider,
   },
-  modalHeaderContent: {
-    flexDirection: 'row',
+  backButton: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
-    flex: 1,
+    justifyContent: 'center',
   },
   modalTitle: {
+    flex: 1,
     color: colors.textPrimary,
-    fontSize: 18,
+    fontSize: 17,
     fontFamily: fontFamily.bold,
-    marginLeft: 10,
+    marginLeft: 4,
   },
-  headerActions: {
+  editButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.primary,
   },
-  iconBtn: {
-    padding: 4,
+  editButtonText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontFamily: fontFamily.semibold,
   },
-  closeButton: {
-    padding: 4,
+  headerSpacer: {
+    width: 40,
   },
   content: {
+    flex: 1,
     padding: 20,
+  },
+
+  // Skeleton de las 4 fases mientras se generan las recomendaciones
+  skeletonLoadingMessage: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+  },
+  skeletonCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  skeletonPhaseRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: spacing.md,
+  },
+  skeletonPhaseLabel: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontFamily: fontFamily.semibold,
+  },
+  skeletonImage: {
+    height: 120,
+    borderRadius: radius.md,
+    backgroundColor: colors.border,
+    marginBottom: spacing.md,
+    opacity: 0.5,
+  },
+  skeletonLine: {
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.border,
+    marginBottom: 8,
+    opacity: 0.5,
+  },
+  feedbackPending: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.divider,
+  },
+  feedbackPendingText: {
+    color: colors.textMuted,
+    fontSize: 13,
+    flex: 1,
   },
 
   // Session Card
@@ -874,7 +1009,13 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     lineHeight: 19,
     marginLeft: 8,
-    flex: 1,
+  },
+  reasoningTitle: {
+    fontSize: 12,
+    color: colors.primary,
+    fontFamily: fontFamily.semibold,
+    marginLeft: 8,
+    marginBottom: 2,
   },
 
   // Loading & Empty States
