@@ -420,6 +420,18 @@ export const getTrainingSessionRecommendationsBySession = async (sessionId: numb
   return Array.isArray(data) ? data : [];
 };
 
+/** Recomendaciones de la sesión junto con su estado de generación (Evidence RAG; null en el flujo antiguo). */
+export const getTrainingSessionRecommendationsWithStatus = async (sessionId: number) => {
+  const response = await api.get(`/training/${sessionId}/recommendations`);
+  const data = unwrapApiPayload(response.data);
+  const meta = (response.data && typeof response.data === 'object' ? (response.data as { meta?: any }).meta : null) || null;
+  return {
+    recommendations: Array.isArray(data) ? data : [],
+    status: (meta?.recommendation_status ?? null) as string | null,
+    note: (meta?.recommendation_note ?? null) as string | null,
+  };
+};
+
 export const pollTrainingRecommendations = async (
   sessionId: number,
   maxAttempts = 5,
@@ -427,9 +439,13 @@ export const pollTrainingRecommendations = async (
 ) => {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     await new Promise((resolve) => setTimeout(resolve, delayMs));
-    const recommendations = await getTrainingSessionRecommendationsBySession(sessionId);
+    const { recommendations, status } = await getTrainingSessionRecommendationsWithStatus(sessionId);
     if (recommendations.length > 0) {
       return recommendations;
+    }
+    // Evidence RAG: la generación terminó sin recomendaciones respaldadas (o falló) → no seguir esperando
+    if (status === 'none' || status === 'failed') {
+      return [];
     }
   }
   return [];

@@ -36,6 +36,8 @@ import {
 const logoPath = require('../../assets/images/login.png');
 
 const TIMING_ORDER = ['antes', 'durante', 'despues', 'diario'];
+// Máximo de recomendaciones por sesión en Evidence RAG (puede haber menos; nunca se rellenan fases)
+const MAX_FEATURED_RECS = 5;
 const TIMING_LABELS: Record<string, string> = {
   antes: 'Antes',
   durante: 'Durante',
@@ -274,7 +276,7 @@ const HomeScreen = () => {
                 {/* Lo más valioso de la app: qué tomar en cada momento */}
                 {featuredRecs.length > 0 ? (
                   <View style={styles.featuredRecs}>
-                    {featuredRecs.slice(0, 4).map((rec) => (
+                    {featuredRecs.slice(0, MAX_FEATURED_RECS).map((rec) => (
                       <View key={rec.recommendation_id || rec.product_id} style={styles.featuredRecRow}>
                         <Text style={styles.featuredRecTiming}>
                           {TIMING_LABELS[rec.consumption_timing] || 'Recomendado'}

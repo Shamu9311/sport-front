@@ -10,6 +10,7 @@ import {
   Alert,
   Dimensions,
   Animated,
+  Linking,
 } from 'react-native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import {
@@ -39,7 +40,7 @@ import {
   weatherLabel,
 } from '../utils/format';
 import { notify } from '../services/feedback';
-import { SavedRecommendation, TrainingSession } from '../types/UserTypes';
+import { RecommendationEvidence, SavedRecommendation, TrainingSession } from '../types/UserTypes';
 import {
   parseIntervalMinutesFromInstructions,
   stripIntervalPrefixFromInstructions,
@@ -51,12 +52,46 @@ const SEARCHING_MESSAGES = [
   'Generando recomendaciones personalizadas...',
 ];
 
-const SKELETON_PHASES = [
-  { timing: 'antes', label: 'Antes', icon: 'time-outline' },
-  { timing: 'durante', label: 'Durante', icon: 'fitness-outline' },
-  { timing: 'despues', label: 'Después', icon: 'checkmark-circle-outline' },
-  { timing: 'diario', label: 'Diario', icon: 'calendar-outline' },
-];
+/** Tarjetas de carga genéricas: el número de recomendaciones es variable (no siempre 4 fases). */
+const SKELETON_CARDS = 2;
+
+const SOURCE_TYPE_LABELS: Record<string, string> = {
+  meta_analysis: 'Metaanálisis',
+  systematic_review: 'Revisión sistemática',
+  randomized_controlled_trial: 'Ensayo controlado aleatorizado',
+  crossover_trial: 'Ensayo cruzado',
+  non_randomized_trial: 'Ensayo no aleatorizado',
+  observational_study: 'Estudio observacional',
+  narrative_review: 'Revisión narrativa',
+  consensus: 'Consenso',
+  position_stand: 'Posicionamiento oficial',
+  guideline: 'Guía',
+  official_framework: 'Marco oficial',
+  manufacturer_specification: 'Ficha del fabricante',
+};
+
+const EVIDENCE_ROLE_LABELS: Record<RecommendationEvidence['role'], string> = {
+  supports: 'Respalda',
+  caveat: 'Matiza',
+  usage_constraint: 'Instrucción del fabricante (no es evidencia de eficacia)',
+};
+
+/** Agrupa la evidencia por fuente para no repetir el mismo estudio en la tarjeta. */
+export function groupEvidenceBySource(evidence: RecommendationEvidence[] = []) {
+  const bySource = new Map<number, RecommendationEvidence & { summaries: string[] }>();
+  for (const e of evidence) {
+    const current = bySource.get(e.source_id);
+    if (current) {
+      if (e.summary && !current.summaries.includes(e.summary)) current.summaries.push(e.summary);
+      if (current.role !== 'supports' && e.role === 'supports') current.role = 'supports';
+    } else {
+      bySource.set(e.source_id, { ...e, summaries: e.summary ? [e.summary] : [] });
+    }
+  }
+  return [...bySource.values()];
+}
+
+const evidenceLink = (e: RecommendationEvidence) => (e.doi ? 'https://doi.org/' + e.doi : e.url || null);
 
 /**
  * Razonamiento del LLM guardado en feedback_notes. Algunas filas guardan "razón del producto | estrategia
@@ -141,6 +176,8 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<SavedRecommendation[]>([]);
+  // Evidence RAG: motivo por el que la sesión no tiene recomendaciones respaldadas
+  const [statusNote, setStatusNote] = useState<string | null>(null);
   const [feedbackStates, setFeedbackStates] = useState<{ [key: number]: string }>({});
   const sessionEnded = session ? hasSessionEnded(session) : false;
 
@@ -236,9 +273,23 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
 
           const payload = unwrapApiPayload<unknown[]>(response.data);
           const recommendationList = Array.isArray(payload) ? payload : [];
+          const meta = (response.data as { meta?: { recommendation_status?: string } })?.meta;
 
           if (recommendationList.length > 0) {
-            setRecommendations(recommendationList);
+            setRecommendations(recommendationList as SavedRecommendation[]);
+            setStatusNote(null);
+            setLoading(false);
+            return;
+          }
+
+          // La generación terminó sin recomendaciones respaldadas por evidencia: no seguir reintentando
+          if (meta?.recommendation_status === 'none' || meta?.recommendation_status === 'failed') {
+            setRecommendations([]);
+            setStatusNote(
+              meta.recommendation_status === 'none'
+                ? 'No hay evidencia suficiente para recomendar productos en esta sesión.'
+                : 'No se pudieron generar las recomendaciones. Inténtalo más tarde.'
+            );
             setLoading(false);
             return;
           }
@@ -278,6 +329,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
       }
 
       setRecommendations([]);
+      setStatusNote(null);
       setLoading(true);
       const timer = setTimeout(() => {
         fetchRecommendationsWithRetry(session.session_id);
@@ -338,17 +390,12 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
 
   const renderRecommendations = () => {
     if (loading) {
-      // Esqueleto de las 4 fases: la pantalla no "salta" cuando llegan los productos y el usuario
-      // ve desde el inicio qué va a recibir.
+      // Esqueleto genérico: el número de recomendaciones depende de la evidencia (no siempre 4 fases).
       return (
         <View style={styles.recommendationsContainer} testID="recommendations-skeleton">
           <LoadingState messages={SEARCHING_MESSAGES} style={styles.skeletonLoadingMessage} />
-          {SKELETON_PHASES.map((phase) => (
-            <View key={phase.timing} style={styles.skeletonCard}>
-              <View style={styles.skeletonPhaseRow}>
-                <Ionicons name={phase.icon as any} size={18} color={colors.textMuted} />
-                <Text style={styles.skeletonPhaseLabel}>{phase.label}</Text>
-              </View>
+          {Array.from({ length: SKELETON_CARDS }, (_, i) => (
+            <View key={'skeleton-' + i} style={styles.skeletonCard} testID="recommendation-skeleton-card">
               <View style={styles.skeletonImage} />
               <View style={[styles.skeletonLine, { width: '70%' }]} />
               <View style={[styles.skeletonLine, { width: '45%' }]} />
@@ -368,7 +415,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
             style={{ marginBottom: 12 }}
           />
           <Text style={styles.noRecommendationsText}>
-            No hay recomendaciones disponibles en este momento.
+            {statusNote || 'No hay recomendaciones disponibles en este momento.'}
           </Text>
           <Text style={styles.noRecommendationsSubtext}>
             Las recomendaciones se generan automáticamente al crear un entrenamiento.
@@ -509,6 +556,43 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                   )}
                 </View>
               )}
+
+              {/* Evidencia (Evidence RAG): fuentes revisadas que respaldan o matizan la recomendación */}
+              {rec.evidence && rec.evidence.length > 0 ? (
+                <View style={styles.evidenceSection} testID="recommendation-evidence">
+                  <View style={styles.consumptionHeader}>
+                    <Ionicons name='library-outline' size={20} color={colors.primary} />
+                    <Text style={styles.consumptionTitle}>Evidencia</Text>
+                  </View>
+                  {rec.evidence_note ? <Text style={styles.evidenceNote}>{rec.evidence_note}</Text> : null}
+                  {groupEvidenceBySource(rec.evidence).map((e) => {
+                    const link = evidenceLink(e);
+                    return (
+                      <View key={'ev-' + e.source_id} style={styles.evidenceItem}>
+                        <Text style={styles.evidenceTitle}>
+                          {e.title}
+                          {e.year ? ' (' + e.year + ')' : ''}
+                        </Text>
+                        <Text style={styles.evidenceMeta}>
+                          {[SOURCE_TYPE_LABELS[e.source_type || ''] || e.source_type, EVIDENCE_ROLE_LABELS[e.role]]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </Text>
+                        {e.summaries.slice(0, 2).map((summary, i) => (
+                          <Text key={i} style={styles.evidenceSummary} numberOfLines={4}>
+                            {summary}
+                          </Text>
+                        ))}
+                        {link ? (
+                          <TouchableOpacity onPress={() => Linking.openURL(link).catch(() => {})} accessibilityRole='link'>
+                            <Text style={styles.evidenceLink}>{e.doi ? 'DOI: ' + e.doi : link}</Text>
+                          </TouchableOpacity>
+                        ) : null}
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : null}
 
               {/* Sección de Feedback: solo tiene sentido después de entrenar */}
               {!sessionEnded ? (
@@ -795,17 +879,6 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
-  skeletonPhaseRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: spacing.md,
-  },
-  skeletonPhaseLabel: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    fontFamily: fontFamily.semibold,
-  },
   skeletonImage: {
     height: 120,
     borderRadius: radius.md,
@@ -1049,6 +1122,52 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 13,
     lineHeight: 20,
+  },
+
+  // Evidencia (Evidence RAG)
+  evidenceSection: {
+    marginTop: spacing.lg,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  evidenceNote: {
+    fontSize: 13,
+    fontFamily: fontFamily.regular,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+  },
+  evidenceItem: {
+    paddingTop: spacing.sm,
+    marginTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  evidenceTitle: {
+    fontSize: 14,
+    fontFamily: fontFamily.semibold,
+    color: colors.textPrimary,
+  },
+  evidenceMeta: {
+    fontSize: 12,
+    fontFamily: fontFamily.medium,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  evidenceSummary: {
+    fontSize: 13,
+    fontFamily: fontFamily.regular,
+    color: colors.textSecondary,
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  evidenceLink: {
+    fontSize: 13,
+    fontFamily: fontFamily.medium,
+    color: colors.primary,
+    marginTop: 4,
   },
 
   // Guía de Consumo

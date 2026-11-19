@@ -130,7 +130,27 @@ export interface TrainingSession {
   notes?: string;
 }
 
+/** Fuente que respalda (o matiza) una recomendación Evidence RAG. Sin datos técnicos. */
+export interface RecommendationEvidence {
+  source_id: number;
+  title: string;
+  year?: number | null;
+  source_type?: string | null;
+  source_category?: string | null;
+  summary?: string | null;
+  doi?: string | null;
+  url?: string | null;
+  role: 'supports' | 'caveat' | 'usage_constraint';
+}
+
+/** Estado de generación de recomendaciones de una sesión (solo Evidence RAG). */
+export type RecommendationStatus = 'pending' | 'ready' | 'none' | 'failed';
+
 export interface SavedRecommendation {
+  evidence?: RecommendationEvidence[];
+  evidence_mode?: 'legacy' | 'evidence_rag';
+  cadence_status?: 'cadence_verified' | 'cadence_unverified' | null;
+  evidence_note?: string | null;
   recommendation_id?: number;
   product_id?: number;
   session_id?: number | null;

@@ -124,7 +124,7 @@ describe('TrainingDetailModal', () => {
     expect(screen.getByText('Podrás calificarlo después de tu entrenamiento.')).toBeTruthy();
   });
 
-  it('muestra el esqueleto de las 4 fases mientras se generan', async () => {
+  it('muestra un esqueleto genérico mientras se generan (sin asumir 4 fases)', async () => {
     await render(
       <TrainingDetailModal
         visible
@@ -138,9 +138,45 @@ describe('TrainingDetailModal', () => {
     );
 
     expect(screen.getByText('Analizando tu entrenamiento...')).toBeTruthy();
+    expect(screen.getAllByTestId('recommendation-skeleton-card').length).toBe(2);
     ['Antes', 'Durante', 'Después', 'Diario'].forEach((label) => {
-      expect(screen.getByText(label)).toBeTruthy();
+      expect(screen.queryByText(label)).toBeNull();
     });
+  });
+
+  it('muestra un número variable de recomendaciones y su sección "Evidencia" sin datos técnicos', async () => {
+    const evidenceRecs = [
+      {
+        recommendation_id: 21, product_id: 25, product_name: 'BETA Fuel 40g Gel Orange', consumption_timing: 'durante',
+        recommended_quantity: '0.8–1.5 porciones/h', feedback_notes: 'Respaldado por la guía.',
+        evidence_mode: 'evidence_rag', cadence_status: 'cadence_verified',
+        evidence_note: 'Evidencia del ingrediente, no del producto específico.',
+        evidence: [
+          { source_id: 7, title: 'AIS Sports Gels', year: null, source_type: 'guideline', summary: '30–60 g/h durante 1–2.5 h.', doi: null, url: 'https://www.ais.gov.au/gels', role: 'supports' },
+          { source_id: 7, title: 'AIS Sports Gels', year: null, source_type: 'guideline', summary: 'Geles antes del ejercicio.', doi: null, url: 'https://www.ais.gov.au/gels', role: 'supports' },
+          { source_id: 9, title: 'Ficha BETA Fuel Gel', year: null, source_type: 'manufacturer_specification', summary: 'Uso durante el ejercicio.', doi: null, url: null, role: 'usage_constraint' },
+        ],
+      },
+    ] as any[];
+    await render(
+      <TrainingDetailModal
+        visible
+        onClose={jest.fn()}
+        session={session}
+        userId={1}
+        usePrefetchedRecommendations
+        prefetchedRecommendations={evidenceRecs}
+        prefetchedRecommendationsLoading={false}
+      />
+    );
+
+    expect(screen.getAllByTestId('recommendation-evidence')).toHaveLength(1);
+    expect(screen.getByText('Evidencia')).toBeTruthy();
+    expect(screen.getAllByText('AIS Sports Gels')).toHaveLength(1); // agrupada por fuente
+    expect(screen.getByText('Guía · Respalda')).toBeTruthy();
+    expect(screen.getByText(/Instrucción del fabricante \(no es evidencia de eficacia\)/)).toBeTruthy();
+    expect(screen.getByText('Evidencia del ingrediente, no del producto específico.')).toBeTruthy();
+    expect(screen.queryByText(/similarity|embedding/i)).toBeNull();
   });
 
   it('separa Editar del botón volver', async () => {
