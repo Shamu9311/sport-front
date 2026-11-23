@@ -40,6 +40,7 @@ import {
   weatherLabel,
 } from '../utils/format';
 import { notify } from '../services/feedback';
+import { roleLabel, sessionCaffeineText, slotLabel, targetText, usagePlanLines } from '../utils/recommendationSlots';
 import { RecommendationEvidence, SavedRecommendation, TrainingSession } from '../types/UserTypes';
 import {
   parseIntervalMinutesFromInstructions,
@@ -178,6 +179,7 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
   const [recommendations, setRecommendations] = useState<SavedRecommendation[]>([]);
   // Evidence RAG: motivo por el que la sesión no tiene recomendaciones respaldadas
   const [statusNote, setStatusNote] = useState<string | null>(null);
+  const [openAlternatives, setOpenAlternatives] = useState<Record<string, boolean>>({});
   const [feedbackStates, setFeedbackStates] = useState<{ [key: number]: string }>({});
   const sessionEnded = session ? hasSessionEnded(session) : false;
 
@@ -430,6 +432,11 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
           <Ionicons name='star' size={18} color={colors.primary} />
           <Text style={styles.sectionTitle}>Productos Recomendados</Text>
         </View>
+        {sessionCaffeineText(recommendations) ? (
+          <Text style={styles.caffeineTotal} testID="session-caffeine-total">
+            {sessionCaffeineText(recommendations)}
+          </Text>
+        ) : null}
         {recommendations.map((rec, recIndex) => {
           // Función helper para obtener icono de timing
           const getTimingIcon = (timing: string) => {
@@ -467,6 +474,18 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
               key={`rec-${rec.recommendation_id || rec.product_id}-${recIndex}`}
               style={styles.recommendationCard}
             >
+              {rec.role ? (
+                <View style={styles.slotRow} testID="recommendation-slot">
+                  <Text style={[styles.slotChip, { color: getTimingColor(rec.consumption_timing || '') }]}>
+                    {slotLabel(rec.consumption_timing, rec.role)}
+                  </Text>
+                  {(rec.also_covers || []).length > 0 ? (
+                    <Text style={styles.slotAlso}>
+                      {'También cubre: ' + (rec.also_covers || []).map((r) => roleLabel(r, rec.consumption_timing)).join(', ')}
+                    </Text>
+                  ) : null}
+                </View>
+              ) : null}
               <Text style={styles.productName}>{rec.product_name}</Text>
 
               {rec.image_url ? (
@@ -503,7 +522,8 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
               {/* Guía de Consumo */}
               {!!(rec.consumption_timing ||
                 rec.recommended_quantity ||
-                rec.consumption_instructions) && (
+                rec.consumption_instructions ||
+                rec.usage_plan) && (
                 <View style={styles.consumptionGuide}>
                   <View style={styles.consumptionHeader}>
                     <Ionicons name='nutrition' size={20} color={colors.primary} />
@@ -541,6 +561,28 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                       </View>
                     </View>
                   )}
+
+                  {/* Objetivo (del claim) y plan calculado por el servidor (Evidence RAG) */}
+                  {targetText(rec.target) ? (
+                    <View style={styles.consumptionItem}>
+                      <Ionicons name='flag-outline' size={18} color={colors.primary} />
+                      <View style={styles.consumptionTextContainer}>
+                        <Text style={styles.consumptionLabel}>Objetivo</Text>
+                        <Text style={styles.consumptionValue}>{targetText(rec.target)}</Text>
+                      </View>
+                    </View>
+                  ) : null}
+                  {usagePlanLines(rec.usage_plan).length > 0 ? (
+                    <View style={styles.consumptionItem} testID="recommendation-usage-plan">
+                      <Ionicons name='repeat' size={18} color={colors.primary} />
+                      <View style={styles.consumptionTextContainer}>
+                        <Text style={styles.consumptionLabel}>Plan</Text>
+                        {usagePlanLines(rec.usage_plan).map((line, i) => (
+                          <Text key={i} style={styles.consumptionValue}>{line}</Text>
+                        ))}
+                      </View>
+                    </View>
+                  ) : null}
 
                   {/* Instrucciones */}
                   {!!rec.consumption_instructions && (
@@ -591,6 +633,39 @@ const TrainingDetailModal: React.FC<TrainingDetailModalProps> = ({
                       </View>
                     );
                   })}
+                </View>
+              ) : null}
+
+              {/* Alternativas del mismo hueco: en lugar del principal, no además */}
+              {rec.alternatives && rec.alternatives.length > 0 ? (
+                <View style={styles.alternativesSection} testID="recommendation-alternatives">
+                  <TouchableOpacity
+                    style={styles.alternativesToggle}
+                    accessibilityRole='button'
+                    onPress={() => {
+                      const key = String(rec.recommendation_id ?? recIndex);
+                      setOpenAlternatives((prev) => ({ ...prev, [key]: !prev[key] }));
+                    }}
+                  >
+                    <Ionicons name='swap-horizontal' size={18} color={colors.primary} />
+                    <Text style={styles.alternativesTitle}>
+                      {'Alternativas (' + rec.alternatives.length + ') · en lugar de, no además'}
+                    </Text>
+                    <Ionicons
+                      name={openAlternatives[String(rec.recommendation_id ?? recIndex)] ? 'chevron-up' : 'chevron-down'}
+                      size={18}
+                      color={colors.textMuted}
+                    />
+                  </TouchableOpacity>
+                  {openAlternatives[String(rec.recommendation_id ?? recIndex)]
+                    ? rec.alternatives.map((alt) => (
+                        <View key={'alt-' + alt.product_id} style={styles.alternativeItem}>
+                          <Text style={styles.alternativeName}>{alt.product_name}</Text>
+                          {alt.usage_plan?.text ? <Text style={styles.alternativeText}>{alt.usage_plan.text}</Text> : null}
+                          <Text style={styles.alternativeReason}>{'No es la principal: ' + alt.reason}</Text>
+                        </View>
+                      ))
+                    : null}
                 </View>
               ) : null}
 
@@ -1125,6 +1200,68 @@ const styles = StyleSheet.create({
   },
 
   // Evidencia (Evidence RAG)
+  caffeineTotal: {
+    fontSize: 13,
+    fontFamily: fontFamily.medium,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+  },
+  slotRow: {
+    marginBottom: spacing.xs,
+  },
+  slotChip: {
+    fontSize: 13,
+    fontFamily: fontFamily.semibold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  slotAlso: {
+    fontSize: 12,
+    fontFamily: fontFamily.regular,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  alternativesSection: {
+    marginTop: spacing.lg,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+  },
+  alternativesToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  alternativesTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: fontFamily.semibold,
+    color: colors.textPrimary,
+  },
+  alternativeItem: {
+    paddingTop: spacing.sm,
+    marginTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  alternativeName: {
+    fontSize: 14,
+    fontFamily: fontFamily.medium,
+    color: colors.textPrimary,
+  },
+  alternativeText: {
+    fontSize: 13,
+    fontFamily: fontFamily.regular,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  alternativeReason: {
+    fontSize: 12,
+    fontFamily: fontFamily.regular,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
   evidenceSection: {
     marginTop: spacing.lg,
     backgroundColor: colors.surfaceMuted,

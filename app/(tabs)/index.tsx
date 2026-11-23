@@ -25,6 +25,7 @@ import AppCard from '../../src/components/ui/AppCard';
 import ScreenHero from '../../src/components/ui/ScreenHero';
 import PressableScale from '../../src/components/ui/PressableScale';
 import { colors, shadows, spacing, radius, fontFamily } from '../../src/theme';
+import { slotLabel } from '../../src/utils/recommendationSlots';
 import {
   displayLabel,
   formatDuration,
@@ -279,7 +280,9 @@ const HomeScreen = () => {
                     {featuredRecs.slice(0, MAX_FEATURED_RECS).map((rec) => (
                       <View key={rec.recommendation_id || rec.product_id} style={styles.featuredRecRow}>
                         <Text style={styles.featuredRecTiming}>
-                          {TIMING_LABELS[rec.consumption_timing] || 'Recomendado'}
+                          {rec.role
+                            ? slotLabel(rec.consumption_timing, rec.role)
+                            : TIMING_LABELS[rec.consumption_timing] || 'Recomendado'}
                         </Text>
                         <Text style={styles.featuredRecName} numberOfLines={1}>
                           {rec.product_name}
